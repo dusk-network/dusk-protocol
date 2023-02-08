@@ -17,3 +17,13 @@ This document describes the pattern to follow to review a single protocol compon
  4. **Update documentation**: use all gathered information to write a complete documentation.
 
  5. **Start research**: open Issues to clarify lacking rationale, address existing issues, and research for improvements.
+
+---
+
+ ### Step 1: Collect information
+ Information on the Dusk protocol should be searched through all these sources:
+ - [Whitepaper](https://dusk.network/uploads/The_Dusk_Network_Whitepaper_v3_0_0.pdf)
+ - [GitBook](https://app.gitbook.com/o/-M8H04Dfb0IChBw1yUbU/home) (until migration to Wiki is completed)
+ - [Dusk Wiki](https://wiki.dusk.network)
+ - [Miro boards](https://miro.com/app/dashboard/)
+ - [GitHub repositories](https://github.com/orgs/dusk-network/repositories) (READMEs, code, Issues, ...)
