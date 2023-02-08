@@ -27,3 +27,7 @@ This document describes the pattern to follow to review a single protocol compon
  - [Dusk Wiki](https://wiki.dusk.network)
  - [Miro boards](https://miro.com/app/dashboard/)
  - [GitHub repositories](https://github.com/orgs/dusk-network/repositories) (READMEs, code, Issues, ...)
+
+### Step 2: Index information
+All sources found in Step 1 should be added to the [_keyword index_](https://github.com/dusk-network/dusk-index/tree/main/keywords).
+Sources are divided into Docs and Code. Docs should include links to all textual documents (Wiki, READMEs, etc...). Code should list all related repos, source files, and main functions/structures.
