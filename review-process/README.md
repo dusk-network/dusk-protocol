@@ -30,4 +30,12 @@ This document describes the pattern to follow to review a single protocol compon
 
 ### Step 2: Index information
 All sources found in Step 1 should be added to the [_keyword index_](https://github.com/dusk-network/dusk-index/tree/main/keywords).
-Sources are divided into Docs and Code. Docs should include links to all textual documents (Wiki, READMEs, etc...). Code should list all related repos, source files, and main functions/structures.
+Sources are divided into _Docs_ and _Code_. Docs should include links to all textual documents (Wiki, READMEs, etc...). Code should list all related repos, source files, and main functions/structures.
+
+### Step 3: Review code
+This phase should process each repo and code listed in the _Code_ section of the index build in Step 2.
+
+Code review should be split in different items:
+- **Document code**: comments in the code should be updated and clarify what the code does in detail.
+- **Discuss**: if some code is unclear (e.g., it's hard to tell WHY something is done), affects security/performance, or has inconsistencies with the specification, an Issue should be created (in the same repo). Issues should be _atomic_, that is, address a single discussion item. 
+- **Create research tasks**: when a research question arises, a new Issue should be open in [`dusk-protocol`](https://github.com/dusk-network/dusk-protocol/) describing the question and its possible implications.
