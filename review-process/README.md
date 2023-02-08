@@ -16,7 +16,7 @@ This document describes the pattern to follow to review a single protocol compon
 
  4. **Update documentation**: use all gathered information to write a complete documentation.
 
- 5. **Start research**: open Issues to clarify lacking rationale, address existing issues, and research for improvements.
+ 5. **Research**: open Issues to clarify lacking rationale, address existing issues, and research for improvements.
 
 ---
 
@@ -46,3 +46,15 @@ Documenting the reviewed _item_ should include different types of documents, eac
 - **Wiki**: a page on the Dusk Wiki should describe, at a high level, how _item_ works and its interaction with other components (linking other pages in the Wiki).
 - **Protocol Documentation**: a page in the [`dusk-protocol`](https://github.com/dusk-network/dusk-protocol/) should describe _item_ in extensive detail, including formalization, security analysis, related work, etc...
 - **Whitepaper**: the whitepaper should include a formal description of _item_, in harmony with the rest of the paper; the level of detail should be assessed according to the rest of the paper.
+
+## Step 5: Research
+In the last phase, research questions that arose in previous phases should be investigated.
+Example tasks include:
+- Formalize design and involved algorithms
+- Write protocol specifications, where applicable
+- Compare with other protocols
+- Motivate undocumented aspects of the protocol
+- Investigate the impact of specific behaviors
+- Investigate potentially improving changes
+
+Investigation results should be clearly documented in [`dusk-protocol`](https://github.com/dusk-network/dusk-protocol/) and, if appropriate, in the whitepaper.
