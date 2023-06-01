@@ -22,3 +22,7 @@ The following lists should be copy-pasted into the relative issue.
 **FORMALIZATION**
 - [ ] Write extended LaTeX description
 - [ ] Draw Miro diagrams
+
+**RESEARCH**
+- [ ] File Issues for related readings
+- [ ] File Issues for investigating critical components
