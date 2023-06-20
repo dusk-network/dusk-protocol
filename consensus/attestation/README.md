@@ -43,7 +43,7 @@ Procedure:
    - (a) Compute block fields:
      - **Set block timestamp** to current time in Unix format
        - `timestamp` = `time.Now().Unix()`
-     - **Compute block seed** as the signature over the previous one -- see [*Deterministic Sortition*](../sortition/README.md)
+     - **Compute block seed** -- see [*Seed*](../sortition/README.md#seed)
        - `newSeed` = `node.sign(prevSeed)` 
      - **Compute current iteration** -- see [*Succinct Attestation*](../README.md)
        - `iteration` = `step/3 + 1`
