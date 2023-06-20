@@ -12,7 +12,7 @@ The SA consensus is divided into **_rounds_**, each of which creates a new block
   1. **_Attestation_**: in this phase, a _generator_, extracted among eligible Provisioners, creates a new candidate block $B$ for the current round, and broadcasts it to the network;
   
   2. **_1st Reduction_**: in this phase, the members of a _committee_, extracted among the  eligible Provisioners, vote on the validity of the candidate block $B$; 
-  if votes reach a quorum of $2/3$ (i.e., 67% of the committee voting pool), the reduction outputs $B$, otherwise it outputs $NIL$;
+  if votes reach a quorum of $\frac{2}{3}$ (i.e., 67% of the committee voting pool), the reduction outputs $B$, otherwise it outputs $NIL$;
 
   3. **_2nd Reduction_**: in this phase, if the output of the 1st Reduction is not $NIL$, a second _committee_, also extracted among the eligible Provisioners, votes on the candidate block $B$;
   if votes reach the quorum, an `Agreement` message is broadcast, which contains all votes of the two Reduction phases.
@@ -21,12 +21,36 @@ The SA consensus is divided into **_rounds_**, each of which creates a new block
 <!-- TODO: mention maximum number of steps -->
 
 A successful iteration (i.e., one that produces a valid new block), is ratified by the following phase:
- - **_Ratification_**: in this phase, which runs concurrently to iteration steps, `Agreement` messages for the current round are collected and processed by nodes. If collected votes reach a quorum, the new block is accepted by producing a `Certicate` message with the aggregated votes. This message is then propagated to be verified by other nodes.
+ - **_Ratification_**: in this phase, which runs concurrently to iteration steps, `Agreement` messages for the current round are collected and processed by nodes. If collected votes reach a quorum, the new block is accepted by producing a `Certificate` message with the aggregated votes. This message is then propagated to be verified by other nodes.
 
 ### Extraction 
 The extraction process, used to select the block producer in the Attestation phase and the committees in the Reduction phases, leverages the **_Deterministic Sortition_** algorithm, described [here](sortition/README.md)[^3]. 
 <!-- TODO: add link to description -->
 
+
+### Parameters
+Several parameters are used in the SA procedures.
+We divide them into _configuration constants_, which are network-wide parameters, and _context variables_, which are specific to the running node and its state current state with respect to the SA protocol.
+
+**Config Constants**
+| Name                    | Value         | Description                   |
+|-------------------------|---------------|-------------------------------|
+| **`DUSK`**              | 1.000.000.000 | Value of 1 Dusk unit (in lux) |
+| **`BlockGasLimit`**     | 5 DUSK        | Gas limit for a single block  |
+| **`MaxBlockTime`**      | 360 seconds   | ?                             | <!-- TODO -->
+| **`ConsensusTimeOut`**  | 5 seconds     | ?                             | <!-- TODO -->
+| **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
+| **`MaxTxSetSize`**      | 825000        | Maximum size of transaction set in a block     |
+
+**Context Variables**
+| Name                    | Description                 |
+|-------------------------|-----------------------------|
+| **`node`**              | Node running the protocol   | <!-- TODO: mention/define its content (keys) -->
+| **`round`**             | Current consensus round (i.e., block height) |
+| **`prevHash`**          | Previous block's hash       |
+| **`prevTimestamp`**     | Previous block's timestamp  |
+| **`prevSeed`**          | Previous block's seed       |
+| **`queue`**             | Consensus event queue       | <!-- TODO: delete this? -->
 
 <!-------------------- Footnotes -------------------->
 
