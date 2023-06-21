@@ -4,7 +4,21 @@ The Dusk blockchain leverages **_Succinct Attestation_ (_SA_)**, which is a perm
 ### Participants
 To participate in the SA consensus, a Dusk user must meet the following requirements:
  - to be a **_Provisioner_**, i.e., have a pre-configured amount of DUSK locked as a stake;
- - to be **_Eligible_**, i.e., have a stake with an age of at least two epochs.
+ - to be **_Eligible_**, i.e., have a stake with an age of at least two epochs.  <!-- TODO: define epoch -->
+
+To formally describe the consensus protocol, we define the *Provisioner* structure as:
+```
+Provisioner {
+  byte[]    PubKey,       // The Provisioner ID
+  int       StakeWeight,  // The total amount of mature stake
+  Stake[]   Stakes        // Set of stakes
+}
+
+Stake {
+  int Amount,             // The amount staked
+  int BlockHeight         // The block when the amount was staked
+}
+```
 
 ### Workflow
 The SA consensus is divided into **_rounds_**, each of which creates a new block. In turn, each round is composed of one or more **_iterations_** of the following **_phases_**:
