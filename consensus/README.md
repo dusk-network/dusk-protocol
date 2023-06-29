@@ -50,7 +50,7 @@ We divide them into _configuration constants_, which are network-wide parameters
 | Name                    | Value         | Description                   |
 |-------------------------|---------------|-------------------------------|
 | **`DUSK`**              | 1.000.000.000 | Value of 1 Dusk unit (in lux) |
-| **`BlockGasLimit`**     | 5 GasPoint    | Gas limit for a single block  |
+| **`BlockGasLimit`**     | 5.000.000.000 | Gas limit for a single block  |
 | **`MaxBlockTime`**      | 360 seconds   | ?                             | <!-- TODO -->
 | **`ConsensusTimeOut`**  | 5 seconds     | ?                             | <!-- TODO -->
 | **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
