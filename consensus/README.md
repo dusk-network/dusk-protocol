@@ -71,19 +71,43 @@ We divide them into _configuration constants_, which are network-wide parameters
 | **`DUSK`**              | 1.000.000.000 | Value of 1 Dusk unit (in lux) |
 | **`BlockGasLimit`**     | 5.000.000.000 | Gas limit for a single block  |
 | **`MaxBlockTime`**      | 360 seconds   | ?                             | <!-- TODO -->
-| **`ConsensusTimeOut`**  | 5 seconds     | ?                             | <!-- TODO -->
+| **`ConsensusTimeOut`**  | 5 seconds     | Initial step timeout          |
+| **`MaxStepTimeout`**    | 60 seconds    | Maximum timeout for a single step |
+  maxTimeout = 60*time.Second
 | **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
 | **`MaxTxSetSize`**      | 825000        | Maximum size of transaction set in a block     |
+| **`CreditPoolSize`**    | 64            | Total credits in a committee |
+| **`Quorum`**            | 43            | Quorum threshold (2/3 of `CreditPoolSize`) |
 
 **Context Variables**
 | Name                    | Description                 |
 |-------------------------|-----------------------------|
 | **`node`**              | Node running the protocol   | <!-- TODO: mention/define its content (keys) -->
+| **`TIP`**               | Current chain tip (last block) |
 | **`round`**             | Current consensus round (i.e., block height) |
 | **`prevHash`**          | Previous block's hash       |
 | **`prevTimestamp`**     | Previous block's timestamp  |
 | **`prevSeed`**          | Previous block's seed       |
-| **`queue`**             | Consensus event queue       | <!-- TODO: delete this? -->
+| **`AttestationTimeout`** | Current timeout for Attestation |
+| **`Reduction1Timeout`**  | Current timeout for Reduction Step 1 |
+| **`Reduction2Timeout`**  | Current timeout for Reduction Step 2 |
+
+`AttestationTimeout`, `Reduction1Timeout`, and `Reduction2Timeout` are all initially set to `ConsensusTimeout`, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)).
+
+## Common Subroutines
+#### IncreaseTimeout
+`IncreaseTimeout` increases a step timeout up to `MaxStepTimeout`.
+
+Input: $StepTimeout$
+
+Procedure:
+- If $StepTimeout \times 2 < MaxStepTimeout$
+  - $StepTimeout = StepTimeout \times 2$
+- Else
+  - $StepTimeout = MaxStepTimeout$
+
+
+
 
 <!-------------------- Footnotes -------------------->
 
