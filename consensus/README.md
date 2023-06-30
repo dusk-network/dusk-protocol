@@ -1,7 +1,7 @@
 # Dusk Consensus Protocol
 The Dusk blockchain leverages **_Succinct Attestation_ (_SA_)**, which is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
-### Participants
+## Participants
 To participate in the SA consensus, a Dusk user must meet the following requirements:
  - to be a **_Provisioner_**, i.e., have a pre-configured amount of DUSK locked as a stake;
  - to be **_Eligible_**, i.e., have a stake with an age of at least two epochs.  <!-- TODO: define epoch -->
@@ -20,7 +20,26 @@ Stake {
 }
 ```
 
-### Workflow
+## Messages
+Three message types are exchanged during the consensus protocol:
+- `NewBlock`: produced in the [Attestation](./attestation/) phase, it stores a candidate block for the current round;
+- `Reduction`: used during the [Reduction](./reduction/) phase, it contains a single vote from a committee member on a candidate block;
+- `Agreement`: produced at the end of the Reduction phase in case a quorum is reached, it contains the aggregated votes of the two reduction steps;
+- `AggrAgreement`: produced in the [Ratification](./ratification) phase, it contains the aggregated signature and bitset of the votes confirming the candidate block.
+
+### Consensus Message Header
+All consensus messages, with the exception of `AggrAgreement` that contains an `Agreement` message, share a common header structure, defined as follows:
+
+| Field     | Type   | Size      | Description                       |
+|-----------|--------|-----------|-----------------------------------|
+| PubKeyBLS | byte[] | 96 bytes  | Public Key of the message creator |
+| Round     | uint   | 64 bits   | Consensus round                   |
+| Step      | uint   | 8 bits    | Consensus step                    |
+| BlockHash | byte[] | 32 bytes  | Block hash                        |
+
+`PubKeyBLS` is the ID of the Provisioner who creator and signer of the message. So, for instance, in a `NewBlock` message, this field would indicate the ID of the block generator.
+
+## Workflow
 The SA consensus is divided into **_rounds_**, each of which creates a new block. In turn, each round is composed of one or more **_iterations_** of the following **_phases_**:
 
   1. **_Attestation_**: in this phase, a _generator_, extracted among eligible Provisioners, creates a new candidate block $B$ for the current round, and broadcasts it to the network;
