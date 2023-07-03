@@ -44,7 +44,7 @@ $\textbf{\textit{RunReduction}}( CB, RStep )$:
 1. **Set step parameters** :
    - $SV_{nil}$ = `StepVotes`$(BitSet{:}\empty, Signature{:}\empty)$
    - $SV_{CB}$ = `StepVotes`$(BitSet{:}\empty, Signature{:}\empty)$
-   - $VC$ = [*createCommittee*](../sortition/README.md#createcommittee)()
+   - $VC$ = [*Committee*](../sortition/README.md#createcommittee)()
 2. **Set timeout** :
     $StepTimeOut$ = $time.Now + ConsensusTimeOut$
 3. **Cast vote** : \

@@ -8,6 +8,9 @@ Thus, the influence of each member within a committee corresponds to the number 
 
 Voting committees have a pre-defined total number of credits, called *Credit Pool*, which determines the degree of distribution among provisioners and, indirectly, the maximum number of committee members. As of today, the Credit Pool size is set to 64.
 
+Formally, given a Chain $\Gamma$, we define a committee for round $r$ and step $s$ as 
+$$ C^r_s = Committee(\Gamma, r,s)$$
+<!-- \{ (pk, c) : (pk, credits) \in C\} -->
 
 
 ### Block Generator Extraction
@@ -39,8 +42,8 @@ Committee {
 }
 
 Member {
-    byte[]      ProvisionerPubKey,
-    int         credits
+    byte[]      PubKey,
+    int         Credits
 }
 ```
 
@@ -78,14 +81,14 @@ Therefore, only the generator of block $h$ can produce $Seed_h$. This prevents p
 
 ### Procedures
 The *Deterministic Sortition* algorithm can be defined by two procedures: 
-- $createCommittee()$, which creates a *Committee* by assigning a Pool of credits to random provisioners,
+- $Committee()$, which creates a *Committee* by assigning a Pool of credits to random provisioners,
 and 
 - $extractMember()$, which selects a provisioner at random to assign a credit.
 
 In the following, we describe such procedures.
 <!-- DONE -->
 
-#### createCommittee()
+#### Committee()
 
 Parameters:
  - $Round$: current consensus round
@@ -96,7 +99,7 @@ Parameters:
 
 Procedure:
 
-$createCommittee(PoolSize)$:
+$Committee(PoolSize)$:
 1. Compute $TotalStakeWeight = SumAll(Provisioners.StakeWeight)$
 2. Assign credits:
    - For each index $i$ ($i = 0\text{ }..\text{ }PoolSize$):
@@ -139,7 +142,7 @@ $extractMember(Score, Provisioners)$:
 ### Pseudocode
 
 ```
-createCommittee(round, step, seed, poolSize, provisioners):
+Committee(round, step, seed, poolSize, provisioners):
   totalWeight = sumStakeWeights(provisioners)
 
   committee = []
