@@ -35,7 +35,7 @@ All consensus messages, with the exception of `AggrAgreement` that contains an `
 | PubKeyBLS | byte[] | 96 bytes  | Public Key of the message creator |
 | Round     | uint   | 64 bits   | Consensus round                   |
 | Step      | uint   | 8 bits    | Consensus step                    |
-| BlockHash | byte[] | 32 bytes  | Block hash                        |
+| BlockHash | byte[] | 32 bytes  | Candidate block hash              |
 
 `PubKeyBLS` is the ID of the Provisioner who creator and signer of the message. So, for instance, in a `NewBlock` message, this field would indicate the ID of the block generator.
 
@@ -73,11 +73,12 @@ We divide them into _configuration constants_, which are network-wide parameters
 | **`MaxBlockTime`**      | 360 seconds   | ?                             | <!-- TODO -->
 | **`ConsensusTimeOut`**  | 5 seconds     | Initial step timeout          |
 | **`MaxStepTimeout`**    | 60 seconds    | Maximum timeout for a single step |
-  maxTimeout = 60*time.Second
 | **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
 | **`MaxTxSetSize`**      | 825000        | Maximum size of transaction set in a block     |
 | **`CreditPoolSize`**    | 64            | Total credits in a committee |
 | **`Quorum`**            | 43            | Quorum threshold (2/3 of `CreditPoolSize`) |
+| **`ConsensusMaxStep`**  | 213           | Maximum number of steps for a single round |
+
 
 **Context Variables**
 | Name                    | Description                 |
