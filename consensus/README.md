@@ -39,6 +39,13 @@ All consensus messages, with the exception of `AggrAgreement` that contains an `
 
 `PubKeyBLS` is the ID of the Provisioner who creator and signer of the message. So, for instance, in a `NewBlock` message, this field would indicate the ID of the block generator.
 
+#### Message Signature
+When a Provisioner creates a consensus message (except for `AggrAgreement`), it signs its header for authenticity and integrity.
+
+In particular, given a message $\mathcal{M}$ the signature $\Sigma_{\mathcal{M}}$ is defined as
+$$\Sigma_{\mathcal{M}} = Sig_{BLS}(H(Round||Step||BlockHash))$$ 
+
+
 ## Workflow
 The SA consensus is divided into **_rounds_**, each of which creates a new block. In turn, each round is composed of one or more **_iterations_** of the following **_phases_**:
 
