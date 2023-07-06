@@ -17,7 +17,7 @@
 | Gas Limit             | uint   | 64 bits   | Block gas limit                           |
 | Iteration             | int    | 8 bits    | Iteration at which the block was produced |
 | Previous Block Hash   | string | 32 bytes  | Hash of previous block                    |
-| Seed                  | string | 32 bytes  | Signature of the previous block's seed    |
+| Seed                  | string | 48 bytes  | Signature of the previous block's seed    |
 | Generator Public Key  | string | 96 bytes  | Generator Public Key                      |
 | Transaction Root      | string | 32 bytes  | Root of transactions Merkle tree          |
 | State Hash            | string | 32 bytes ?| Root of contracts state Merkle tree       |

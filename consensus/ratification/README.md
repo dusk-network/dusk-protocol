@@ -14,24 +14,24 @@ This effectively ends the current consensus round.
 #### Agreement Message
 | Field        | Type                   | Size      | Description       |
 |--------------|------------------------|-----------|-------------------|
-| hdr          | [ConsensusHeader][hdr] | 137 Bytes | Consensus header  |
-| signature    | BLS Signature          | 32 bits   | signature of hdr  |
+| hdr          | [ConsensusHeader][hdr] | 137 bytes | Consensus header  |
+| signature    | BLS Signature          | 48 bytes  | signature of hdr  |
 | VotesPerStep | [StepVotes][sv][]      | 192 bits  | Reduction votes   |
 
 #### AggrAgreement Message
 | Field     | Type          | Size      | Description          |
 |-----------|---------------|-----------|----------------------|
-| Agreement | Agreement     | 137 Bytes | Consensus header     |
+| Agreement | Agreement Message | 137 Bytes | Consensus header     |
 | Bitset    | byte[]        | 32 bits   | signature of hdr     |
-| AggrSig   | BLS Signature |  ?         | Aggregated signature |
+| AggrSig   | BLS Signature | 48 bytes  | Aggregated signature |
 
 #### Certificate Structure
-| Field             | Type          | Size    | Description                                      |
-|-------------------|---------------|---------|--------------------------------------------------|
-| StepOneBatchedSig | BLS Signature | ?       | Aggregated signature of first reduction votes    |
-| StepTwoBatchedSig | BLS Signature | ?       | Aggregated signature of second reduction votes   |
-| StepOneCommittee  | byte[]        | 64 bits | BitSet of of first reduction's quorum committee  |
-| StepOneCommittee  | byte[]        | 64 bits | BitSet of of second reduction's quorum committee |
+| Field             | Type          | Size     | Description                                      |
+|-------------------|---------------|----------|--------------------------------------------------|
+| StepOneBatchedSig | BLS Signature | 48 bytes | Aggregated signature of first reduction votes    |
+| StepTwoBatchedSig | BLS Signature | 48 bytes | Aggregated signature of second reduction votes   |
+| StepOneCommittee  | byte[]        | 64 bits  | BitSet of of first reduction's quorum committee  |
+| StepOneCommittee  | byte[]        | 64 bits  | BitSet of of second reduction's quorum committee |
 
 ## Procedure
 
@@ -53,7 +53,7 @@ Loop:
           3. If $isValid$:
              - Add $A$ to $S$:
                $S.A_i = S.A_i \cup A$, s.t. $i = A.Step \div 3$
-             - $Count_{i} = $ [*CountAgreements*]()($S.A_i$),
+             - $Count_{i+1}$ = [*CountAgreements*]()($S.A_i$),
              - If $Count_{i} > Quorum$:
                - $AA$ = [*CreateAggrAgreement*](#sendaggragreement)($S.A_i$)
                - $B_W$ = [*CreateWinningBlock*](#createwinningblock)($A_i^0$)
@@ -72,7 +72,7 @@ Loop:
 
 #### VerifyAgreement
 1. Verify message signature:
-   - $BLS.VerifySignature(A.hdr, A.Sig, A.PubKeyBLS)$
+   - $Verify_{BLS}(A.hdr, A.Sig, A.PubKeyBLS)$
 2. if $|A.VotesPerStep| \ne 2$: output $FALSE$
 3. if $A.Step > ConsensusMaxStep$: output $FALSE$
 4. Verify StepVotes:
@@ -88,7 +88,7 @@ $VerifyAggregated(H, \Sigma_A, Round, Step, Bitset)$:
 2. if $CountVotes(SC) \lt Quorum$:
    - output $FALSE$
 3. $APK = BLS.AggregatePubKeys(SC)$
-4. output $BLS.VerifySignature(H, APK, \Sigma_A)$
+4. output $Verify_{BLS}(H, APK, \Sigma_A)$
 
 
 #### CountAgreements

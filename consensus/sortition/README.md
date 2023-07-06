@@ -71,9 +71,9 @@ As a result, a unique score is generated every time a credit has to be assigned,
 The *Seed* value is used to ensure pseudo-randomicity and unpredictability to the *score* value used in the Sortition process.
 
 This value is the Block structure (see [Block Structure](../../blockchain/README.md#block-structure)) and gets updated for every new block. 
-Specifically, the $Seed$ for block $h$ is obtained by the block generator signing seed in block $h-1$.
+Specifically, the $Seed$ for block $h$ is obtained by the block generator $BG$ signing seed in block $h-1$.
 Formally: 
-$$ Seed_h = Sign_{GenPrivKey}(Seed_{h-1}).$$
+$$ Seed_h = Sign_{BLS}(sk_{BG}, Seed_{h-1}).$$
 
 Therefore, only the generator of block $h$ can produce $Seed_h$. This prevents pre-calculating the score for future blocks, which in turn prevents predicting future block generators and committees.
 

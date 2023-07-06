@@ -32,19 +32,22 @@ All consensus messages, with the exception of `AggrAgreement` that contains an `
 
 | Field     | Type   | Size      | Description                       |
 |-----------|--------|-----------|-----------------------------------|
-| PubKeyBLS | byte[] | 96 bytes  | Public Key of the message creator |
+| PubKeyBLS | BLS Key | 96 bytes  | Public Key of the message creator |
 | Round     | uint   | 64 bits   | Consensus round                   |
 | Step      | uint   | 8 bits    | Consensus step                    |
 | BlockHash | byte[] | 32 bytes  | Candidate block hash              |
 
-`PubKeyBLS` is the ID of the Provisioner who creator and signer of the message. So, for instance, in a `NewBlock` message, this field would indicate the ID of the block generator.
+`PubKeyBLS` is the public BLS key of the Provisioner who created and signed the message. So, for instance, in a `NewBlock` message, this field would indicate the ID of the block generator, while in a `Reduction` message it would indicate the Provisioner who casted the vote.
 
 #### Message Signature
+> Functions: $Sign_{BLS}()$ and $Verify_{BLS}()$
+
 When a Provisioner creates a consensus message (except for `AggrAgreement`), it signs its header for authenticity and integrity.
 
-In particular, given a message $\mathcal{M}$ the signature $\Sigma_{\mathcal{M}}$ is defined as
-$$\Sigma_{\mathcal{M}} = Sig_{BLS}(H(Round||Step||BlockHash))$$ 
+In particular, given a message $\mathcal{M}$, the signature $\Sigma_{\mathcal{M}}$ is defined as
+$$\Sigma_{\mathcal{M}} = Sig_{BLS}(H_{Blake2B}(Round||Step||BlockHash))$$
 
+> Note that the hash operation is actually included in the definition of BLS signature. We explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
 
 ## Workflow
 The SA consensus is divided into **_rounds_**, each of which creates a new block. In turn, each round is composed of one or more **_iterations_** of the following **_phases_**:

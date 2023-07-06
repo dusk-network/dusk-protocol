@@ -91,6 +91,7 @@ Inputs: `candidateBlock`
 Procedure:
   - (1) **Create message header**
     - `messageHeader` = 
+    <!-- TODO: mv node.blspubkey to $pk_{BLS}^{node}$ -->
       ``` 
         Header {
             PubKeyBLS:     node.BLSPubKey,
@@ -100,7 +101,7 @@ Procedure:
         }
       ```
   - (2) **Sign message header**
-    - `signedHash` = `node.Sign(messageHeader)`
+    - `signedHash` = [`Sign`](../README.md#message-signature)(`messageHeader`)
   - (3) **Create NewBlock Message**
     - `NewBlockMessage` = 
       ```

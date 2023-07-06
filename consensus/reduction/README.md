@@ -17,7 +17,7 @@ If any of the two steps produces a `nil` result, the Reduction phase will fail a
 | Field      | Type             | Size      | Description       |
 |------------|------------------|-----------|-------------------|
 | hdr        | [ConsensusHeader](../README.md#consensus-message-header)  |           | Consensus header  |
-| SignedHash | byte[]           | 32 bits   | signature of hdr  |
+| SignedHash | byte[]           | 48 bytes   | signature of hdr  |
 
 
 #### StepVotes
@@ -25,7 +25,7 @@ If any of the two steps produces a `nil` result, the Reduction phase will fail a
 | Field     | Type   | Size      | Description          |
 |-----------|--------|-----------|----------------------|
 | BitSet    | uint   | 64 bits   | Bitset of the voters |
-| Signature | uint   | 32 bits   | Aggregated signature |
+| Signature | byte[] | 48 bytes  | Aggregated signature |
 
 <!-- TODO: explain BitSet -->
 
@@ -48,7 +48,7 @@ $\textbf{\textit{RunReduction}}( CB, RStep )$:
 2. **Set timeout** :
     $StepTimeOut$ = $time.Now + ConsensusTimeOut$
 3. **Cast vote** : \
-  If $this.PubKeyBLS$ in $VC$:
+  If $node.PubKeyBLS$ in $VC$:
     - Set $vote$:
       - If $CB == nil$:
         - $vote = nil$
@@ -63,7 +63,7 @@ $\textbf{\textit{RunReduction}}( CB, RStep )$:
       -  If $M.Round == round$ 
          && $M.step == step$
          && $M.PubKeyBLS \in VC$
-         && BLS.*VerifySig*($M.PubKeyBLS$, $M.hdr$, $M.SignedHash$)
+         && [$Verify_{BLS}$](../README.md#message-signature)($M.PubKeyBLS$, $M.hdr$, $M.SignedHash$)
          - [*Propagate*]()($M$) <!-- TODO: add link to Kadcast -->
          - Aggregate vote:
            - If $M.BlockHash$ == $CB.Hash$ :
@@ -128,13 +128,13 @@ $SendReductionMessage(vote)$:
 1. Create [`ConsensusHeader`](../README.md#consensus-message-header) $hdr$:
     | Field     | Value            |
     |-----------|------------------|
-    | PubKeyBLS | $this.BLSPubKey$ |
+    | PubKeyBLS | $node.BLSPubKey$ |
     | Round     | $round$          |
     | Step      | $step$           |
     | BlockHash | $vote$           | 
 
 2. Sign header:
-     - $sig$ = $Sign_{BLS}(this.BLSPrivKey, hdr)$
+     - $sig$ = $Sign_{BLS}(node.BLSPrivKey, hdr)$
 
 3. Create `ReductionMessage` $M$:
     | Field      | Value |
