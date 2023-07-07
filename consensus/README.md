@@ -1,3 +1,6 @@
+<!-- TODO: Describe main consensus loop -->
+<!-- TODO: Define Provisioners and stake -->
+<!-- TODO: Define State := current blockchain -->
 # Dusk Consensus Protocol
 The Dusk blockchain leverages **_Succinct Attestation_ (_SA_)**, which is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
