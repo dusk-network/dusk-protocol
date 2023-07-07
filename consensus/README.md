@@ -88,8 +88,8 @@ We divide them into _configuration constants_, which are network-wide parameters
 | **`MaxStepTimeout`**    | 60 seconds    | Maximum timeout for a single step |
 | **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
 | **`MaxTxSetSize`**      | 825000        | Maximum size of transaction set in a block     |
-| **`CreditPoolSize`**    | 64            | Total credits in a committee |
-| **`Quorum`**            | 43            | Quorum threshold (2/3 of `CreditPoolSize`) |
+| **`VCPool`**            | 64            | Total credits in a voting committee |
+| **`Quorum`**            | 43            | Quorum threshold (2/3 of `VCPool`) |
 | **`ConsensusMaxStep`**  | 213           | Maximum number of steps for a single round |
 
 
