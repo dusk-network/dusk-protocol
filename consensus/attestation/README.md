@@ -1,136 +1,179 @@
 # Attestation Phase
+*Attestation* is the first phase in an [*SA iteration*](../README.md#workflow).
+In this phase, a selected Provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 
-In [Succinct Attestation](../README.md), the *Attestation* phase is the first step in an [*iteration*](../README.md#workflow).
+## Phase Overview
+Each provisioner node first executes the [*Deterministic Sortition*](../sortition/) algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $NewBlock$ message.
+Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*](../reduction/) phase, where it will vote on the block validity. All other blocks are discarded.
 
-In this phase, a provisioner is selected to generate a new *candidate block* and broadcast it with a `NewBlock` message. 
-Upon receiving such a message, other Provisioners verify its validity and, if valid, switch to the [*1st Reduction*](../reduction) phase to vote on the block.
-
-### Algorithm
-This phase is run in a loop by all provisioner nodes, producing a new candidate block when selected as generator, or processing incoming `NewBlock` messages otherwise.
-
-Inputs: [SA Parameters](../README.md#parameters)
-Procedure:
-
-- loop:
-  - (1) **Check if extracted as block generator** -- see [*Deterministic Sortition*](../sortition/README.md)
-    - If extracted:
-      - (a) **Generate candidate block `CB`** -- see [*generateCandidateBlock()*](#generatecandidateblock)
-      - (b) **Create `NewBlock` message `NBM`** -- see [*createNewBlockMessage()*](#createnewblockmessage)
-      - (c) **Broadcast `NBM`** -- see [*Kadcast*]()
-      - (d) **Emit `NewBlock_Message` event**
-
-    <!-- Insert vertical spacing -->
-    <div><br></div>
-
-    - (2) **Handle events** :
-        - **`NewBlock` message `NBM` received** (for current `round`/`step`):
-        - (a) **Verify message and block validity** -- see [*verifyNewBlock()*](#verifynewblock)
-        - (b) **Store `NBM` in the local DB** <!-- TODO?: Storage -->
-        - (c) **Start First Reduction with `NBM.Block`** -- see [First Reduction](../reduction)
-        - **Timeout expired**:
-        - (a) **Start First Reduction with `EmptyBlock`** -- see [First Reduction](../reduction)
+If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
 
 
-### Subroutines
+<!-- TODO: Block Generator -->
 
-##### generateCandidateBlock()
-Procedure:
- - (1) **Fetch transactions from Mempool** -- see [*Mempool*]() <!-- TODO -->
-   - `transactions` = [*selectTransactions()*](#selecttransactions)
- - (2) **Compute new state hash** -- see [*VM and State*]() <!-- TODO -->
-   - `newStateHash` = vm.[*execute(`transactions`)*]() <!-- TODO -->
- - (3) **Create block**:
-   - (a) Compute block fields:
-     - **Set block timestamp** to current time in Unix format
-       - `timestamp` = `time.Now().Unix()`
-     - **Compute block seed** -- see [*Seed*](../sortition/README.md#seed)
-       - `newSeed` = `node.sign(prevSeed)` 
-     - **Compute current iteration** -- see [*Succinct Attestation*](../README.md)
-       - `iteration` = `step/3 + 1`
-     - **Compute transaction Merkle tree root** <!-- TODO: see [MerkleTree]() ? -->
-       - `txRoot` = `MerkleTree(transactions).root` 
-     - **Compute Header Hash**
-       - `HeaderHash` = `Hash(Version||Height||Timestamp||GasLimit||Iteration||PrevBlockHash||GeneratorPubKey||TxRoot||Seed||StateHash)`
-   - (b) **Create candidate block** :
-        `candidateBlock` =
-        ```
-          Block {
-              Header: {
-                  Version:            0,
-                  Height:             round,
-                  Timestamp:          timestamp,
-                  GasLimit:           blockGasLimit,
-                  Iteration:          iteration,
-                  PreviousBlockHash:  prevBlockHash,
-                  GeneratorPublicKey: node.PubKey,
-                  TransactionRoot:    txRoot,
-                  Seed:               newSeed,
-                  StateHash:          newStateHash,
-                  HeaderHash:         HeaderHash,
-                  
-                  Certificate:        nil,
-              },
-              Txs:    transactions,
-          }
-        ```
+### Candidate Block
+A candidate block is the block generated in the Attestation step by the extracted Provisioner. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+
+Therefore, for each iteration, only one (valid) candidate block can be produced [^1]. To reflect this, we denote a candidate block with $\mathcal{B}_r^i$, where $r$ is the consensus round, and $i$ is the consensus iteration.
+
+### NewBlock Message
+The $NewBlock$ message is used by a block generator to broadcast a candidate block.
+
+The message has the following structure:
+
+| Field       | Type                  | Size     | Description           |
+|-------------|-----------------------|----------|-----------------------|
+| $Header$    | [$MessageHeader$][mh] |          | Message header        |
+| $PrevHash$  | SHA3 Hash             | 256 bits | Previous block's hash |
+| $Candidate$ | [$Block$][b]          |          | Candidate block       |
+| $Signature$ | BLS Signature         | 48 bytes | Message signature     |
+
+## Attestation Algorithm
+*Parameters*: 
+ - $r$: current round
+ - $s$: current step
+ - $\tau_{Attestation}$: maximum time for Attestation step (see [SA Parameters](../README.md#parameters))
+
+*Algorithm*:
+1. Extract the block generator ($BG$) $DS(R,S,1)$
+2. If this node is the block generator:
+   1. Generate candidate block $\mathcal{B}_r^i$ [ [$GenerateBlock()$](#generateblock) ]
+   2. Create $NewBlock$ message $\mathcal{M}$ containing $\mathcal{B}_r^i$
+   3. Broadcast $\mathcal{M}$
+   4. Execute first $Reduction$ with $\mathcal{B}_r^i$
+3. Otherwise:
+   1. Start Attestation timeout
+   2. Loop:
+      1. If a $NewBlock$ message $\mathcal{M}$ is received for this round and step:
+         1. If $\mathcal{M}$'s signature is valid
+         2. and $\mathcal{M}$'s signer is $BG$
+         3. and $\mathcal{M}$'s $BlockHash$ corresponds to $Candidate$
+            1. Execute first $Reduction$ with $Candidate$
+      2. If timeout expired
+         1. Execute first $Reduction$ with $NIL$$
+
+*Procedure*:
+1. $pk_{BG} = DS(R,S,1)$
+2. $if \text{ } pk_N == pk_{BG}$:
+   1. $\mathcal{B}_r^i =$ [$GenerateBlock()$](#generateblock)
+   2. $\mathcal{M} =$ [$CreateNBM()$](#createnbm)
+   3. $Broadcast(\mathcal{M})$
+   4. $Reduction(\mathcal{B}_r^i, 1)$
+3. $else$:
+   1. $\tau_{Start} = \tau_{Now}$
+   2. $loop$:
+      1. $if (\text{ } \mathcal{M} = Receive(NewBlock,r,s) \text{ })$:
+         - $(\mathcal{H}_\mathcal{M},\_,\mathcal{B}_\mathcal{M},\sigma_\mathcal{M}) \leftarrow \mathcal{M}$
+         - $\eta_{\mathcal{B}_\mathcal{M}} = H_{SHA3-256}(\mathcal{B}_\mathcal{M}.Header)$
+         - $(pk_\mathcal{M},\_,\_,\eta_\mathcal{M}) \leftarrow \mathcal{H}_\mathcal{M}$
+         1. $if \text{ }(\text{ } Verify_{BLS}(\sigma_\mathcal{M}, pk_\mathcal{M}) == true \text{ })$
+         2. $and \text{ }(\text{ } pk_\mathcal{M} == pk_{BG} \text{ })$
+         3. $and \text{ } (\text{ }\eta_\mathcal{M} == \eta_{\mathcal{B}_\mathcal{M}} \text{ })$:
+                1. $Reduction(\mathcal{B}_\mathcal{M}, 1)$
+      2. $if \text{ } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
+         1. $Reduction(NIL, 1)$
 
 <p><br></p>
 
-##### selectTransactions()
-The selection of the transactions to be included in the block is arbitrary and can vary between different implementations.
-Typically, the block producer will aim at maximizing its profits by selecting transactions paying higher gas price.
-In this respect, it can be said that transactions paying higher gas prices will be prioritized by block producers, and hence will be included in the blockchain earlier.
+##### GenerateBlock
+*Parameters*
+- $r$: consensus round
+- $s$: consensus step
+- $v$: protocol version
+- $\eta_{\mathcal{B}_{r-1}}$: previous block's hash
 
-To ease this process, transactions in the Mempool are ordered by their gas price.
-<!-- TODO: -- see our implementation -->
+*Algorithm*
+1. Fetch transactions from Mempool
+2. Execute transactions and get new state hash
+3. Compute transaction tree root
+4. Set timestamp to current time
+5. Compute iteration number
+6. Set new $Seed$ by signing the previous one
+7. Create header
+8. Create candidate block
+9. Output candidate block
 
-##### createNewBlockMessage()
-This procedure creates a `NewBlock` message with the new candidate block and the provisioner's signature.
+*Procedure*:
+1. $\bold{tx} = [tx_1, \dots, tx_n] = $ [$SelectTransactions()$](#selecttransactions)
+2. $State_r =$ [$ExecuteTransactions$](../../vm)$(State_{r-1}, \bold{tx})$
+3. $TxRoot_r = MerkleTree(\bold{tx}).Root$
+4. $i = \lfloor\frac{s}{3}\rfloor$
+5. $Seed_r = Sign_{BLS}(sk_N, Seed_{r-1})$
+6. $\mathcal{H}_r = (v,r,\tau_{now},Gas^{\mathcal{B}},i,\eta_{\mathcal{B}_{r-1}},Seed_r,pk_N,TxRoot_r,State_r)$
+    | Field           | Value               | 
+    |-----------------|---------------------|
+    | $Version$       | $v$                 |
+    | $Height$        | $r$                 |
+    | $Timestamp$     | $\tau_{now}$        |
+    | $GasLimit$      | $Gas^{\mathcal{B}}$ |
+    | $Iteration$     | $i$                 |
+    | $PreviousBlock$ | $\eta_{\mathcal{B}_{r-1}}$ |
+    | $Seed$          | $Seed_r$            |
+    | $Generator$     | $pk_N$              |
+    | $TxRoot$        | $TxRoot_r$          |
+    | $State$         | $State_r$           |
 
-Inputs: `candidateBlock`
-Procedure:
-  - (1) **Create message header**
-    - `messageHeader` = 
-    <!-- TODO: mv node.blspubkey to $pk_{BLS}^{node}$ -->
-      ``` 
-        Header {
-            PubKeyBLS:     node.BLSPubKey,
-            Round:         round,
-            Step:          step,
-            BlockHash:     candidateBlock.Header.Hash
-        }
-      ```
-  - (2) **Sign message header**
-    - `signedHash` = [`Sign`](../README.md#message-signature)(`messageHeader`)
-  - (3) **Create NewBlock Message**
-    - `NewBlockMessage` = 
-      ```
-        NewBlock {
-            hdr:        nbHeader,
-            PrevHash:   prevHash,
-            Candidate:  candidateBlock,
-            SignedHash: signedHash
-        }
-      ```
-  - (4) Output `NewBlockMessage`
+    <!-- | $Header Hash           | string | -->
+    <!-- | Certificate           |    ?   | -->
+7. $\mathcal{B}_r^i = (\mathcal{H}, \bold{tx})$
+    | Field         | Value           | 
+    |---------------|-----------------|
+    | $Header$      | $\mathcal{H}_r$ |
+    | $Transaction$ | $\bold{tx}$     |
+8. $output \text{ } \mathcal{B}_r^i$
 
-##### verifyNewBlock()
-Verifies the validity of a NewBlock message.
+<p><br></p>
 
-Inputs: `NewBlockMessage`
-Procedure:
- - (1) **Verify signer is expected block producer**
- - (2) **Check signature validity**
- - (3) **Check block hash**
- - (4) **Check transaction root**
- - (5) **Check message and block hash match**
+##### SelectTransactions
+$SelectTransactions$ selects a set of transactions from the Mempool to be included in a new block.
+The criteria used for the selection is arbitrary and is left to the Block Generator.
+
+Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
+In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
+
+<!-- TODO: In our implementation:
+To ease this process, transactions in the Mempool are ordered by their gas price. -->
+
+##### CreateNBM
+$CreateNBM$ creates a $NewBlock$ message with the new candidate block and the provisioner's signature.
+
+*Parameters*:
+  - $r$: consensus round
+  - $s$: consensus step
+  - $\mathcal{B}_r^i$: candidate block
+
+*Algorithm*:
+1. Compute block hash
+2. Create message header $\mathcal{H}_\mathcal{M}$
+3. Sign $\mathcal{H}_\mathcal{M}$
+4. Create $NewBlock$ message $\mathcal{M}$
+5. Output $\mathcal{M}$
 
 
-<!-- TODO:
-Write everything in <pre> ?
-Ex:
-    <pre>
-    Procedure:
-    - (1) <b>Fetch transactions from Mempool</b> -- see <a href="">Mempool</a>
-    </pre>
- -->
+*Procedure*:
+- $\eta_r = H_{SHA3-256}(\mathcal{B}_r^i.Header)$
+- $\eta_{r-1} = H_{SHA3-256}(\mathcal{B}_{r-1}.Header)$
+1. $\mathcal{H}_\mathcal{M} = (pk_N, r, s, \eta_r)$
+    | Field       | Value    | 
+    |-------------|----------|
+    | $Signer$    | $pk_N$   |
+    | $Round$     | $r$      |
+    | $Step$      | $s$      |
+    | $BlockHash$ | $\eta_r$ |
+2. $\sigma_\mathcal{M} = Sign_{BLS}(sk_N, \mathcal{H}_\mathcal{M})$
+3. $\mathcal{M} = NewBlock(\mathcal{H}_\mathcal{M},\eta_{r-1},\mathcal{B}_r^i, \sigma_\mathcal{M})$
+    | Field       | Value                | 
+    |-------------|----------------------|
+    | $Header$    | $\mathcal{H}_\mathcal{M}$        |
+    | $PrevHash$  | $\eta_{r-1}$         |
+    | $Candidate$ | $\mathcal{B}_r^i$    |
+    | $Signature$ | $\sigma_\mathcal{M}$ |
+4. $output \text{ } \mathcal{M}$
+
+
+<!-- FOOTNOTES -->
+[^1]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
+
+<!--  -->
+[mh]: ../README.md#consensus-message-header
+[b]: ../../blockchain/README.md#block-structure
