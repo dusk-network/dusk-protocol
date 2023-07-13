@@ -41,7 +41,7 @@ Formally, the block generator for round $R$ and step $S$ is defined as:
 $$ BG_R^i = DS(R,S,1).$$
 
 
-## Algorithm
+## Algorithm Overview
 The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning the credits of credit pool to eligible provisioners (see [Eligibility](../README.md#participants)).
 
 The algorithm takes as inputs the round number $R$ and step number $S$, and outputs the corresponding committee.
@@ -83,7 +83,7 @@ As such, $Seed_h$ can only be computed by the generator of block $B_h$. This pre
 
 Note that $Seed_0$ is a randomly-generated value contained in the genesis block $B_0$.
 
-### Procedures
+### Algorithm
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* of a *Credit Pool* to eligible provisioners using the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
 
 In the following, we describe both $DS$ and $DE$ first as natural-language algorithm and then as formal procedure.
@@ -205,6 +205,7 @@ extractMember(provisioners, score):
 
 <!-- REFS -->
 ## References
+<!-- TODO: mv to Consensus README. SHA3 is also used for the block header -->
 <a name="rsha3"></a>
 [1]: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions", Boneh et al., 2004, [https://doi.org/10.6028/NIST.FIPS.202](https://doi.org/10.6028/NIST.FIPS.202)
 
