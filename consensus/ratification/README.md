@@ -83,12 +83,12 @@ Loop:
 #### VerifyAggregated
 $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggregated signature is valid.
 
-$VerifyAggregated(H, \Sigma_A, Round, Step, Bitset)$:
+$VerifyAggregated(H, \sigma_A, Round, Step, Bitset)$:
 1. $SC = SubCommittee(C_{Round}^{{Step}}, BitSet)$
 2. if $CountVotes(SC) \lt Quorum$:
    - output $FALSE$
 3. $APK = BLS.AggregatePubKeys(SC)$
-4. output $Verify_{BLS}(H, APK, \Sigma_A)$
+4. output $Verify_{BLS}(H, APK, \sigma_A)$
 
 
 #### CountAgreements
@@ -106,11 +106,11 @@ $CountAgreements(A):$
 
 $CreateAggrAgreement(A_i)$:
  1. Aggregate signatures: 
-    - $\Sigma_{i} = BLS.Aggregate(\{\Sigma : A.\Sigma \in A_i\}) $
+    - $\sigma_{i} = BLS.Aggregate(\{\sigma : A.\sigma \in A_i\}) $
  2. Create q-Committee bitset:
     - $\Beta_{i} = BitSet(\{pk : pk=A.PubKey \wedge A \in A_i\})$
  3. Create `AggrAgreement`:
-    - $AA = (A_i^0, \Beta_i, \Sigma_i )$
+    - $AA = (A_i^0, \Beta_i, \sigma_i )$
  4. Output $AA$
 
 
