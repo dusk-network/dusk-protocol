@@ -75,7 +75,7 @@ The message has the following structure:
 
 <p><br></p>
 
-##### GenerateBlock
+#### GenerateBlock
 *Parameters*
 - $r$: consensus round
 - $s$: consensus step
@@ -124,7 +124,7 @@ The message has the following structure:
 
 <p><br></p>
 
-##### SelectTransactions
+#### SelectTransactions
 $`SelectTransactions`$ selects a set of transactions from the Mempool to be included in a new block.
 The criteria used for the selection is arbitrary and is left to the Block Generator.
 
@@ -134,7 +134,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 <!-- TODO: In our implementation:
 To ease this process, transactions in the Mempool are ordered by their gas price. -->
 
-##### CreateNBM
+#### CreateNBM
 $CreateNBM$ creates a $NewBlock$ message with the new candidate block and the provisioner's signature.
 
 *Parameters*:
