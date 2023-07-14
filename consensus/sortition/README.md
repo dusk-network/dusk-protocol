@@ -10,21 +10,21 @@ In a given committee, each member has a certain *influence*, which is defined as
 
 Formally, we define a member of a committee $C$ as:
 
-$$ M^C = (pk, credits), $$ 
+$$ m^\mathcal{C} = (pk, Credits), $$ 
 
-where $pk$ is the public key of the provisioner, and $credits$ is the number of voting credits assigned to such provisioner by the $DS$ algorithm.
+where $pk$ is the public key of the provisioner, and $Credits$ is the number of voting credits assigned to such provisioner by the $DS$ algorithm.
 
 Formally, a Voting Committee is defined as:
 
-$$ C_{r}^{s} = [M_0^C,\dots,M_{n-1}^C] = DS(r,s,ps),$$
+$`$ \mathcal{C}_{r}^{s} = [m_0^\mathcal{C},\dots,m_{n}^\mathcal{C}],$`$
 
 where $r$ and $s$ are the consensus round and step, respectively (see [Consensus Workflow](../README.md#workflow)), and $ps$ is the Pool Size of the committee.
 
 Note that $C$ is ordered by insertion (a Provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have the lowest index, and the last to be inserted will have the highest. 
 
 For the sake of readability, we use the following notation:
-- $C[i] = M_i^C$ denotes the $i\text{th}$ member of $C$ 
-- $C[pk] =  M_i^C : M_i^C.pk = pk$ (or $nil$ if $pk$ is not the committee)
+- $m_i^\mathcal{C}$ denotes the $i\text{th}$ member of committee $\mathcal{C}$ 
+- $p \in \mathcal{C} \text{ }if\text{ } \exists \text{ } m^\mathcal{C} :   m.pk=p$
 
 ### Reduction Committees
 Voting Committees in the Reduction steps have a credit pool of size $VCPool$, which is a global consensus parameter (see [Consensus Parameters](../README.md#parameters)), and is currently set to $64$.
@@ -38,14 +38,14 @@ To extract a block generator, a one-member committee is created, using the $Dete
 
 Formally, the block generator for round $r$ and step $s$ is defined as:
 
-$$ BG_r^i = DS(r,s,1).$$
+$$ G_r^i = DS(r,s,1).$$
 
 
 ## Algorithm Overview
 The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning the credits of credit pool to eligible provisioners (see [Eligibility](../README.md#participants)).
 
 The algorithm takes as inputs the round number $r$ and step number $s$, and outputs the corresponding committee.
-It also uses the provisioner set $\mathcal{P}$, the block produced in the previous round $B_{r-1}$, and the credit pool size $ps$.
+It also uses the provisioner set $\mathcal{P}$, the block produced in the previous round $\mathcal{B}_{r-1}$, and the credit pool size $ps$.
 
 The algorithm assigns one credit at a time to a randomly-selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*score*](#score), described below.
 
@@ -61,9 +61,9 @@ The extraction procedure assigns voting credits based on a pseudo-random number 
 
 Formally:
 
-$$ Score_{r}^{s} = Int( H_{SHA3-256}( Seed_{r-1}||r||s||i ) ) \mod w,$$
+$$ Score_{r}^{s} = Int( H_{SHA3-256}( Seed_{r-1}||r||s||c ) ) \mod W,$$
 
-where $r$ and $s$ are the consensus round and step, $Seed_{r-1}$ is the $Seed$ of the previous block ($B_{r-1}$), $i$ is the number of the credit being assigned (e.g., $i=3$ represents the third credit to assign), and $w$ is the total *stake weight* of provisioners at iteration $i$ of $DS$. $Int()$ denotes the integer interpretation of the hash value.
+where $r$ and $s$ are the consensus round and step, $Seed_{r-1}$ is the $Seed$ of the previous block ($\mathcal{B}_{r-1}$), $c$ is the number of the credit being assigned (e.g., $c=3$ represents the third credit to assign), and $W$ is the total *stake weight* of provisioners when assigning credit $c$ during $DS$. $Int()$ denotes the integer interpretation of the hash value.
 
 The use of a hash value based on the above parameters allows to generate a unique score value for each single credit being assigned, ensuring the randomness of the extraction process.
 The use of the modulo operation guarantees a Provisioner is extracted within a single iteration over the provisioner set (see the $DE$ algorithm)
@@ -73,15 +73,15 @@ The use of the modulo operation guarantees a Provisioner is extracted within a s
 The *Seed* value is used to ensure the pseudo-randomicity and unpredictability of the score.
 
 This value is included in the block header (see [Block Structure](../../blockchain/README.md#header-structure)) and gets updated in each block. 
-Specifically, the $Seed$ of block $B_h$ is set to the signature of the block generator $BG$ on the seed of block $B_{h-1}$.
+Specifically, the $Seed$ of block $\mathcal{B}_h$ is set to the signature of the block generator $G$ on the seed of block $\mathcal{B}_{h-1}$.
 
 Formally: 
 
-$$ Seed_h = Sign_{BLS}(sk_{BG_h}, Seed_{h-1}).$$
+$$` Seed_h = Sign_{BLS}(sk_{G_h}, Seed_{h-1}).`$$
 
-As such, $Seed_h$ can only be computed by the generator of block $B_h$. This prevents pre-calculating the score for future blocks, which in turn prevents predicting future block generators and committees.
+As such, $Seed_h$ can only be computed by the generator of block $\mathcal{B}_h$. This prevents pre-calculating the score for future blocks, which in turn prevents predicting future block generators and committees.
 
-Note that $Seed_0$ is a randomly-generated value contained in the genesis block $B_0$.
+Note that $Seed_0$ is a randomly-generated value contained in the genesis block $\mathcal{B}_0$.
 
 ### Algorithm
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* of a *Credit Pool* to eligible provisioners using the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
@@ -94,45 +94,44 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
  - $r$: consensus round
  - $s$: consensus step
  - $ps$: credit pool size
- - $w^P$: stake *weight* of provisioner $P$
- - $w$: total stake weight
+ - $\mathcal{P}^r = [p_0,\dots,p_n]$: provisioner set for round $r$
 
 *Algorithm*:
-1. Set each provisioner weight $w^P$ to its stake
-2. Set total weight to the sum of all $w^P$
-3. Assign credit $i$ as follows:
+1. Start with empty committee
+2. Set each provisioner's weight equal to its stake
+3. Set total weight to the sum of all provisioner's weights
+4. Assign credit $i$ as follows:
    1. Compute $Score$
    2. Order provisioners by ascending public key
-   3. Extract provisioner $P$ with $DE(Score, \mathcal{P})$
-   4. If not in committee $C$, add $P$ to $C$
-   5. Add credit to $P$
-   6. Subtract 1 DUSK from $P$'s weight $w^P$
-   7. Subtract 1 DUSK from total weight $w$
-   8. If $w$ reaches 0, output the partial committee $C$
-4. Output committee $C$
+   3. Extract provisioner $p$ with [*DE*][de]()
+   4. Add $p$ to committee, if necessary
+   5. Assign credit to $p$
+   6. Compute $d$ as the minimum between $1$ DUSK and $p$'s weight
+   7. Subtract $d$ from $p$'s weight
+   8. Subtract $d$ from total weight
+   9. If total weight reaches 0, output the partial committee
+5. Output committee
 
 *Procedure*:
 
 $DS(r, s, ps)$:
-1. $w_P = P.Stake, \forall P \in \mathcal{P}^r$
-2. $w = \sum w_{P}, \forall P \in \mathcal{P}^r$
-3. $for\text{ } i = 0\text{ }\dots\text{ }ps{-}1$:
-   1. $Score_i^{r,s} = Int(H_{SHA3-256}( Seed_{r-1}||r||s||i)) \mod w$
-   2. $\mathcal{P}_r^O = SortByPK(\mathcal{P}^r)$
-   3. $P = DE(Score_i^{r,s}, \mathcal{P}_r^O)$
-   4. $if \text{ } C[P] == nil$ : 
-       - $C[|C|+1] = (P, 0)$
-   5. $C[P].credits = C[P].credits + 1$
-
-   - $if \text{ } w_{P} < 1 \text{ }$ :
-      - $A = w_{P}$
-   - $else$:
-      - $\text{ } A = 1$
-   6. $w_{P} = w_{P} - A$
-   7. $w = w - A$
-   8. $if \text{ } w \le 0$
-       - $output\text{ } C$
-4. $output \text{ } C$
+1. $\mathcal{C} = \emptyset$
+2. $for\text{ } p \in \mathcal{P}^r: w_p = p.Stake$
+3. $W = \sum_{i=0}^{|\mathcal{P}^r|-1} w_{p_i} : p_i \in \mathcal{P}^r$
+4. $for\text{ } c = 0\text{ }\dots\text{ }ps{-}1$:
+   1. $Score_c^{r,s} = Int(H_{SHA3-256}( Seed_{r-1}||r||s||c)) \mod W$
+   2. $\mathcal{P}_r' = SortByPK(\mathcal{P}^r)$
+   3. $p_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \mathcal{P}_r')$
+   4. $if \text{ } p_c \notin \mathcal{C}$ : 
+       - $m_{p_c}^\mathcal{C} = (p_c,0)$ 
+       - $\mathcal{C} = \mathcal{C} \cup m_{p_c}^\mathcal{C}$
+   5. $m_{p_c}^\mathcal{C}.Credits = m_{p_c}^\mathcal{C}.Credits+1$
+   6. $d = min(w_{p},1)$
+   7. $w_{p_c} = w_{p_c} - d$
+   8. $W = W - d$
+   9.  $if \text{ } W \le 0$
+       - $output\text{ } \mathcal{C}$
+5. $output\text{ } \mathcal{C}$
 
 
 <p><br></p>
@@ -141,24 +140,25 @@ $DS(r, s, ps)$:
 
 *Parameters*:
  - $Score$: score for current credit assignation
- - $\mathcal{P}^O$: ordered set of eligible provisioners
+ - $\mathcal{P}' = [p_0,\dots,p_n]$: array of provisioners ordered by public key
 
 *Algorithm*:
-  1. For each provisioner $P$ in $\mathcal{P}^O$
-     1. if $P$'s weight is higher than $Score$, 
-        1. output $P$
+  1. For each provisioner $p$ in $\mathcal{P}'$
+     1. if $p$'s weight is higher than $Score$, 
+        1. output $p$
      2. otherwise, 
-        1. subtract $P$'s weight from $Score$
+        1. subtract $p$'s weight from $Score$
 
 *Procedure*:
 
-$DE(Score_i^{r,s}, \mathcal{P}^O)$:
+$`DE(Score_i^{r,s}, \mathcal{P}')`$:
 <!-- - $loop$ :  This line should be unnecessary, since the for loop is guaranteed to extract -->
-  1. $for \text{ } P = \mathcal{P}^O[0] \dots \mathcal{P}^O[|\mathcal{P}|-1]$ :
+  <!-- 2. $for \text{ } P = \mathcal{P}^O[0] \dots \mathcal{P}^O[|\mathcal{P}|-1]$ : -->
+  1. $for \text{ } p = p_0 \dots p_{|\mathcal{P}|-1}$ :  <!-- s.t. p \in \mathcal{P}'  -->
      1. $if \text{ } w_{P} \ge Score$
-        1. $\text{ output } P$
+        1. $output\text{ } p$
      2. $else$
-        1. $Score = Score - w_{P}$
+        1. $Score = Score - w_{p}$
 
 <!-- Note that the outer $loop$ means that if the $for$ loop ends (i.e. no provisioner was extracted), it starts over with $j=0$. -->
 
@@ -211,3 +211,6 @@ extractMember(provisioners, score):
 [1]: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions", Boneh et al., 2004, [https://doi.org/10.6028/NIST.FIPS.202](https://doi.org/10.6028/NIST.FIPS.202)
 
 [2]: "Short Signatures from the Weil Pairing", Dworkin, 2015, [https://doi.org/10.1007%2Fs00145-004-0314-9](https://doi.org/10.1007%2Fs00145-004-0314-9)
+
+<!--  -->
+[de]: #deterministic-extraction-de
