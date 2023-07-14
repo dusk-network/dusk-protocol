@@ -72,6 +72,7 @@ We divide them into _configuration constants_, which are network-wide parameters
 | $Quorum$                | 43            | Quorum threshold ($VCPool \times \frac{2}{3}$) |
 | $MaxSteps$  | 213           | Maximum number of steps for a single round |
 
+<!-- TODO: Motivate MaxTxSetSize = 825000  -->
 <!-- Will be removed
 | **`MaxBlockTime`**      | 360 seconds   | ?                             | 
 -->
