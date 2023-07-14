@@ -14,7 +14,7 @@ If the timeout expires, it moves to Reduction with an empty candidate block ($NI
 ### Candidate Block
 A candidate block is the block generated in the Attestation step by the extracted Provisioner. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
-Therefore, for each iteration, only one (valid) candidate block can be produced [^1]. To reflect this, we denote a candidate block with $\mathcal{B}_r^i$, where $r$ is the consensus round, and $i$ is the consensus iteration.
+Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathcal{B}_r^i$, where $r$ is the consensus round, and $i$ is the consensus iteration.
 
 ### NewBlock Message
 The $NewBlock$ message is used by a block generator to broadcast a candidate block.
@@ -23,9 +23,9 @@ The message has the following structure:
 
 | Field       | Type                  | Size     | Description           |
 |-------------|-----------------------|----------|-----------------------|
-| $Header$    | [$MessageHeader$][mh] |          | Message header        |
+| $Header$    | [*MessageHeader*][mh] |          | Message header        |
 | $PrevHash$  | SHA3 Hash             | 256 bits | Previous block's hash |
-| $Candidate$ | [$Block$][b]          |          | Candidate block       |
+| $Candidate$ | [*Block*][b]          |          | Candidate block       |
 | $Signature$ | BLS Signature         | 48 bytes | Message signature     |
 
 ## Attestation Algorithm
@@ -35,9 +35,9 @@ The message has the following structure:
  - $\tau_{Attestation}$: maximum time for Attestation step (see [SA Parameters](../README.md#parameters))
 
 *Algorithm*:
-1. Extract the block generator ($BG$) $DS(R,S,1)$
+1. Extract the block generator ($BG$) [*DS*][ds]$(R,S,1)$
 2. If this node is the block generator:
-   1. Generate candidate block $\mathcal{B}_r^i$ [ [$GenerateBlock()$](#generateblock) ]
+   1. Generate candidate block $\mathcal{B}_r^i$ [ [_GenerateBlock_()](#generateblock) ]
    2. Create $NewBlock$ message $\mathcal{M}$ containing $\mathcal{B}_r^i$
    3. Broadcast $\mathcal{M}$
    4. Execute first $Reduction$ with $\mathcal{B}_r^i$
@@ -53,22 +53,22 @@ The message has the following structure:
          1. Execute first $Reduction$ with $NIL$$
 
 *Procedure*:
-1. $pk_{BG} = DS(R,S,1)$
+1. $pk_{BG} = $ [*DS*][ds]$(R,S,1)$
 2. $if \text{ } pk_N == pk_{BG}$:
-   1. $\mathcal{B}_r^i =$ [$GenerateBlock()$](#generateblock)
-   2. $\mathcal{M} =$ [$CreateNBM()$](#createnbm)
+   1. $\mathcal{B}_r^i =$ [_GenerateBlock_](#generateblock)()
+   2. $\mathcal{M} =$ [_CreateNBM_](#createnbm)()
    3. $Broadcast(\mathcal{M})$
    4. $Reduction(\mathcal{B}_r^i, 1)$
 3. $else$:
    1. $\tau_{Start} = \tau_{Now}$
    2. $loop$:
       1. $if (\text{ } \mathcal{M} = Receive(NewBlock,r,s) \text{ })$:
-         - $(\mathcal{H}_\mathcal{M},\_,\mathcal{B}_\mathcal{M},\sigma_\mathcal{M}) \leftarrow \mathcal{M}$
-         - $\eta_{\mathcal{B}_\mathcal{M}} = H_{SHA3-256}(\mathcal{B}_\mathcal{M}.Header)$
-         - $(pk_\mathcal{M},\_,\_,\eta_\mathcal{M}) \leftarrow \mathcal{H}_\mathcal{M}$
-         1. $if \text{ }(\text{ } Verify_{BLS}(\sigma_\mathcal{M}, pk_\mathcal{M}) == true \text{ })$
-         2. $and \text{ }(\text{ } pk_\mathcal{M} == pk_{BG} \text{ })$
-         3. $and \text{ } (\text{ }\eta_\mathcal{M} == \eta_{\mathcal{B}_\mathcal{M}} \text{ })$:
+         - $`(\mathcal{H}_\mathcal{M},\_,\mathcal{B}_\mathcal{M},\sigma_\mathcal{M}) \leftarrow \mathcal{M}`$
+         - $`\eta_{\mathcal{B}_\mathcal{M}} = H_{SHA3-256}(\mathcal{B}_\mathcal{M}.Header)`$
+         - $`(pk_\mathcal{M},\_,\_,\eta_\mathcal{M}) \leftarrow \mathcal{H}_\mathcal{M}`$
+         1. $`if \text{ }(\text{ } Verify_{BLS}(\sigma_\mathcal{M}, pk_\mathcal{M}) == true \text{ })`$
+         2. $`and \text{ }(\text{ } pk_\mathcal{M} == pk_{BG} \text{ })`$
+         3. $`and \text{ } (\text{ }\eta_\mathcal{M} == \eta_{\mathcal{B}_\mathcal{M}} \text{ })`$:
                 1. $Reduction(\mathcal{B}_\mathcal{M}, 1)$
       2. $if \text{ } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
          1. $Reduction(NIL, 1)$
@@ -94,12 +94,12 @@ The message has the following structure:
 9. Output candidate block
 
 *Procedure*:
-1. $\bold{tx} = [tx_1, \dots, tx_n] = $ [$SelectTransactions()$](#selecttransactions)
-2. $State_r =$ [$ExecuteTransactions$](../../vm)$(State_{r-1}, \bold{tx})$
-3. $TxRoot_r = MerkleTree(\bold{tx}).Root$
-4. $i = \lfloor\frac{s}{3}\rfloor$
-5. $Seed_r = Sign_{BLS}(sk_N, Seed_{r-1})$
-6. $\mathcal{H}_r = (v,r,\tau_{now},Gas^{\mathcal{B}},i,\eta_{\mathcal{B}_{r-1}},Seed_r,pk_N,TxRoot_r,State_r)$
+1. $`\boldsymbol{tx} = [tx_1, \dots, tx_n] = `$ [_SelectTransactions_](#selecttransactions)()
+2. $State_r =$ [_ExecuteTransactions_](../../vm)$`(State_{r-1}, \boldsymbol{tx})`$
+3. $`TxRoot_r = MerkleTree(\boldsymbol{tx}).Root`$
+4. $`i = \lfloor\frac{s}{3}\rfloor`$
+5. $`Seed_r = Sign_{BLS}(sk_N, Seed_{r-1})`$
+6. $`\mathcal{H}_r = (v,r,\tau_{now},Gas^{\mathcal{B}},i,\eta_{\mathcal{B}_{r-1}},Seed_r,pk_N,TxRoot_r,State_r)`$
     | Field           | Value               | 
     |-----------------|---------------------|
     | $Version$       | $v$                 |
@@ -115,17 +115,17 @@ The message has the following structure:
 
     <!-- | $Header Hash           | string | -->
     <!-- | Certificate           |    ?   | -->
-7. $\mathcal{B}_r^i = (\mathcal{H}, \bold{tx})$
+7. $`\mathcal{B}_r^i = (\mathcal{H}, \boldsymbol{tx})`$
     | Field         | Value           | 
     |---------------|-----------------|
     | $Header$      | $\mathcal{H}_r$ |
-    | $Transaction$ | $\bold{tx}$     |
+    | $Transaction$ | $\boldsymbol{tx}$     |
 8. $output \text{ } \mathcal{B}_r^i$
 
 <p><br></p>
 
 ##### SelectTransactions
-$SelectTransactions$ selects a set of transactions from the Mempool to be included in a new block.
+$`SelectTransactions`$ selects a set of transactions from the Mempool to be included in a new block.
 The criteria used for the selection is arbitrary and is left to the Block Generator.
 
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
@@ -160,8 +160,8 @@ $CreateNBM$ creates a $NewBlock$ message with the new candidate block and the pr
     | $Round$     | $r$      |
     | $Step$      | $s$      |
     | $BlockHash$ | $\eta_r$ |
-2. $\sigma_\mathcal{M} = Sign_{BLS}(sk_N, \mathcal{H}_\mathcal{M})$
-3. $\mathcal{M} = NewBlock(\mathcal{H}_\mathcal{M},\eta_{r-1},\mathcal{B}_r^i, \sigma_\mathcal{M})$
+2. $`\sigma_\mathcal{M} = Sign_{BLS}(sk_N, \mathcal{H}_\mathcal{M})`$
+3. $`\mathcal{M} = NewBlock(\mathcal{H}_\mathcal{M},\eta_{r-1},\mathcal{B}_r^i, \sigma_\mathcal{M})`$
     | Field       | Value                | 
     |-------------|----------------------|
     | $Header$    | $\mathcal{H}_\mathcal{M}$        |
@@ -177,3 +177,4 @@ $CreateNBM$ creates a $NewBlock$ message with the new candidate block and the pr
 <!--  -->
 [mh]: ../README.md#consensus-message-header
 [b]: ../../blockchain/README.md#block-structure
+[ds]: ../sortition/README.md#deterministic-sortition-ds
