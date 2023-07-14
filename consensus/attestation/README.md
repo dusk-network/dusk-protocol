@@ -35,7 +35,7 @@ The message has the following structure:
  - $\tau_{Attestation}$: maximum time for Attestation step (see [SA Parameters](../README.md#parameters))
 
 *Algorithm*:
-1. Extract the block generator ($BG$) [*DS*][ds]$(R,S,1)$
+1. Extract the block generator ($G$) [*DS*][ds]$(R,S,1)$
 2. If this node is the block generator:
    1. Generate candidate block $\mathcal{B}_r^i$ [ [_GenerateBlock_()](#generateblock) ]
    2. Create $NewBlock$ message $\mathcal{M}$ containing $\mathcal{B}_r^i$
@@ -46,15 +46,15 @@ The message has the following structure:
    2. Loop:
       1. If a $NewBlock$ message $\mathcal{M}$ is received for this round and step:
          1. If $\mathcal{M}$'s signature is valid
-         2. and $\mathcal{M}$'s signer is $BG$
+         2. and $\mathcal{M}$'s signer is $G$
          3. and $\mathcal{M}$'s $BlockHash$ corresponds to $Candidate$
             1. Execute first $Reduction$ with $Candidate$
       2. If timeout expired
-         1. Execute first $Reduction$ with $NIL$$
+         1. Execute first $Reduction$ with $NIL$
 
 *Procedure*:
-1. $pk_{BG} = $ [*DS*][ds]$(R,S,1)$
-2. $if \text{ } pk_N == pk_{BG}$:
+1. $pk_{G} = $ [*DS*][ds]$(R,S,1)$
+2. $if \text{ } pk_N == pk_{G}$:
    1. $\mathcal{B}_r^i =$ [_GenerateBlock_](#generateblock)()
    2. $\mathcal{M} =$ [_CreateNBM_](#createnbm)()
    3. $Broadcast(\mathcal{M})$
@@ -67,7 +67,7 @@ The message has the following structure:
          - $`\eta_{\mathcal{B}_\mathcal{M}} = H_{SHA3-256}(\mathcal{B}_\mathcal{M}.Header)`$
          - $`(pk_\mathcal{M},\_,\_,\eta_\mathcal{M}) \leftarrow \mathcal{H}_\mathcal{M}`$
          1. $`if \text{ }(\text{ } Verify_{BLS}(\sigma_\mathcal{M}, pk_\mathcal{M}) == true \text{ })`$
-         2. $`and \text{ }(\text{ } pk_\mathcal{M} == pk_{BG} \text{ })`$
+         2. $`and \text{ }(\text{ } pk_\mathcal{M} == pk_{G} \text{ })`$
          3. $`and \text{ } (\text{ }\eta_\mathcal{M} == \eta_{\mathcal{B}_\mathcal{M}} \text{ })`$:
                 1. $Reduction(\mathcal{B}_\mathcal{M}, 1)$
       2. $if \text{ } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
