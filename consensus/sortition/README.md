@@ -25,6 +25,7 @@ Note that $C$ is ordered by insertion (a Provisioner is added to the committee w
 For the sake of readability, we use the following notation:
 - $m_i^\mathcal{C}$ denotes the $i\text{th}$ member of committee $\mathcal{C}$ 
 - $p \in \mathcal{C} \text{ }if\text{ } \exists \text{ } m^\mathcal{C} :   m.pk=p$
+- $\mathcal{C}[pk]$ denotes the index $i$ of provisioner $pk$ in committee $\mathcal{C}$
 
 ### Reduction Committees
 Voting Committees in the Reduction steps have a credit pool of size $VCPool$, which is a global consensus parameter (see [Consensus Parameters](../README.md#parameters)), and is currently set to $64$.

@@ -11,13 +11,6 @@ When a new block certificate is produced (due to a quorum of `Agreement` message
 This effectively ends the current consensus round.
 
 ## Data Structures
-#### Agreement Message
-| Field        | Type                   | Size      | Description       |
-|--------------|------------------------|-----------|-------------------|
-| hdr          | [ConsensusHeader][hdr] | 137 bytes | Consensus header  |
-| signature    | BLS Signature          | 48 bytes  | signature of hdr  |
-| VotesPerStep | [StepVotes][sv][]      | 192 bits  | Reduction votes   |
-
 #### AggrAgreement Message
 | Field     | Type          | Size      | Description          |
 |-----------|---------------|-----------|----------------------|
@@ -73,10 +66,10 @@ Loop:
 #### VerifyAgreement
 1. Verify message signature:
    - $Verify_{BLS}(A.hdr, A.Sig, A.PubKeyBLS)$
-2. if $|A.VotesPerStep| \ne 2$: output $FALSE$
+2. if $|A.ReductionVotes| \ne 2$: output $FALSE$
 3. if $A.Step > ConsensusMaxStep$: output $FALSE$
 4. Verify StepVotes:
-   - $SV^1 {=} A.VotesPerStep^1$; $SV^2 {=} A.VotesPerStep^2$
+   - $SV^1 {=} A.ReductionVotes^1$; $SV^2 {=} A.ReductionVotes^2$
    - [VerifyAggregated]()($A.hdr, SV^1.Signature, A.Round, A.Step{-}1, SV^1.BitSet$)
    - [VerifyAggregated]()($A.hdr, SV^2.Signature, A.Round, A.Step, SV^2.BitSet$)
 
@@ -119,7 +112,7 @@ $CreateAggrAgreement(A_i)$:
 
 $CreateWinningBlock(A)$
   - Create `Certificate`:
-    - $\Phi = (A.VotesPerStep^1, A.VotesPerStep^2)$
+    - $\Phi = (A.ReductionVotes^1, A.ReductionVotes^2)$
   - Add certificate to candidate block:
     - $CB.Certificate = \Phi$
   - Output $CB$

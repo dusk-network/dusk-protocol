@@ -81,8 +81,8 @@ We divide them into _configuration constants_, which are network-wide parameters
 | Name                  | Description                          |
 |-----------------------|--------------------------------------|
 | $v$                   | Protocol version number              |
-| $N$                   | Node running the protocol            |
-| $pk_N$                | PubKey of the node provisioner       |
+| $\mathcal{N}$                   | Node running the protocol            |
+| $pk_\mathcal{N}$                | PubKey of the node provisioner       |
 | $\mathcal{B_{tip}}$   | Current chain tip (last block)       |
 | $r$                   | Current consensus round              |
 | $s$                   | Current consensus step               | <!-- TODO: replace $s$ with iteration $i$ ? -->
@@ -100,38 +100,83 @@ $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all ini
 
 
 ## Protocol Messages
-<!-- TODO: Receive(type, r, s) -->
-There are four types of message exchanged during the consensus protocol:
+The SA protocol is executed by nodes by means of message exchange. There are four types of message exchanged during the consensus protocol:
 - $NewBlock$: produced in the [Attestation](./attestation/) phase, it stores a candidate block for the current round;
 - $Reduction$: used during the [Reduction](./reduction/) phase, it contains a single vote from a committee member on a candidate block;
 - $Agreement$: produced at the end of the Reduction phase in case a quorum is reached, it contains the aggregated votes of the two reduction steps;
 - $AggrAgreement$: produced in the [Ratification](./ratification) phase, it contains the aggregated signature and bitset of the votes confirming the candidate block.
 
-### Consensus Message Header
+We denote a consensus message $\mathcal{M}$ as:
+
+$$\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_\mathcal{M}, f_1,\dots,f_n),$$
+<!-- $$\mathsf{m} = (\mathsf{h}_\mathsf{m}, \sigma_\mathsf{m}, f_1,\dots,f_n),$$
+ -->
+
+where $\mathcal{H}_\mathcal{M}$ is the message header, $\sigma_\mathcal{M}$ is the signature of the sender, and $f_1, \dots, f_n$ are the fields specific to the message type.
+
+In the following, we describe both the header and signature in detail.
+
+### Message Header
 All consensus messages (with the exception of $AggrAgreement$, which embeds an $Agreement$ message) share a common $MessageHeader$ structure, defined as follows:
 
-<!-- TODO: rename PubKeyBLS to pk_BLS and BlockHash to CB -->
-| Field     | Type    | Size      | Description                       |
-|-----------|---------|-----------|-----------------------------------|
-| $Signer$ | BLS Key | 96 bytes  | Public Key of the message signer  |
+| Field       | Type    | Size      | Description                       |
+|-------------|---------|-----------|-----------------------------------|
+| $Signer$    | BLS Key | 96 bytes  | Public Key of the message signer  |
 | $Round$     | Number  | 64 bits   | Consensus round                   |
 | $Step$      | Number  | 8 bits    | Consensus step                    |
 | $BlockHash$ | Hash    | 32 bytes  | Candidate block hash              |
 
-$Signer$ is the public BLS key of the Provisioner who created and signed the message. As such, in a $NewBlock$ message, this field indicates the block generator, while in a $Reduction$ message it indicates the committee member who casted the vote.
+$Signer$ is the public BLS key of the Provisioner who created and signed the message. For instance, in a $NewBlock$ message, this field indicates the block generator, while, in a $Reduction$ message, it indicates the committee member who casted the vote.
+
+The $MessageHeader$ structure has a total size of 137 bytes.
 
 #### Message Signature
 <!-- TODO: mv pk away from header -->
-When a Provisioner creates a consensus message (except for $AggrAgreement$), it signs its header for authenticity and integrity.
+When a Provisioner creates a consensus message (except for $AggrAgreement$), it signs its header for authenticity and integrity. 
 
-In particular, given a message $\mathcal{M}$, the signature $\sigma_{\mathcal{M}}$ is defined as
-$$\sigma_{\mathcal{M}} = Sig_{BLS}(H_{Blake2B}(Round||Step||BlockHash))$$
+In particular, given a message $\mathcal{M}$, we define its hash as:
 
-We define two functions: 
- - $Sign_{BLS}(\mathcal{M})$, which is used to digitally sign the message
- - $Verify_{BLS}(\mathcal{M}, pk)$, which is used to verify a signature on a message
+$$\eta_\mathcal{M} = H_{Blake2B}(Round||Step||BlockHash),$$
+
+where $Round$, $Step$, and $BlockHash$ are the respective fields included in $\mathcal{M}$'s header.
+
+We then define the $\mathcal{M}$'s signature $\sigma_{\mathcal{M}}$ as:
+$$\sigma_{\mathcal{M}} = Sig_{BLS}(\eta_\mathcal{M}, sk),$$
+where $\eta_\mathcal{M}$ is the hash of $\mathcal{M}$'s header and $sk$ is the secret key of the signer.
+
+The signature $\sigma_{\mathcal{M}}$ is then put in the $Signature$ field of the message.
+
+In addition, we define the following message signing and verifying functions:
+ - $Sign(\mathcal{M}, sk)$, which takes a message $\mathcal{M}$, a secret key $sk$, and outputs the signature $\sigma_{\mathcal{M}}$;
+ - $Verify(\mathcal{M})$, which takes a message $\mathcal{M}$ and outputs $true$ if $\mathcal{M}.Signature$ corresponds to $\sigma_{\mathcal{M}}$, and $false$ otherwise.
+ 
 
 > Note that the hash operation is actually included in the definition of BLS signature. We explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
+
+
+#### Create Message
+In addition, we define the $NewMsg$ function, which is used to create a consensus message:
+
+$Msg(Type, f_1,\dots,f_2):$
+1. $\mathcal{H}_\mathcal{M} = (pk_\mathcal{\mathcal{N}}, r, s, \mathcal{B}^c)$
+2. $\sigma_{\mathcal{M}} = Sig_{BLS}(\eta_\mathcal{M}, sk_\mathcal{N}),$
+3. $\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_{\mathcal{M}}, f_1, \dots, f_n)$
+4. $output \text{ } \mathcal{M}$
+
+$Type$ indicate the actual message ($NewBlock$,$Reduction$, or $Agreement$).
+In case of $Reduction$, the parameter $f_1$, i.e. the vote $v$, is assigned to $BlockHash$ in the header.
+
+
+#### Send and Receive
+<!-- TODO: Send -->
+We handle incoming message with the *Receive$(MessageType,r,s)$* function, which returns a message $\mathcal{M}$ of type $MessageType$ if it was received and it has $Round=r$ and $Step=s$. If no new message has been received, it returns $NIL$.
+
+Messages received before calling the *Receive* function are stored in a queue.
+
+## Consensus Algorithm
+<!-- TODO -->
+### SAIteration
+<!-- TODO NewIteration -->
 
 ## Common Subroutines
 #### IncreaseTimeout
@@ -146,7 +191,9 @@ Procedure:
   - $StepTimeout = MaxStepTimeout$
 
 
-
+## Notation
+- $\mathcal{H}^\mathcal{B}$ denotes the hash of the header of block $\mathcal{B}$.
+- The notation $H_{SHA3}$ indicates the SHA3-256 hash function.
 
 <!-------------------- Footnotes -------------------->
 
