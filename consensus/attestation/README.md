@@ -48,7 +48,8 @@ The message has the following structure:
          1. If $\mathcal{M}$'s signature is valid
          2. and $\mathcal{M}$'s signer is $G$
          3. and $\mathcal{M}$'s $BlockHash$ corresponds to $Candidate$
-            1. Execute first $Reduction$ with $Candidate$
+            1. Propagate $\mathcal{M}$
+            2. Execute first $Reduction$ with $Candidate$
       2. If timeout expired
          1. Execute first $Reduction$ with $NIL$
 
@@ -69,7 +70,8 @@ The message has the following structure:
          1. $`if \text{ }(\text{ } Verify_{BLS}(\sigma_\mathcal{M}, pk_\mathcal{M}) == true \text{ })`$
          2. $`and \text{ }(\text{ } pk_\mathcal{M} == pk_{G} \text{ })`$
          3. $`and \text{ } (\text{ }\eta_\mathcal{M} == \eta_{\mathcal{B}_\mathcal{M}} \text{ })`$:
-                1. $Reduction(\mathcal{B}_\mathcal{M}, 1)$
+            1. $Propagate(\mathcal{M})$
+            2. $Reduction(\mathcal{B}_\mathcal{M}, 1)$
       2. $if \text{ } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
          1. $Reduction(NIL, 1)$
 
