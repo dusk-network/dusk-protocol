@@ -55,13 +55,13 @@ The $Agreement$ message has total size of 297 bytes.
 ## Reduction Algorithm
 
 **Parameters**:
-- $\mathcal{B}_r^i$ : candidate block 
+- $\mathcal{B}^c$ : candidate block 
 - $rstep$ : Reduction step number (1 or 2)
 - [Consensus Parameters](../README.md#parameters)
 
 **Environment**:
 - $\mathcal{V}^{1}$ : $StepVotes$ of first Reduction
-- $\mathcal{V}^{2}$ = $StepVotes$ of second Reduction
+- $\mathcal{V}^{2}$ : $StepVotes$ of second Reduction
 <!-- TODO?: \mathcal{V}_{r,i}^1 -->
 
 
