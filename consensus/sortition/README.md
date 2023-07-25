@@ -22,10 +22,19 @@ where $r$ and $s$ are the consensus round and step, respectively (see [Consensus
 
 Note that $C$ is ordered by insertion (a Provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have the lowest index, and the last to be inserted will have the highest. 
 
-For the sake of readability, we use the following notation:
-- $m_i^\mathcal{C}$ denotes the $i\text{th}$ member of committee $\mathcal{C}$ 
-- $p \in \mathcal{C} \text{ }if\text{ } \exists \text{ } m^\mathcal{C} :   m.pk=p$
-- $\mathcal{C}[pk]$ denotes the index $i$ of provisioner $pk$ in committee $\mathcal{C}$
+In the rest of the consensus documentation, we will use the following notation:
+- $m_i^\mathcal{C}$ denotes the $i\text{th}$ member of committee $\mathcal{C}$:
+  - $m_i^\mathcal{C} = \mathcal{C}[i]$
+- $i_m^\mathcal{C}$ denotes the index $i$ of member $m$ in committee $\mathcal{C}$. Formally:
+  - $i_m^\mathcal{C} = i : m_i^\mathcal{C} = m$
+
+- $pk_m$ denotes the public key of member $m$ (i.e., $m.pk$):
+  - $pk_m = m.pk$
+- We say a provisioner with public key $pk$ is in a committee $\mathcal{C}$ if such committee contains a member with public key $pk$. Formally:
+  - $pk \in \mathcal{C} \text{ }if\text{ } \exists \text{ } m^\mathcal{C} :   pk_m{=}pk$
+<!-- - $\mathcal{C}[pk]$ denotes the member $m$ corresponding to public key $pk$. Formally: -->
+- $m_{pk}^\mathcal{C}$ denotes the member of $\mathcal{C}$ with publick key $pk$.
+  - $m_{pk}^\mathcal{C} = m : m \in \mathcal{C} \wedge pk_m{=}pk$
 
 ### Reduction Committees
 Voting Committees in the Reduction steps have a credit pool of size $VCPool$, which is a global consensus parameter (see [Consensus Parameters](../README.md#parameters)), and is currently set to $64$.
@@ -163,6 +172,23 @@ $`DE(Score_i^{r,s}, \mathcal{P}')`$:
 
 <!-- Note that the outer $loop$ means that if the $for$ loop ends (i.e. no provisioner was extracted), it starts over with $j=0$. -->
 
+
+## Subcommittees
+
+<!-- TODO: BitSet -->
+
+#### CountCredits
+$CountCredits$ gets a list of members of a committee and return the cumulative amount of credits belonging to such members.
+
+- $\textbf{p}=[pk_1,\dots,pk_n]$: set of provisioner public keys
+- $\mathcal{C}$: voting committee
+
+$Credits(\textbf{p}, \mathcal{C})$:
+1. $sum = \sum_{i=0}^{n} m_{pk_i}^{\mathcal{C}}.Credits$
+2. $\texttt{output } sum$
+
+
+<!-- TODO: SubCommittee(C, bitset) , CountVotes(C), AggregatePKs-->
 
 <!-- ### Pseudocode
 
