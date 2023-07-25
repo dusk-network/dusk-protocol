@@ -60,17 +60,17 @@ Several parameters are used in the SA procedures.
 We divide them into _configuration constants_, which are network-wide parameters, and _context variables_, which are specific to the running node and its state current state with respect to the SA protocol.
 
 **Config Constants**
-| Name                    | Value         | Description                   |
-|-------------------------|---------------|-------------------------------|
-| **`DUSK`**              | 1.000.000.000 | Value of 1 Dusk unit (in lux) |
-| $Gas^{\mathcal{B}}$     | 5.000.000.000 | Gas limit for a single block  |
-| $\tau_{Step}$  | 5 seconds     | Initial step timeout          |
-| $\tau_{Step}^{max}$     | 60 seconds    | Maximum timeout for a single step | <!-- **`MaxStepTimeout`** -->
-| **`ExtractionDelay`**   | 3 seconds     | Extra delay to fetch transactions from mempool |
-| **`MaxTxSetSize`**      | 825000        | Maximum size of transaction set in a block     |
-| $VCPool$                | 64            | Total credits in a voting committee |
-| $Quorum$                | 43            | Quorum threshold ($VCPool \times \frac{2}{3}$) |
-| $MaxSteps$  | 213           | Maximum number of steps for a single round |
+| Name                  | Value         | Description                                    |
+|-----------------------|---------------|------------------------------------------------|
+| **`DUSK`**            | 1.000.000.000 | Value of 1 Dusk unit (in lux)                  |
+| $Gas^{\mathcal{B}}$   | 5.000.000.000 | Gas limit for a single block                   |
+| $\tau_{Step}$         | 5 seconds     | Initial step timeout                           |
+| $\tau_{Step}^{max}$   | 60 seconds    | Maximum timeout for a single step              | <!-- **`MaxStepTimeout`** -->
+| **`ExtractionDelay`** | 3 seconds     | Extra delay to fetch transactions from mempool |
+| **`MaxTxSetSize`**    | 825000        | Maximum size of transaction set in a block     |
+| $VCPool$              | 64            | Total credits in a voting committee            |
+| $Quorum$              | 43            | Quorum threshold ($VCPool \times \frac{2}{3}$) |
+| $MaxSteps$            | 213           | Maximum number of steps for a single round     |
 
 <!-- TODO: Motivate MaxTxSetSize = 825000  -->
 <!-- Will be removed
@@ -167,11 +167,20 @@ $Type$ indicate the actual message ($NewBlock$,$Reduction$, or $Agreement$).
 In case of $Reduction$, the parameter $f_1$, i.e. the vote $v$, is assigned to $BlockHash$ in the header.
 
 
-#### Send and Receive
-<!-- TODO: Send -->
+#### Message Exchange
+**Receive**
 We handle incoming message with the *Receive$(MessageType,r,s)$* function, which returns a message $\mathcal{M}$ of type $MessageType$ if it was received and it has $Round=r$ and $Step=s$. If no new message has been received, it returns $NIL$.
 
-Messages received before calling the *Receive* function are stored in a queue.
+Messages received before calling the *Receive* function are stored in a queue and are returned by the function in the order they were received.
+
+**Broadcast**
+The *Broadcast* function is used by the creator of a new message.
+<!-- TODO: Send -->
+
+**Propagate**
+<!-- TODO -->
+The *Propagate* function represent a re-broadcast operation. It is used by a node when receiving a message from the network and propagating to other nodes.
+
 
 ## Consensus Algorithm
 <!-- TODO -->
