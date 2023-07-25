@@ -108,11 +108,11 @@ The SA protocol is executed by nodes by means of message exchange. There are fou
 
 We denote a consensus message $\mathcal{M}$ as:
 
-$$\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_\mathcal{M}, f_1,\dots,f_n),$$
+$`$\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_\mathcal{M}, f_1,\dots,f_n),$`$
 <!-- $$\mathsf{m} = (\mathsf{h}_\mathsf{m}, \sigma_\mathsf{m}, f_1,\dots,f_n),$$
  -->
 
-where $\mathcal{H}_\mathcal{M}$ is the message header, $\sigma_\mathcal{M}$ is the signature of the sender, and $f_1, \dots, f_n$ are the fields specific to the message type.
+where $`\mathcal{H}_\mathcal{M}`$ is the message header, $`\sigma_\mathcal{M}`$ is the signature of the sender, and $f_1, \dots, f_n$ are the fields specific to the message type.
 
 In the following, we describe both the header and signature in detail.
 
@@ -158,18 +158,18 @@ In addition, we define the following message signing and verifying functions:
 In addition, we define the $NewMsg$ function, which is used to create a consensus message:
 
 $Msg(Type, f_1,\dots,f_2):$
-1. $\mathcal{H}_\mathcal{M} = (pk_\mathcal{\mathcal{N}}, r, s, \mathcal{B}^c)$
-2. $\sigma_{\mathcal{M}} = Sig_{BLS}(\eta_\mathcal{M}, sk_\mathcal{N}),$
-3. $\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_{\mathcal{M}}, f_1, \dots, f_n)$
+1. $`\mathcal{H}_\mathcal{M} = (pk_\mathcal{\mathcal{N}}, r, s, \mathcal{B}^c)`$
+2. $`\sigma_{\mathcal{M}} = Sig_{BLS}(\eta_\mathcal{M}, sk_\mathcal{N})`$
+3. $`\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_{\mathcal{M}}, f_1, \dots, f_n)`$
 4. $output \text{ } \mathcal{M}$
 
-$Type$ indicate the actual message ($NewBlock$,$Reduction$, or $Agreement$).
+$Type$ indicate the actual message ($NewBlock$, $Reduction$, or $Agreement$).
 In case of $Reduction$, the parameter $f_1$, i.e. the vote $v$, is assigned to $BlockHash$ in the header.
 
 
 #### Message Exchange
 **Receive**
-We handle incoming message with the *Receive$(MessageType,r,s)$* function, which returns a message $\mathcal{M}$ of type $MessageType$ if it was received and it has $Round=r$ and $Step=s$. If no new message has been received, it returns $NIL$.
+We handle incoming message with the *Receive*$(MessageType,r,s)$ function, which returns a message $\mathcal{M}$ of type $MessageType$ if it was received and it has $Round=r$ and $Step=s$. If no new message has been received, it returns $NIL$.
 
 Messages received before calling the *Receive* function are stored in a queue and are returned by the function in the order they were received.
 
