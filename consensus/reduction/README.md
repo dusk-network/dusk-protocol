@@ -48,7 +48,7 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
 |------------------|-----------------------|-----------|----------------------------------|
 | $Header$         | [*MessageHeader*][mh] | 137 bytes | Consensus header                 |
 | $Signature$      | BLS Signature         | 48 bytes  | Message signature                |
-| $ReductionVotes$ | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes |
+| $RVotes$ | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes |
 
 The $Agreement$ message has total size of 297 bytes.
 
@@ -134,7 +134,8 @@ $RunReduction( \mathcal{B}^c, rstep )$:
          1. [*Propagate*][kad]()($\mathcal{M}^R$)
          2. $v = \mathcal{H}_{\mathcal{M}^R}.BlockHash$
          3. *AggregateSig*$(\sigma^v, \sigma_{\mathcal{M}^R})$
-         4. $\boldsymbol{vbs}^{v}[\mathcal{C}[pk_{\mathcal{M}^R}]] = 1$
+         4. $m = m_{pk_{\mathcal{M}^R}}$ \
+            $\boldsymbol{vbs}^{v}[i_m^\mathcal{C}] = 1$
          5. $if$ *countSetBits*$(\boldsymbol{vbs}^v) \ge Quorum$
             1. $if \text{ } rstep = 1$
                1. $\mathcal{V}^1 = (\sigma^v, \boldsymbol{vbs}^v)$
@@ -144,11 +145,11 @@ $RunReduction( \mathcal{B}^c, rstep )$:
                2. $\mathcal{M}^A =$ [*Msg*][msg]$(Agreement, [\mathcal{V}^1,\mathcal{V}^2])$
                <!-- (\mathcal{H}_\mathcal{M},\sigma_\mathcal{M},[\mathcal{V}^1,\mathcal{V}^2])$ -->
                   <!-- $Agreement$ -->
-                  | Field            | Value                           | 
-                  |------------------|---------------------------------|
-                  | $Header$         | $\mathcal{H}_\mathcal{M}$       |
-                  | $Signature$      | $\sigma_\mathcal{M}$            |
-                  | $ReductionVotes$ | $[\mathcal{V}^1,\mathcal{V}^2]$ |
+                  | Field       | Value                           | 
+                  |-------------|---------------------------------|
+                  | $Header$    | $\mathcal{H}_\mathcal{M}$       |
+                  | $Signature$ | $\sigma_\mathcal{M}$            |
+                  | $RVotes$    | $[\mathcal{V}^1,\mathcal{V}^2]$ |
 
                3. *Broadcast*$(\mathcal{M}^A)$
                4. *NewIteration*$()$
