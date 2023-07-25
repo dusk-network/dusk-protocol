@@ -87,8 +87,8 @@ $\textbf{\textit{RunRatification}}( )$:
                 2. $\texttt{output } \mathcal{B}^w$
    
    2.  $if \text{ } \mathcal{M}^{Ag} =$ [*Receive*][mx]$(AggrAgreement, r)$
-       - $(\mathcal{H}_{\mathcal{M}^{Ag}}, \_ , \textbf{bs}, \sigma_A) \leftarrow \mathcal{M}^{Ag}$
-       - $\_, \mathcal{B}^c, r_{\mathcal{M}^{Ag}}, s_{\mathcal{M}^{Ag}} \leftarrow \mathcal{H}_{\mathcal{M}^{Ag}}$
+       - $`(\mathcal{H}_{\mathcal{M}^{Ag}}, \_ , \textbf{bs}, \sigma_A) \leftarrow \mathcal{M}^{Ag}`$
+       - $`\_, \mathcal{B}^c, r_{\mathcal{M}^{Ag}}, s_{\mathcal{M}^{Ag}} \leftarrow \mathcal{H}_{\mathcal{M}^{Ag}}`$
        1. [VerifyAggregated](#verifyaggregated)$(\mathcal{B}^c, r_{\mathcal{M}^{Ag}}, s_{\mathcal{M}^{Ag}}, \textbf{bs}, \sigma_\textbf{bs})$
        2.  [*Propagate*][mx]($\mathcal{M}^{Ag}$)
        3.  $\mathcal{B}^w =$ [*MakeWinning*](#makewinning)($\mathcal{M}^{Ag}.Agreement$)
@@ -111,14 +111,14 @@ $\textbf{\textit{RunRatification}}( )$:
 
 **Procedure**:
 $VerifyAgreement(\mathcal{M})$
-- $H_{\mathcal{M}}, \sigma_{\mathcal{M}}, \textbf{V} \leftarrow \mathcal{M}$
-- $\_, r_{\mathcal{M}}, s_{\mathcal{M}}, \mathcal{B}^c \leftarrow H_{\mathcal{M}}$
+- $`H_{\mathcal{M}}, \sigma_{\mathcal{M}}, \textbf{V} \leftarrow \mathcal{M}`$
+- $`\_, r_{\mathcal{M}}, s_{\mathcal{M}}, \mathcal{B}^c \leftarrow H_{\mathcal{M}}`$
 1. $Verify_{BLS}(H_{\mathcal{M}}, \sigma_{\mathcal{M}}, pk_{\mathcal{M}})$
 2. $\texttt{if } |\textbf{V}| \ne 2: \texttt{output } false$
 3. $\texttt{if } s_{\mathcal{M}} \gt MaxSteps: \texttt{output } false$
-4. $\mathcal{V}_1, \mathcal{V}_1 \leftarrow \textbf{V}$\
-  $r_1 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathcal{B}^c, r_{\mathcal{M}}, s_{\mathcal{M}}-1, \textbf{bs}_{\mathcal{V}_1}, \sigma_{\mathcal{V}_1})$\
-  $r_2 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathcal{B}^c, r_{\mathcal{M}}, s_{\mathcal{M}}, \textbf{bs}_{\mathcal{V}_2}, \sigma_{\mathcal{V}_2})$
+4. $`\mathcal{V}_1, \mathcal{V}_1 \leftarrow \textbf{V}`$ \
+  $`r_1 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathcal{B}^c, r_{\mathcal{M}}, s_{\mathcal{M}}-1, \textbf{bs}_{\mathcal{V}_1}, \sigma_{\mathcal{V}_1})`$ \
+  $`r_2 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathcal{B}^c, r_{\mathcal{M}}, s_{\mathcal{M}}, \textbf{bs}_{\mathcal{V}_2}, \sigma_{\mathcal{V}_2})`$
 1. $\texttt{if } r_1{=}true \texttt{ and } r_2{=}true : \texttt{return } true$
 
 #### VerifyAggregated
@@ -164,13 +164,13 @@ $VerifyAggregated(\mathcal{B}^c, round, step, \textbf{bs}, \sigma_\textbf{bs})$:
 **Procedure**
 
 $CreateAggrAgreement(S)$:
- - $\mathcal{H}_{\mathcal{M}_1}, \_, \_ \leftarrow \mathcal{M}_1$
- - $\_, r, s, \_ \leftarrow \mathcal{H}_{\mathcal{M}_1}$
+ - $`\mathcal{H}_{\mathcal{M}_1}, \_, \_ \leftarrow \mathcal{M}_1`$
+ - $`\_, r, s, \_ \leftarrow \mathcal{H}_{\mathcal{M}_1}`$
  1. $\textbf{sigs} = $ [*GetSignatures*](#getsignatures)$(S)$ \
     $\sigma_{S} = Aggregate_{BLS}(\textbf{sigs})$
- 2. $\textbf{signers} = $ [*GetSigners*](#getsigners)$(S)$ \
-    $\textbf{bs}_{S} = $ [*BitSet*][bs]$(\mathcal{C}_r^s, \textbf{signers})$
- 3. $\mathcal{M}^{Ag} = (\mathcal{M}_1, \textbf{bs}_{S}, \sigma_S)$
+ 2. $`\textbf{signers} = `$ [*GetSigners*](#getsigners)$(S)$ \
+    $`\textbf{bs}_{S} = `$ [*BitSet*][bs]$(\mathcal{C}_r^s, \textbf{signers})$
+ 3. $`\mathcal{M}^{Ag} = (\mathcal{M}_1, \textbf{bs}_{S}, \sigma_S)`$
  4. $\texttt{output }\mathcal{M}^{Ag}$
 
 #### GetSignatures
