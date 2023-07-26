@@ -3,101 +3,64 @@
 <!-- TODO: Define State := current blockchain -->
 <!-- TODO: mention the algorithm assumes the running node only contains a single provisioner key, although it can be easily modified to handle multiple keys -->
 # Succinct Attestation
-**_Succinct Attestation_ (_SA_)** is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
+**Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
-The protocol is run by Dusk stakers, called *Provisioners*, in a sequence of *rounds*, each of which produces a new block of the blockchain. 
-The protocol leverages the *Deterministic Sortition* algorithm, which allows selecting a unique block producer and unique voting committees in a non-interactive deterministic way.
+The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating, validating, and finalizing new blocks.
+
+Provisioners participate in turns to the production and validation of each new block of the ledger. Participation in each round is decided with a [*Deterministic Sortition*][ds] algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
+
 
 ## Protocol Overview
-The SA consensus is divided into **_rounds_**, each of which creates a new block. In turn, each round is composed of one or more **_iterations_** of the following **_phases_**:
+The SA protocol is executed in ***rounds***, with each round adding a new block to the chain.
 
-  1. **_Attestation_**: in this phase, a _generator_, extracted among eligible Provisioners, creates a new candidate block $B$ for the current round, and broadcasts it to the network;
+Each round is composed of three phases:
+  1. ***Attestation***: in this phase, a *generator*, extracted via [DS][ds], creates a new candidate block and broadcasts it to the network using a $NewBlock$ message;
   
-  2. **_1st Reduction_**: in this phase, the members of a _committee_, extracted among the  eligible Provisioners, vote on the validity of the candidate block $B$; 
-  if votes reach a quorum of $\frac{2}{3}$ (i.e., 67% of the committee voting pool), the reduction outputs $B$, otherwise it outputs $NIL$;
+  2. ***Reduction***: in this phase, two separate committees of provisioners, extracted via [DS][ds], vote on the validity of the candidate block and broadcast their vote with a $Reduction$ message. If positive votes reach a quorum of $\frac{2}{3}$ (67% of the votes) in each committee, an $Agreement$ message is broadcast, which contains the aggregated votes of both committees. Conversely, the reduction fails and the protocol starts over (from *Attestation*) with a new generator and new voting committees (that is, a new candidate block is produced and voted upon);
 
-  3. **_2nd Reduction_**: in this phase, if the output of the 1st Reduction is not $NIL$, a second _committee_, also extracted among the eligible Provisioners, votes on the candidate block $B$;
-  if votes reach the quorum, an `Agreement` message is broadcast, which contains all votes of the two Reduction phases.
+  3. ***Ratification***: in this phase, all generated $Agreement$ messages are collected; if messages for a specific candidate block reach a quorum (according to the second-reduction committee vote allocation), the candidate block is added to the chain along with a *certificate* containing the quorum votes from the $Agreement$ message. This effectively ends the current round.
 
-> NOTE: Iteration phases are also known as **_steps_**, so that each iteration is composed of 3 steps.
-<!-- TODO: mention maximum number of steps -->
+As the *Reduction* phase can fail, multiple repetitions of the *Attestation*/*Reduction* sequence can occur within a single round. We call each such repetition an ***iteration***, and each phase in the repetition a ***step***.
+Note that since the *Reduction* phase has two consecutive votes, it is composed of two steps. Therefore, a single iteration is composed of three steps: (1) Attestation, (2) first Reduction, and (3) second Reduction.
 
-A successful iteration (i.e., one that produces a valid new block), is ratified by the following phase:
- - **_Ratification_**: in this phase, which runs concurrently to iteration steps, `Agreement` messages for the current round are collected and processed by nodes. If collected votes reach a quorum, the new block is accepted by producing a `Certificate` message with the aggregated votes. This message is then propagated to be verified by other nodes.
+A maximum number of 71 iterations (213 steps) is allowed to add a new valid block to the chain. If this number is exceeded, the network is deemed unsafe and the consensus process is halted.
 
 
 ## Provisioners
-*Provisioners* are the only users in the Dusk network that are allowed to participate in the SA protocol. A provisioner is a user that locked a certain amount of DUSK coins in the *Stake Contract*. <!-- TODO: link to Stake Contract -->
+*Provisioners* are the only users in the Dusk network that are allowed to participate in the SA protocol. A provisioner is a user that locked a certain amount of their DUSK coins as *stake*.
 
+Staking is managed through the *Stake Contract*. 
+<!-- TODO: link to Stake Contract -->
 <!-- TODO: mention minimum amount of stake -->
 
-Formally, we define a *stake* $S$ 
+Formally, we define a ***provisioner*** $\mathcal{P}$ as:
 
-we define a *Provisioner* as:
+$$\mathcal{P}=(pk,[S_0,\dots,S_n]),$$
 
-$$P=(pk,[S_0,\dots,S_n]),$$
+where $pk$ is the BLS public key of the provisioner, and $S_i$ is a stake amount belonging to $\mathcal{P}$.
 
-where $S_i$ a stake belonging to $P$.
+In turn, we define a ***stake*** $S$ of a provisioner $\mathcal{P}$ as:
+$$S^\mathcal{P}=(Amount,Height),$$
+where $Amount$ is the quantity of Dusk locked as a stake, and $Height$ is the height of the block where $Amount$ was locked.
 
-In turn, we define a *stake* $S$ as:
+We say a stake $S$ is ***mature*** if it was locked more than two *epochs* before the current chain tip. Formally, given a stake $S$, we say $S$ is mature if 
 
-$$S^P=(Amount,H),$$
+$$Height_{Tip} \gt Height_S + (2 \times EPOCH),$$
 
-where $Amount$ is the quantity of Dusk locked as a stake,and $H$ is the block height when such $Amount$ was staked.
+where $Height_{Tip}$ is the current tip's height, $Height_S$ is the stake's height, and $EPOCH$ is a [Consensus Parameter][cp]. 
 
-We say a stake $S$ is *mature* if $H^S\gt 2\times EPOCH$, where $EPOCH$ is a Consensus Parameter, currently set at $?$. <!-- TODO: define epoch -->
-We say a provisioner $P$ is *eligible* if it has at least a mature stake.
+Moreover, we say a provisioner is ***eligible*** if it has at least a mature stake.
+
+Note that only eligible provisioners can participate in the consensus protocol.
+
+<!-- Formally:
+  $$\mathcal{P}^e = \mathcal{P} : \exists \text{ } S^\mathcal{P} : S^\mathcal{P} \gt Height_{Tip} \gt Height_S + (2 \times EPOCH)$$ -->
 
 
 <!-- TODO: decide if $P$ only include mature stakes -->
 
 
-## Deterministic Sortition
-The $SA$ algorithm leverages [*Deterministic Sortition*](./sortition/) to select a unique block producer during the [*Attestation*](./attestation/) phase, as well as forming unique voting committee during the [Reduction](./reduction/) phase.
-
-## Consensus Parameters
-Several parameters are used in the SA procedures.
-We divide them into _configuration constants_, which are network-wide parameters, and _context variables_, which are specific to the running node and its state current state with respect to the SA protocol.
-
-**Config Constants**
-| Name                  | Value         | Description                                    |
-|-----------------------|---------------|------------------------------------------------|
-| **`DUSK`**            | 1.000.000.000 | Value of 1 Dusk unit (in lux)                  |
-| $Gas^{\mathcal{B}}$   | 5.000.000.000 | Gas limit for a single block                   |
-| $\tau_{Step}$         | 5 seconds     | Initial step timeout                           |
-| $\tau_{Step}^{max}$   | 60 seconds    | Maximum timeout for a single step              | <!-- **`MaxStepTimeout`** -->
-| **`ExtractionDelay`** | 3 seconds     | Extra delay to fetch transactions from mempool |
-| **`MaxTxSetSize`**    | 825000        | Maximum size of transaction set in a block     |
-| $VCPool$              | 64            | Total credits in a voting committee            |
-| $Quorum$              | 43            | Quorum threshold ($VCPool \times \frac{2}{3}$) |
-| $MaxSteps$            | 213           | Maximum number of steps for a single round     |
-
-<!-- TODO: Motivate MaxTxSetSize = 825000  -->
-<!-- Will be removed
-| **`MaxBlockTime`**      | 360 seconds   | ?                             | 
--->
-
-**Context Variables**
-| Name                  | Description                          |
-|-----------------------|--------------------------------------|
-| $v$                   | Protocol version number              |
-| $\mathcal{N}$                   | Node running the protocol            |
-| $pk_\mathcal{N}$                | PubKey of the node provisioner       |
-| $\mathcal{B_{tip}}$   | Current chain tip (last block)       |
-| $r$                   | Current consensus round              |
-| $s$                   | Current consensus step               | <!-- TODO: replace $s$ with iteration $i$ ? -->
-| $\tau_{Attestation}$  | Current timeout for Attestation      |
-| $\tau_{Reduction_1}$  | Current timeout for First Reduction  |
-| $\tau_{Reduction_2}$  | Current timeout for Second Reduction |
-
-<!-- This are included in the previous block
-| **`prevHash`**          | Previous block's hash       |
-| **`prevTimestamp`**     | Previous block's timestamp  |
-| **`prevSeed`**          | Previous block's seed       | -->
-
-
-$\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $\tau_{Step}$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)).
-
+<!-- TODO: mv Voting Committees here? -->
 
 ## Protocol Messages
 The SA protocol is executed by nodes by means of message exchange. There are four types of message exchanged during the consensus protocol:
@@ -182,6 +145,53 @@ The *Broadcast* function is used by the creator of a new message.
 The *Propagate* function represent a re-broadcast operation. It is used by a node when receiving a message from the network and propagating to other nodes.
 
 
+## Consensus Parameters
+Several parameters are used in the SA procedures.
+We divide them into _configuration constants_, which are network-wide parameters, and _context variables_, which are specific to the running node and its state current state with respect to the SA protocol.
+
+**Config Constants**
+| Name                  | Value         | Description                                    |
+|-----------------------|---------------|------------------------------------------------|
+| **`DUSK`**            | 1.000.000.000 | Value of 1 Dusk unit (in lux)                  |
+| $Gas^{\mathcal{B}}$   | 5.000.000.000 | Gas limit for a single block                   |
+| $\tau_{Step}$         | 5 seconds     | Initial step timeout                           |
+| $\tau_{Step}^{max}$   | 60 seconds    | Maximum timeout for a single step              | <!-- **`MaxStepTimeout`** -->
+| **`ExtractionDelay`** | 3 seconds     | Extra delay to fetch transactions from mempool |
+| **`MaxTxSetSize`**    | 825000        | Maximum size of transaction set in a block     |
+| $VCPool$              | 64            | Total credits in a voting committee            |
+| $Quorum$              | 43            | Quorum threshold ($VCPool \times \frac{2}{3}$) |
+| $MaxSteps$            | 213           | Maximum number of steps for a single round     |
+| $EPOCH$               | 2160          | Epoch duration in number of blocks             |
+
+
+<!-- TODO: Motivate MaxTxSetSize = 825000  -->
+<!-- Will be removed
+| **`MaxBlockTime`**      | 360 seconds   | ?                             | 
+-->
+
+**Context Variables**
+| Name                  | Description                          |
+|-----------------------|--------------------------------------|
+| $v$                   | Protocol version number              |
+| $\mathcal{N}$                   | Node running the protocol            |
+| $pk_\mathcal{N}$                | PubKey of the node provisioner       |
+| $\mathcal{B_{tip}}$   | Current chain tip (last block)       |
+| $r$                   | Current consensus round              |
+| $s$                   | Current consensus step               | <!-- TODO: replace $s$ with iteration $i$ ? -->
+| $\tau_{Attestation}$  | Current timeout for Attestation      |
+| $\tau_{Reduction_1}$  | Current timeout for First Reduction  |
+| $\tau_{Reduction_2}$  | Current timeout for Second Reduction |
+
+<!-- This are included in the previous block
+| **`prevHash`**          | Previous block's hash       |
+| **`prevTimestamp`**     | Previous block's timestamp  |
+| **`prevSeed`**          | Previous block's seed       | -->
+
+
+$\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $\tau_{Step}$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)).
+
+
+
 ## Consensus Algorithm
 <!-- TODO -->
 ### SAIteration
@@ -238,3 +248,6 @@ $(\mathcal{H}_\mathcal{M},\_,\mathcal{B}_r^i,\sigma_\mathcal{M}) \leftarrow \mat
 We use $\tau_{Now}$ to denote the current time in UNIX format.
 -->
 
+<!-- LINKS -->
+[cp]: #consensus-parameters
+[ds]: ./sortition/
