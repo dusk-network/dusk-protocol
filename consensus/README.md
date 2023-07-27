@@ -108,11 +108,11 @@ The SA protocol is executed by nodes by means of message exchange. There are fou
 
 We denote a consensus message $\mathcal{M}$ as:
 
-$$\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_\mathcal{M}, f_1,\dots,f_n),$$
+$$`\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_\mathcal{M}, f_1,\dots,f_n),`$$
 <!-- $$\mathsf{m} = (\mathsf{h}_\mathsf{m}, \sigma_\mathsf{m}, f_1,\dots,f_n),$$
  -->
 
-where $\mathcal{H}_\mathcal{M}$ is the message header, $\sigma_\mathcal{M}$ is the signature of the sender, and $f_1, \dots, f_n$ are the fields specific to the message type.
+where $`\mathcal{H}_\mathcal{M}`$ is the message header, $`\sigma_\mathcal{M}`$ is the signature of the sender, and $f_1, \dots, f_n$ are the fields specific to the message type.
 
 In the following, we describe both the header and signature in detail.
 
@@ -163,7 +163,7 @@ $Msg(Type, f_1,\dots,f_2):$
 3. $\mathcal{M} = (\mathcal{H}_\mathcal{M}, \sigma_{\mathcal{M}}, f_1, \dots, f_n)$
 4. $output \text{ } \mathcal{M}$
 
-$Type$ indicate the actual message ($NewBlock$,$Reduction$, or $Agreement$).
+$Type$ indicate the actual message ($NewBlock$, $Reduction$, or $Agreement$).
 In case of $Reduction$, the parameter $f_1$, i.e. the vote $v$, is assigned to $BlockHash$ in the header.
 
 
