@@ -1,9 +1,10 @@
+ <!-- TODO: define functions ExtractGenerator() and ExtractCommittee() -->
 # Attestation Phase
 *Attestation* is the first phase in an [*SA iteration*](../README.md#workflow).
-In this phase, a selected Provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
+In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 
 ## Phase Overview
-Each provisioner node first executes the [*Deterministic Sortition*](../sortition/) algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $NewBlock$ message.
+Each provisioner node first executes the [*Deterministic Sortition*](../sortition/) algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $\mathsf{NewBlock}$ message.
 Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*](../reduction/) phase, where it will vote on the block validity. All other blocks are discarded.
 
 If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
@@ -12,14 +13,14 @@ If the timeout expires, it moves to Reduction with an empty candidate block ($NI
 <!-- TODO: Block Generator -->
 
 ### Candidate Block
-A candidate block is the block generated in the Attestation step by the extracted Provisioner. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+A candidate block is the block generated in the Attestation step by the extracted provisioner. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
-Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathcal{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration.
+Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration.
 
-Note that we simplify this notation to simply $\mathcal{B}^c$ when this does not generate
+Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate
 
 ### NewBlock Message
-The $NewBlock$ message is used by a block generator to broadcast a candidate block.
+The $\mathsf{NewBlock}$ message is used by a block generator to broadcast a candidate block.
 
 The message has the following structure:
 
@@ -30,7 +31,7 @@ The message has the following structure:
 | $Candidate$ | [*Block*][b]          |           | Candidate block       |
 | $Signature$ | BLS Signature         | 48 bytes  | Message signature     |
 
-The $NewBlock$ message has a variable size of 217 bytes plus the block size.
+The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block size.
 
 ## Attestation Algorithm
 ***Parameters***: 
@@ -39,50 +40,50 @@ The $NewBlock$ message has a variable size of 217 bytes plus the block size.
 ***Algorithm***:
 1. Extract the block generator ($G$) [*DS*][ds]$(R,S,1)$
 2. If this node is the block generator:
-   1. Generate candidate block $\mathcal{B}^c$ [ [_GenerateBlock_()](#generateblock) ]
-   2. Create $NewBlock$ message $\mathcal{M}^B$ containing $\mathcal{B}^c$
-   3. Broadcast $\mathcal{M}^B$
-   4. Execute first $Reduction$ with $\mathcal{B}^c$
+   1. Generate candidate block $\mathsf{B}^c$ [ [_GenerateBlock_()](#generateblock) ]
+   2. Create $\mathsf{NewBlock}$ message $\mathsf{M}^B$ containing $\mathsf{B}^c$
+   3. Broadcast $\mathsf{M}^B$
+   4. Execute first *Reduction* with $\mathsf{B}^c$
 3. Otherwise:
    1. Start Attestation timeout
    2. Loop:
-      1. If a $NewBlock$ message $\mathcal{M}^B$ is received for this round and step:
-         1. If $\mathcal{M}^B$'s signature is valid
-         2. and $\mathcal{M}^B$'s signer is $G$
-         3. and $\mathcal{M}^B$'s $BlockHash$ corresponds to $Candidate$
-            1. Propagate $\mathcal{M^B}$
-            2. Execute first $Reduction$ with $Candidate$
+      1. If a $\mathsf{NewBlock}$ message $\mathsf{M}^B$ is received for this round and step:
+         1. If $\mathsf{M}^B$'s signature is valid
+         2. and $\mathsf{M}^B$'s signer is $G$
+         3. and $\mathsf{M}^B$'s $BlockHash$ corresponds to $Candidate$
+            1. Propagate $\mathsf{M}^B$
+            2. Execute first *Reduction* with $Candidate$
       2. If timeout expired
-         1. Execute first $Reduction$ with $NIL$
+         1. Execute first *Reduction* with $NIL$
 
 ***Procedure***:
 
 $RunAttestation()$:
 1. $pk_{G} = $ [*DS*][ds]$(r,s,1)$
-2. $if \text{ } pk_\mathcal{N} == pk_{G}$:
-   1. $\mathcal{B}^c =$ [_GenerateBlock_](#generateblock)$()$
-   2. $\mathcal{M}^B =$ [*Msg*][msg]$(NewBlock, \eta_{\mathcal{B}_{r-1}}, \mathcal{B}^c)$
+2. $\texttt{if } pk_\mathcal{N} == pk_{G}$:
+   1. $\mathsf{B}^c =$ [_GenerateBlock_](#generateblock)$()$
+   2. $\mathsf{M}^B =$ [*Msg*][msg]$(NewBlock, \eta_{\mathsf{B}_{r-1}}, \mathsf{B}^c)$
       | Field       | Value                      | 
       |-------------|----------------------------|
-      | $Header$    | $\mathcal{H}_\mathcal{M}$  |
-      | $PrevHash$  | $\eta_{\mathcal{B}_{r-1}}$ |
-      | $Candidate$ | $\mathcal{B}^c$            |
-      | $Signature$ | $\sigma_\mathcal{M}$       |
-   3. $Broadcast(\mathcal{M}^B)$
-   4. [*RunReduction*][red]$(\mathcal{B}^c, 1)$
-3. $else$:
+      | $Header$    | $\mathsf{H}_\mathsf{M}$  |
+      | $PrevHash$  | $\eta_{\mathsf{B}_{r-1}}$ |
+      | $Candidate$ | $\mathsf{B}^c$            |
+      | $Signature$ | $\sigma_\mathsf{M}$       |
+   3. $Broadcast(\mathsf{M}^B)$
+   4. [*RunReduction*][red]$(\mathsf{B}^c, 1)$
+3. $\texttt{else }$:
    1. $\tau_{Start} = \tau_{Now}$
-   2. $loop$:  <!-- TODO: change this to while t_now <= t_start + timeout  -->
-      1. $if (\mathcal{M} {=} Receive(NewBlock,r,s) \ne NIL)$:
-         - $`(\mathcal{H}_\mathcal{M},\_,\mathcal{B}^c,\sigma_\mathcal{M}) \leftarrow \mathcal{M}`$
-         - $`\eta_{\mathcal{B}^c} = H_{SHA3}(\mathcal{H}^{\mathcal{B}^c})`$
-         - $`(pk_\mathcal{M},\_,\_,\eta_\mathcal{B}^\mathcal{M}) \leftarrow \mathcal{H}_\mathcal{M}`$
-         1. $`if \text{ }(\text{ } VerifySignature(\mathcal{M}) == true \text{ })`$
-         2. $`and \text{ }(\text{ } pk_\mathcal{M} == pk_{G} \text{ })`$
-         3. $`and \text{ } (\text{ }\eta_\mathcal{B}^\mathcal{M} == \eta_{\mathcal{B}^c} \text{ })`$:
-            1. $Propagate(\mathcal{M})$
-            2. [*RunReduction*][red]$(\mathcal{B}^c, 1)$
-      2. $if \text{ } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
+   2. $\texttt{loop}$:  <!-- TODO: change this to while t_now <= t_start + timeout  -->
+      1. $\texttt{if} (\mathsf{M} {=} Receive(NewBlock,r,s) \ne NIL)$:
+         - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}^c,\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
+         - $`\eta_{\mathsf{B}^c} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^c})`$
+         - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{B}^\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
+         1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) == true \text{ })`$
+         2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{G} \text{ })`$
+         3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^c} \text{ })`$:
+            1. $Propagate(\mathsf{M})$
+            2. [*RunReduction*][red]$(\mathsf{B}^c, 1)$
+      2. $\texttt{if } \tau_{Now} > \tau_{Start}+\tau_{Attestation}$
          1. [*RunReduction*][red]$(NIL, 1)$
 
 <p><br></p>
@@ -109,15 +110,15 @@ $GenerateBlock()$
 3. $`TxRoot_r = MerkleTree(\boldsymbol{tx}).Root`$
 4. $`i = \lfloor\frac{s}{3}\rfloor`$
 5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
-6. $`\mathcal{H}_{\mathcal{B}^c_{r,i}} = (v,r,\tau_{now},Gas^{\mathcal{B}},i,\eta_{\mathcal{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r)`$
+6. $`\mathsf{H}_{\mathsf{B}^c_{r,i}} = (v,r,\tau_{now},BlockGas,i,\eta_{\mathsf{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r)`$
     | Field           | Value               | 
     |-----------------|---------------------|
     | $Version$       | $V$                 |
     | $Height$        | $r$                 |
     | $Timestamp$     | $\tau_{now}$        |
-    | $GasLimit$      | $Gas^{\mathcal{B}}$ |
+    | $GasLimit$      | $BlockGas$ |
     | $Iteration$     | $i$                 |
-    | $PreviousBlock$ | $\eta_{\mathcal{B}_{r-1}}$ |
+    | $PreviousBlock$ | $\eta_{\mathsf{B}_{r-1}}$ |
     | $Seed$          | $Seed_r$            |
     | $Generator$     | $pk_\mathcal{N}$    |
     | $TxRoot$        | $TxRoot_r$          |
@@ -125,12 +126,12 @@ $GenerateBlock()$
 
     <!-- | $Header Hash           | string | -->
     <!-- | Certificate           |    ?   | -->
-7. $`\mathcal{B}^c_{r,i} = (\mathcal{H}, \boldsymbol{tx})`$
+7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                         | 
     |----------------|-------------------------------|
-    | $Header$       | $\mathcal{H}_{\mathcal{B}^c}$ |
+    | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
     | $Transactions$ | $\boldsymbol{tx}$            |
-8. $output \text{ } \mathcal{B}^c_{r,i}$
+8. $\texttt{output } \mathsf{B}^c_{r,i}$
 
 <p><br></p>
 

@@ -24,15 +24,15 @@
 | $Hash$               | Sha3-256 Hash | 32 bytes | Hash of the header (ex. this and $Certificate$)               |
 | $Certificate$           |    ?   |     ?     |    ?                                      |
 
-For the sake of readability, we refer to header fields omitting the $.Header$ as this does not generate any ambiguity. For instance $\mathcal{B}.Seed$ will correspond to $\mathcal{B}.Header.Seed$
-<!-- TODO: if we use $\mathcal{H}^B$ we can avoid this -->
+For the sake of readability, we refer to header fields omitting the $.Header$ as this does not generate any ambiguity. For instance $\mathsf{B}.Seed$ will correspond to $\mathsf{B}.Header.Seed$
+<!-- TODO: if we use $\mathsf{H}^B$ we can avoid this -->
 
 ### Notation
-We denote the header of a block $\mathcal{B}$ as $\mathcal{H}_\mathcal{B}$.
+We denote the header of a block $\mathsf{B}$ as $\mathsf{H}_\mathsf{B}$.
 
 We define a *block's hash* as:
 
-$$\eta_\mathcal{B} = H_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||\\PreviousBlock||Seed||Generator||TransactionRoot||StateRoot)$$
+$$\eta_\mathsf{B} = H_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||\\PreviousBlock||Seed||Generator||TransactionRoot||StateRoot)$$
 
 
 ## Transaction Structure
