@@ -117,7 +117,7 @@ $RunReduction( \mathsf{B}^c, rstep )$:
       1. $isValid$ = [*VerifyCandidate*](#verifycandidate)($\mathsf{B}^c$)
       2. $\texttt{if } isValid : v =$ *Hash*$(\mathsf{H}_{SHA3}^{\mathsf{B}^c})$
       3. $\texttt{else } : v = NIL$
-   3. $\mathsf{M}^R = $ [*Msg*][msg]$(Reduction, v)$
+   3. $`\mathsf{M}^R = `$ [*Msg*][msg]$(Reduction, v)$
       | Field            | Value                           | 
       |------------------|---------------------------------|
       | $Header$         | $\mathsf{H}_{\mathsf{M}^R}$   |

@@ -166,7 +166,7 @@ $VerifyAggregated(\mathsf{B}^c, round, step, \textbf{bs}, \sigma_\textbf{bs})$:
 $CreateAggrAgreement(S)$:
  - $`\mathsf{H}_{\mathsf{M}_1}, \_, \_ \leftarrow \mathsf{M}_1`$
  - $`\_, r, s, \_ \leftarrow \mathsf{H}_{\mathsf{M}_1}`$
- 1. $\textbf{sigs} = $ [*GetSignatures*](#getsignatures)$(S)$ \
+ 1. $`\textbf{sigs} = `$ [*GetSignatures*](#getsignatures)$(S)$ \
     $\sigma_{S} = Aggregate_{BLS}(\textbf{sigs})$
  2. $`\textbf{signers} = `$ [*GetSigners*](#getsigners)$(S)$ \
     $`\textbf{bs}_{S} = `$ [*BitSet*][bs]$(C_r^s, \textbf{signers})$
