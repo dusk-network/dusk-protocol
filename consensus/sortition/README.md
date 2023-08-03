@@ -1,3 +1,5 @@
+<!-- TODO: Define BlockGenerator() and Committee() procedures -->
+
 # Deterministic Sortition
 *Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](../README.md) protocol to select the *Block Generator* during the [*Attestation*](../attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*](../reduction) phases.
 
@@ -14,12 +16,12 @@ where $r$ and $s$ are the consensus round and step, respectively, $n$ is the num
 
 $$ m_i^C = (pk_i, influence), $$ 
 
-where $pk_i$ is the public key of the $i$th provisioner to be added to the committee by the $DS$ algorithm, and $influence$ is the number of credits it is assigned.
+where $pk_i$ is the public key of the $i\text{th}$ provisioner to be added to the committee by the $DS$ algorithm, and $influence$ is the number of credits it is assigned.
 
 Note that members are ordered by insertion (a provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have index $0$, and the last one will have index $n$.
 
 For the sake of readability, in the rest of this documentation, we will use the following notation:
-- $C[i]$ denotes the $i$th member of committee $C$. Formally:
+- $C[i]$ denotes the $i\text{th}$ member of committee $C$. Formally:
   - $C[i] = m_i^C$
 - $i_m^C$ denotes the index $i$ of member $m$ in committee $C$. Formally:
   - $i_m^C = i : m_i^C = m$
@@ -172,11 +174,11 @@ $`DE(Score_i^{r,s}, \mathbf{P})`$:
 #### CountCredits
 $CountCredits$ gets a list of members of a committee and return the cumulative amount of credits belonging to such members.
 
-- $\textbf{P}=[pk_1,\dots,pk_n]$: set of provisioner public keys
+- $\boldsymbol{P}=[pk_1,\dots,pk_n]$: set of provisioner public keys
 <!-- TODO: change to set of provisioners -->
 - $C$: voting committee
 
-$CountCredits(\textbf{P}, C)$:
+$CountCredits(\boldsymbol{P}, C)$:
 1. $sum = \sum_{i=0}^{n} m_{pk_i}^{C}.influence$
 2. $\texttt{output } sum$
 
