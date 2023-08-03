@@ -43,27 +43,13 @@ Thus, the $StepVotes$ structure has a total size of 56 bytes.
 Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*](../README.md#consensus-parameters)).
 
 
-#### Agreement Message
-| Field            | Type                  | Size      | Description                      |
-|------------------|-----------------------|-----------|----------------------------------|
-| $Header$         | [*MessageHeader*][mh] | 137 bytes | Consensus header                 |
-| $Signature$      | BLS Signature         | 48 bytes  | Message signature                |
-| $RVotes$ | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes |
-
-The $\mathsf{Agreement}$ message has total size of 297 bytes.
-
 ## Reduction Algorithm
 
 **Parameters**:
-- $\mathsf{B}^c$ : candidate block 
+- $Round$: round number
+- $Iteration$: iteration number
 - $rstep$ : Reduction step number (1 or 2)
-- [Consensus Parameters](../README.md#parameters)
-
-**Environment**:
-- $\mathsf{V}^{1}$ : $StepVotes$ of first Reduction
-- $\mathsf{V}^{2}$ : $StepVotes$ of second Reduction
-<!-- TODO?: \mathsf{V}_{r,i}^1 -->
-
+- $\mathsf{B}^c$: candidate block
 
 **Algorithm**
 1. Extract voting committee for the step
@@ -84,92 +70,67 @@ The $\mathsf{Agreement}$ message has total size of 297 bytes.
          2. Set vote $v$ to $\mathsf{M}$'s $BlockHash$ (candidate or $NIL$)
          3. Aggregate $v$ to corresponding aggregated signature
          4. Add sender to corresponding voters bitset
-         5. If aggregated $v$ votes reached a quorum
-            1. If this is the first Reduction:
-               1. Set $\mathsf{V}^1$ to aggregated $v$
-               2. Start second Reduction
-            2. Otherwise:
-               1. Set $\mathsf{V}^2$ to aggregated $v$
-               2. Create $\mathsf{Agreement}$ message with both $StepVotes$
-               3. Broadcast message
-               4. Start new consensus iteration
+         5. If aggregated $v$ votes reached a quorum:
+            1. Create $StepVotes$ $\mathsf{V}$ with aggregated $v$
+            2. Output $\mathsf{V}$
  5. If timeout expired:
     1. Increase Reduction timeout
-    2. If it's the first Reduction:
-       1. Set $\mathsf{V}^1$ to $NIL$
-       2. Start the second Reduction <!-- This is kind of useless -->
-    3. Otherwise:
-       1. Start new consensus iteration
+    2. Output $NIL$
 
 **Procedure**
 
-$RunReduction( \mathsf{B}^c, rstep )$:
+$Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 - $\sigma^{\mathsf{B}^c}$ : aggregate signature for candidate
 - $\boldsymbol{vbs}^{\mathsf{B}^c}$ : Voters bitset for candidate
 - $\sigma^{NIL}$ : aggregate signature for vote NIL
 - $\boldsymbol{vbs}^{NIL}$ : Voters bitset for NIL
+- $r = Round$
+- $s = (Iteration-1) \times 3 + 1 + rstep$
 1. $C$ = [*DS*][dsa]$(r,s,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
-3. $\texttt{if } pk_\mathcal{N} \in C$
-   1. $\texttt{if } \mathsf{B}^c == NIL$
+3. $\texttt{if } (pk_\mathcal{N} \in C):$
+   1. $\texttt{if } (\mathsf{B}^c == NIL):$
       1. $v = NIL$
-   2. $\texttt{else }$
-      1. $isValid$ = [*VerifyCandidate*](#verifycandidate)($\mathsf{B}^c$)
-      2. $\texttt{if } isValid : v =$ *Hash*$(\mathsf{H}_{SHA3}^{\mathsf{B}^c})$
-      3. $\texttt{else } : v = NIL$
-   3. $`\mathsf{M}^R = `$ [*Msg*][msg]$(Reduction, v)$
-      | Field            | Value                           | 
-      |------------------|---------------------------------|
-      | $Header$         | $\mathsf{H}_{\mathsf{M}^R}$   |
-      | $Signature$      | $\sigma_{\mathsf{M}^R}$        |
+   2. $\texttt{else}:$
+      1. $isValid$ = [*VerifyCandidate*](#verifycandidate)$(\mathsf{B}^c)$
+      2. $\texttt{if } (isValid = true) : v =$ *Hash*$`_{SHA3}(\mathsf{H}^{\mathsf{B}^c})`$
+      3. $\texttt{else}: v = NIL$
+   3. $`\mathsf{M}^R = `$ [*Msg*][msg]$(\mathsf{Reduction}, v)$
+      | Field       | Value                       | 
+      |-------------|-----------------------------|
+      | $Header$    | $\mathsf{H}_{\mathsf{M}^R}$ |
+      | $Signature$ | $\sigma_{\mathsf{M}^R}$     |
 
       <!-- Add | $Vote$ | $v$ | -->
 
-   4. [*SendReduction*](#sendreduction)($v$)
-4. $\texttt{while} \text{ } \tau_{now} \le \tau_{Start}+\tau_{Reduction_1}$ :
-   1. $\texttt{if } \mathsf{M}^R =$ [*Receive*][msr]$(Reduction,r,s) \ne NIL$
-      1. $\texttt{if } pk_{\mathsf{M}^R} \in C$
+   4. [*Broadcast*][mx]$(\mathsf{M}^R)$
+4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Reduction_1}):$
+   1. $\texttt{if } (\mathsf{M}^R =$ [*Receive*][mx]$(\mathsf{Reduction},r,s) \ne NIL):$
+      1. $\texttt{if } (pk_{\mathsf{M}^R} \in C)$
       <!-- TODO?: S = pk_M  set "Sender" -->
-      2. $\texttt{and }$*VerifySignature*$(\mathsf{M}^R) = true$
-         1. [*Propagate*][kad]()($\mathsf{M}^R$)
+      2. $\texttt{and }($*VerifySignature*$(\mathsf{M}^R) = true):$
+         1. [*Propagate*][mx]($\mathsf{M}^R$)
          2. $v = \mathsf{H}_{\mathsf{M}^R}.BlockHash$
          3. *AggregateSig*$(\sigma^v, \sigma_{\mathsf{M}^R})$
          4. $m = m_{pk_{\mathsf{M}^R}}$ \
             $\boldsymbol{vbs}^{v}[i_m^C] = 1$
-         5. $\texttt{if}$ *countSetBits*$(\boldsymbol{vbs}^v) \ge Quorum$
-            1. $\texttt{if } rstep = 1$
-               1. $\mathsf{V}^1 = (\sigma^v, \boldsymbol{vbs}^v)$
-               2. *RunReduction*$(\mathsf{B}^c, 2)$
-            2. $\texttt{else }$
-               1. $\mathsf{V}^2 = (\sigma^v, \boldsymbol{vbs}^v)$
-               2. $\mathsf{M}^A =$ [*Msg*][msg]$(Agreement, [\mathsf{V}^1,\mathsf{V}^2])$
-               <!-- (\mathsf{H}_\mathsf{M},\sigma_\mathsf{M},[\mathsf{V}^1,\mathsf{V}^2])$ -->
-                  <!-- $\mathsf{Agreement}$ -->
-                  | Field       | Value                           | 
-                  |-------------|---------------------------------|
-                  | $Header$    | $\mathsf{H}_\mathsf{M}$       |
-                  | $Signature$ | $\sigma_\mathsf{M}$            |
-                  | $RVotes$    | $[\mathsf{V}^1,\mathsf{V}^2]$ |
+         5. $\texttt{if } ($*countSetBits*$(\boldsymbol{vbs}^v) \ge Quorum):$
+            1. $\mathsf{V} = (\sigma^v, \boldsymbol{vbs}^v)$
+            2. $\texttt{output } \mathsf{V}$
 
-               3. *Broadcast*$(\mathsf{M}^A)$
-               4. *NewIteration*$()$
-
- 5. $\texttt{if } \tau_{Now} \gt \tau_{Start}+\tau_{Reduction_{rstep}}$
+ 5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Reduction_{rstep}}):$
     1. *IncreaseTimeout*$(\tau_{Reduction_{rstep}})$
-    2. $\texttt{if } rstep = 1$
-       1. $\mathsf{V}^1 = \emptyset$
-       2. *RunReduction*$(\mathsf{B}^c, 2)$
-    3. $\texttt{else }$
-       1. *NewIteration*$()$
+    2. $\texttt{output } NIL$
 
 ---
 
 #### VerifyCandidate
+<!-- TODO: Replace with CheckBlockHeader or define common VerifyBlock -->
 *VerifyCandidate* returns $true$ if all candidate block header fields check out with respect to the current state (i.e., the $TIP$) and the candidate block's transactions. Otherwise it returns $false$.
 
 **Parameters**  :
   - $\mathsf{B}^c$: candidate block
-  - [Consensus Parameters](../README.md#parameters)
+  - [Consensus Parameters][cp]
 
 **Algorithm**:
 1. If $Version$ is $0$
@@ -187,15 +148,16 @@ $RunReduction( \mathsf{B}^c, rstep )$:
 **Procedure**:
 
 $VerifyCandidate(\mathsf{B}^c)$:
-1. $\texttt{if } \mathsf{B}^c.Version = 0$ 
-2. $\texttt{and } \mathsf{B}^c.Height = \mathsf{B}^{Tip}.Height$
-3. $\texttt{and } \mathsf{B}^c.Hash = \mathsf{H}_{\mathsf{B}^c}$
-4. $\texttt{and } \mathsf{B}^c.PreviousBlock = \mathsf{B}^{Tip}.Hash$
-5. $\texttt{and } \mathsf{B}^c.Timestamp \ge \mathsf{B}^{Tip}.Timestamp$
-6. $\texttt{and } \mathsf{B}^c.TransactionRoot = MerkleTree(\mathsf{B}^c.Transactions).Root$
-7. $\texttt{and } \mathsf{B}^c.StateRoot \ge StateTransition(\mathsf{B}^c.Transactions)$
+- $newState =$ *ExecuteTransactions*$(State, \mathsf{B}^c.Transactions), BlockGas, pk_{G_\mathsf{B}^c})$
+1. $\texttt{if } (\mathsf{B}^c.Version = 0$)
+2. $\texttt{and } (\mathsf{B}^c.Height = \mathsf{B}^{Tip}.Height)$
+3. $\texttt{and } (\mathsf{B}^c.Hash =$ *Hash*$`_{SHA3}$(\mathsf{H}_{\mathsf{B}^c}))`$
+4. $\texttt{and } (\mathsf{B}^c.PreviousBlock = \mathsf{B}^{Tip}.Hash)$
+5. $\texttt{and } (\mathsf{B}^c.Timestamp \ge \mathsf{B}^{Tip}.Timestamp)$
+6. $\texttt{and } (\mathsf{B}^c.TransactionRoot = MerkleTree(\mathsf{B}^c.Transactions).Root)$
+7. $\texttt{and } (\mathsf{B}^c.StateRoot = newState.Root):$
    1. $\texttt{output } true$
-8. $\texttt{else }$
+8. $\texttt{else}:$
    1. $\texttt{output } false$
 
 
@@ -203,10 +165,10 @@ $VerifyCandidate(\mathsf{B}^c)$:
 [^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
 
 <!-- LINKS -->
+[cp]: ../README.md#consensus-parameters
 [ds]: ../sortition/README.md
 [dsa]: ../sortition/README.md#deterministic-sortition-ds
 [mh]: ../README.md#message-header
-[msr]: ../README.md#send-and-receive
-[msg]: ../README.md#create-message
+[msg]: ../README.md#message-creation
 [sv]: #stepvotes
-[kad]: ../../network
+[mx]: ../README.md#message-exchange

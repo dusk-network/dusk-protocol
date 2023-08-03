@@ -1,8 +1,13 @@
-<!-- TODO: Describe main consensus loop -->
-<!-- TODO: Define Provisioners and stake -->
-<!-- TODO: Define State := current blockchain -->
-<!-- TODO: mention the algorithm assumes the running node only contains a single provisioner key, although it can be easily modified to handle multiple keys -->
-<!-- TODO: rename NewBlock to Candidate -->
+<!-- TODO: rename NewBlock to Candidate ? -->
+<!-- TODO: use \rightarrow to indicate procedure output ?-->
+<!-- TODO: add a Crypto Tools section -->
+<!-- TODO: do not use bold for vectors. choose another font, so we can use bold words in text without confusion -->
+<!-- TODO: add *finality* definition (and possibly block field) -->
+<!-- TODO: better define State (differentiate between node state and system state?) 
+  - Provisioner is Net State
+  - Tip is Chain state
+-->
+
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
@@ -17,21 +22,28 @@ In this documentation we will use the following notation:
   - variables, with lowercase letters (e.g. a variable $v$)
   - simple objects, with uppercase letters (e.g. a committee $C$)
   - consensus parameters, state variables, and object fields, with whole words, (e.g. the $Quorum$ parameter)
-- $\mathbf{Bold}$ is used for vectors (e.g. a bitset $\mathbf{bs}$)
+- $\boldsymbol{Bold}$ is used for vectors (e.g. a bitset $\boldsymbol{bs}$)
 - $\mathcal{Calligrafic}$ is used for actors (e.g. a provisioner $\mathcal{P}$)
 - $\mathsf{Sans Serif}$ is used for structures (e.g. a block $\mathsf{B}$, or a $\mathsf{Reduction}$ message)
 - *Italic* is used for functions names (e.g. the *Hash* function)
+
+Moreover, we will conventionally use the following symbols:
 - $pk$ and $sk$ are used to denote public and secret keys, respectively
 - $\sigma$ characters are used for signatures (e.g. a message signature $\sigma_{M}$)
 - $\eta$ characters are used for hash digests (e.g. a block hash $\eta_B$)
 - $\tau$ characters are used for time variables (e.g. the Attestation timeout $\tau_{Attestation}$)
+- $G$ is used to the block generator <!-- TODO calligrafic? -->
+- $\mathsf{B}^c$ is used for the candidate block
+- $\mathsf{B}^w$ is used for the winning block
 
 While we can use the dot notation to specify a structure field (e.g. $\mathsf{B}.Header$), we will prefer the use of subscript when convenient (e.g. $\mathsf{H_B} = \mathsf{B}.Header$). Generally speaking, we use subscripts to specify the object or actor to which a variable belongs to (e.g. a block's hash $\eta_\mathsf{B}$), to indicate numeric order (e.g. the $i\text{th}$ block $`\mathsf{B}_i`$), or to specify a particular instantiation (e.g. *Hash*$`_{BLS}`$). In the case of vectors, we also use the standard notation $[i]$ to indicate the $i\text{th}$ element.
 
-We use $\leftarrow$ to assign object fields to separate variables. For instance, $\mathsf{H_B}, \textbf{txs} \leftarrow \mathsf{B}$ will assign $\mathsf{B}.Header$ to $\mathsf{H_B}$, and $B.Transactions$ to $\textbf{txs}$. The assignation follows the field order in the related structure definition. If a field is not needed in the algorithm, we ignore it by assigning it to a null variable $`\_`$.
+We use $\leftarrow$ to assign object fields to separate variables. For instance, $\mathsf{H_B}, \boldsymbol{txs} \leftarrow \mathsf{B}$ will assign $\mathsf{B}.Header$ to $\mathsf{H_B}$, and $B.Transactions$ to $\boldsymbol{txs}$. The assignation follows the field order in the related structure definition. If a field is not needed in the algorithm, we ignore it by assigning it to a null variable $`\_`$.
+
 
 ## Protocol Overview
 The SA protocol is executed in ***rounds***, with each round adding a new block to the chain.
+Within each round we refer to the new block, generated and voted up by the committees, as the *candidate* block. A candidate block which reaches an agreement is called a *winning* block.
 
 Each round is composed of three phases:
   1. ***Attestation***: in this phase, a *generator*, extracted via [*DS*][ds], creates a new candidate block and broadcasts it to the network using a $\mathsf{NewBlock}$ message;
@@ -40,17 +52,16 @@ Each round is composed of three phases:
 
   3. ***Ratification***: in this phase, all generated $\mathsf{Agreement}$ messages are collected; if messages for a specific candidate block reach a quorum (according to the second-reduction committee vote allocation), the candidate block is added to the chain along with a *certificate* containing the quorum votes from the $\mathsf{Agreement}$ message. This effectively ends the current round.
 
-As the *Reduction* phase can fail, multiple repetitions of the *Attestation*/*Reduction* sequence can occur within a single round. We call each such repetition an ***iteration***, and each phase in the repetition a ***step***.
+As both the *Attestation* and *Reduction* phases can fail, the *Attestation*/*Reduction* sequence can be executed multiple times within a single round (using different provisioners). We call each repetition of such sequence an ***iteration***, and each phase in the repetition a ***step***.
 Note that since the *Reduction* phase has two consecutive votes, it is composed of two steps. Therefore, a single iteration is composed of three steps: (1) Attestation, (2) first Reduction, and (3) second Reduction.
 
-A maximum number of 71 iterations (213 steps) is allowed to add a new valid block to the chain. If this number is exceeded, the network is deemed unsafe and the consensus process is halted.
+A maximum number of 71 iterations (213 steps) is allowed to agree on a new valid block to add to the chain. If this number is exceeded, the network is considered unsafe and the consensus process is halted. Both step and iteration count starts from 1. 
 
 
 ## Provisioners and Stakes
 <!-- TODO: link to Stake Contract -->
 <!-- TODO: mention minimum amount of stake -->
 A provisioner is a user that locked a certain amount of their Dusk coins as *stake* (see [*Stake Contract*]()).
-
 Formally, we define a *provisioner* ${P}$ as:
 
 $${P}=(pk_P,\mathbf{Stakes}_P),$$
@@ -156,22 +167,45 @@ Messages received before calling the *Receive* function are stored in a queue an
 **Propagate**
 The *Propagate* function represents a re-broadcast operation. It is used by a node when receiving a message from the network and propagating to other nodes.
 
+
+### Agreement Message
+<!-- TODO: add description -->
+
+| Field       | Type                  | Size      | Description                      |
+|-------------|-----------------------|-----------|----------------------------------|
+| $Header$    | [*MessageHeader*][mh] | 137 bytes | Consensus header                 |
+| $Signature$ | BLS Signature         | 48 bytes  | Message signature                |
+| $RVotes$    | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes |
+
+The $\mathsf{Agreement}$ message has total size of 297 bytes.
+
+
 ## Consensus Parameters
-<!-- DOING -->
-Consensus parameters are common values used throughout the whole consensus protocol. They are divided into *global parameters* and *state variables*. Global parameters are network-wide parameters used by all nodes of the network using a particular protocol version. Context variables are local to each node and are used to both identify the node's provisioner and handle the local consensus state.
+Consensus parameters are common values that are used throughout the whole consensus protocol. These values are shared by all SA procedures.
+
+Parameters are divided into:
+- *global parameters*: network-wide parameters used by all nodes of the network using a particular protocol version;
+- *chain state*: represent the current system state, as per result of the execution of all transactions in the blockchain;
+- *round state*: local variables used to handle the consensus state 
+
+Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^3] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
 
 **Global Parameters**
-| Name                | Value         | Description                                    |
-|---------------------|---------------|------------------------------------------------|
-| $CommitteeCredits$            | 64            | Total credits in a voting committee            |
-| $Quorum$            | 43            | Quorum threshold ($CommitteeCredits \times \frac{2}{3}$) |
-| $MaxSteps$          | 213           | Maximum number of steps for a single round     |
-| $InitTimeout$       | 5             | Initial step timeout (in seconds)              |
-| $MaxTimeout$ | 60            | Maximum timeout for a single step (in seconds) |
-| $Epoch$             | 2160          | Epoch duration in number of blocks             |
-| $Dusk$              | 1.000.000.000 | Value of one unit of Dusk (in lux)             |
-| $BlockGas$ | 5.000.000.000 | Gas limit for a single block                   |
-| $MaxTxSetSize$      | 825000        | Maximum size of transaction set in a block     |
+All global values (except for the genesis block) refer to version $0$ of the protocol.
+
+| Name               | Value          | Description                                     |
+|--------------------|----------------|-------------------------------------------------|
+| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                    |
+| $Version$          | 0              | Protocol version number                         |
+| $CommitteeCredits$ | 64             | Total credits in a voting committee             |
+| $Quorum$           | 43             | Quorum threshold ($CommitteeCredits \times \frac{2}{3}$) |
+| $MaxIterations$    | 71             | Maximum number of iterations for a single round |
+| $InitTimeout$      | 5              | Initial step timeout (in seconds)               |
+| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)  |
+| $Epoch$            | 2160           | Epoch duration in number of blocks              |
+| $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)              |
+| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                    |
+| $MaxTxSetSize$     | 825000         | Maximum size of transaction set in a block      |
 
 <!-- TODO: MaxTxSetSize is never used (here). check in the code -->
 <!-- TODO: Motivate MaxTxSetSize = 825000  -->
@@ -179,41 +213,230 @@ Consensus parameters are common values used throughout the whole consensus proto
 | **`MaxBlockTime`**      | 360 seconds   | ?                             | 
 -->
 
-**State Variables**
-<!-- TODO: replace $Step_{SA}$ with $Iteration$ ? -->
+**Chain State**
+| Name                 | Description                             |
+|----------------------|-----------------------------------------|
+| $Tip$                | Current chain tip (last block)          |
+| $State$              | Current system state                    |
+| $Provisioners$       | Current set of (eligible) provisioners  |
+
+**Round State**
 | Name                 | Description                          |
 |----------------------|--------------------------------------|
-| $\mathcal{N}$        | Node (provisioner) running the protocol            |
-| $pk_\mathcal{N}$     | PubKey of the node provisioner       |
-| $Version$            | Protocol version number              |
-| $Tip$                | Current chain tip (last block)        |
-| $Round_{SA}$         | Current consensus round              | <!-- TODO: replace $r$ with $Round$ -->
-| $Step_{SA}$          | Current consensus step               | <!-- TODO: replace $s$ with $Step$ ? -->
+| $Round_{SA}$         | Round number                         |
+| $Iteration_{SA}$     | Iteration number                     |
+| $\mathsf{B}^c$       | Candidate block                      |
+| $\mathsf{B}^w$       | Winning block                        |
+| $\mathsf{V}^1$       | StepVotes of First Reduction         |
+| $\mathsf{V}^2$       | StepVotes of Second Reduction        |
 | $\tau_{Attestation}$ | Current timeout for Attestation      |
 | $\tau_{Reduction_1}$ | Current timeout for First Reduction  |
 | $\tau_{Reduction_2}$ | Current timeout for Second Reduction |
 
-$\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)).
 
-<!-- TODO: Add "Initial value", if not included in main loop algorithm -->
+<!-- $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->
 
-## Consensus Algorithm
-<!-- TODO -->
+## SA Algorithm
+The SA consensus algorithm is defined by the *SAConsensus* procedure, which executes an SA round (*SARound*) for each new block to generate. In turn, the *SARound* procedure runs a loop of *SAIteration*s in parallel with the *Ratification* procedure. As soon as a winning block ($\mathsf{B}^w$) for the round is produced, the state is updated (*StateTransition*), the $Tip$ is set to the winning block, and a new round begins.
+
+### SAConsensus
+The *SAConsensus* procedure is the entry point of a consensus node. Upon booting, the node check if there is a local state saved and, if so, loads it. Otherwise, it starts from the *Genesis Block*. Then, it probes the network to check if it is in sync or not with the blockchain. If not, it starts a synchronization procedure. When in sync, it executes the consensus algorithm per rounds. At the end of each round, if a winning block has been produced, it updates the state and starts a new round. 
+
+If, at any time, the node falls behind the network, the synchronization procedure is run before restarting the rounds loop.
+
+***Algorithm***
+
+1. Load local state
+2. If there is a saved state
+   1. Check state validity
+   2. Set $State$ to loaded state
+   3. Set $Tip$ to last block
+3. Otherwise
+   1. Set $Tip$ to Genesis Block
+4. Loop:
+   1. Check sync state
+   2. If in sync
+      1. Set $Round_{SA}$ to $Tip$'s height plus one
+      2. Execute Round $Round_{SA}$ to produce winning block $\mathsf{B}^w$
+      3. If no winning block has been produced, halt
+      4. Execute state transition
+   3. Otherwise
+      1. Synchronize
+
+***Procedure***
+
+$\textit{SAConsensus}()$
+1. $S =$ *LoadState*$()$
+2. $\texttt{if } (S \ne NIL):$
+   1. *ValidateState*$(S)$
+   2. $State = S.State$
+   3. $Tip = S.Tip$
+3. $\texttt{else}:$
+   1. $Tip = GenesisBlock$
+4. $\texttt{loop}:$
+   1. $inSync =$ *CheckSync*$()$
+   2. $\texttt{if } (inSync = true):$
+      1. $Round_{SA} = Tip.Height + 1$
+      2. $\mathsf{B}^w =$ [*SARound*](#saround)$(Round_{SA})$
+      3. $\texttt{if } (\mathsf{B}^w = NIL):$ *Stop*$()$
+      4. $State =$ [*StateTransition*](#statetransition)$(\mathsf{B}^w)$
+   3. $\texttt{else}:$
+      1. *SyncChain*$()$
+
+
+### SARound
+The *SARound* procedure handles the execution of a consensus round: first, it initializes the *Round State* variables; then, it starts the Ratification process in background, and starts executing SA iterations. If, at any time, a winning block is produced by the Ratification process, the round stops.
+
+***Algorithm***
+
+1. Set variables:
+   - Initialize Attestation and Reduction timeouts
+   - Set candidate and winning block to $NIL$
+   - Set iteration to 1
+2. Start Ratification process
+3. While iteration number is less than $MaxIterations$ and no winning block has been produced
+   1. Execute SA iteration
+4. If we reached $MaxIterations$ without a winning block
+   1. Output $NIL$
+5. Otherwise, broadcast the winning block <!-- TODO: move this to SAConsensus ? -->
+6. Output the block
+
+***Procedure***
+
+$\textit{SARound}(Round_{SA}):$
+1. $\texttt{set }$:
+   - $\tau_{Attestation}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
+   - $\mathsf{B}^c, \mathsf{B}^w = NIL$
+   - $Iteration_{SA} = 1$
+2. [*Ratification*][rat]$(Round_{SA})$
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} < MaxIterations$)
+   1. [*SAIteration*](#saiteration)$(Round_{SA}, Iteration_{SA})$
+4. $\texttt{if } (\mathsf{B}^w = NIL)$
+   1. $\texttt{output } NIL$
+5. [*Broadcast*][mx]$(\mathsf{B}^w)$
+6. $\texttt{output } \mathsf{B}^w$
+
+
 ### SAIteration
-<!-- TODO NewIteration -->
+This procedure executes a sequence of *Attestation*, to generate a new candidate block ($\mathsf{B}^c$) for the current round and iteration, and two *Reduction* steps, to vote on the candidate block (if any). Quorum votes of first and second Reduction (if any) are stored in $\mathsf{V}^1$ and $\mathsf{V}^2$, respectively.
+
+***Algorithm***
+1. Run Attestation to generate *candidate* block $\mathsf{B}^c$
+2. Run first Reduction on $\mathsf{B}^c$
+3. Run second Reduction on $\mathsf{B}^c$
+4. If both Reduction votes are not $NIL$ and this node $\mathcal{N}$ is in the second Reduction committee:
+   1. Create $\mathsf{Agreement}$ message $\mathsf{M}^A$ with both Reduction votes
+   2. Broadcast message $\mathsf{M}^A$
+
+***Procedure***
+
+$SAIteration(Round, Iteration)$
+- $r2Step = (Iteration{-}1) \times 3 + 3$
+- $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
+1. $\mathsf{B}^c =$ [*Attestation*][att]$(Round, Iteration)$
+2. $\mathsf{V}^1 =$ [*Reduction*][red]$(Round, Iteration, 1, \mathsf{B}^c)$
+3. $\mathsf{V}^2 =$ [*Reduction*][red]$(Round, Iteration, 2, \mathsf{B}^c)$
+4. $\texttt{if } (pk_\mathcal{N} \in C^{R2})$ \
+   $\texttt{and } (\mathsf{V}^1 \ne NIL) \texttt{ and } (\mathsf{V}^2 \ne NIL):$
+    1. $\mathsf{M}^A =$ [*Msg*][msg]$(\mathsf{Agreement}, [\mathsf{V}^1,\mathsf{V}^2])$
+        | Field       | Value                         | 
+        |-------------|-------------------------------|
+        | $Header$    | $\mathsf{H}_\mathsf{M}$       |
+        | $Signature$ | $\sigma_\mathsf{M}$           |
+        | $RVotes$    | $[\mathsf{V}^1,\mathsf{V}^2]$ |
+
+    2. [*Broadcast*][mx]$(\mathsf{M}^A)$
+
+### StateTransition
+*StateTransition* updates the system $State$ by executing the transactions in the winning block $\mathsf{B}^w$, which includes the $Provisioners$ set, and sets the block as the new $Tip$. If agreement was reached in the first iteration, the block is set as *final*.
+
+***Algorithm***
+
+1. Extract $Transactions$, $GasLimit$, and $Generator$ from winning block $\mathsf{B}^w$
+2. Generate new state ($newState$) by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
+3. Update $Provisioners$ set
+4. Output $newState$
+
+***Procedure***
+
+$\textit{StateTransition}(\mathsf{B}^w)$
+1. $\texttt{set }$:
+   - $\boldsymbol{txs} = \mathsf{B}^w.Transactions$
+   - $gas = \mathsf{B}^w.GasLimit$
+   - $pk_{G} = \mathsf{B}^w.Generator$
+2. $newState =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{G})$
+3. $Provisioners = newState.Provisioners$
+4. $\texttt{if } (Iteration = 1):$ *MakeFinal*$(\mathsf{B}^w)$
+5. $Tip = \mathsf{B}^w$
+
+
+<!-- TODO Sync
+when accepting block from the network
+  - check header
+  - check certificate 
+-->
 
 ## Common Subroutines
-#### IncreaseTimeout
-`IncreaseTimeout` increases a step timeout up to the maximum step timeout ($MaxTimeout$).
+The procedures defined here are common subroutines used throughout the consensus protocol.
 
-Input: $\tau_{Step}$
+### CheckBlockHeader
+*CheckBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
-Procedure:
-- If $\tau_{Step} \times 2 < MaxTimeout$
-  - $\tau_{Step} = \tau_{Step} \times 2$
-- Else
-  - $\tau_{Step} = MaxTimeout$
+**Parameters**  :
+- $\mathsf{B}$: block to verify
+- $\mathsf{B}^p$: previous block
 
+**Algorithm**:
+1. Check $Version$ is $0$
+2. Check $Height$ is $\mathsf{B}^p$'s height plus 1
+3. Check $Hash$ is the header's hash
+4. Check $PrevBlock$ is $\mathsf{B}^p$'s hash
+5. Check $Timestamp$ is higher than $\mathsf{B}^p$'s timestamp
+6. Check $Timestamp$ is not higher than $\mathsf{B}^p$'s timestamp plus $MaxBlockTime$ <!-- TODO: has this been removed? -->
+1. Check transaction root is correct with respect to the transaction set
+2. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+- If all checks passed
+  1. Output $true$
+- Otherwise
+  1. Output $false$
+
+**Procedure**:
+
+$CheckBlockHeader(\mathsf{B}, \mathsf{B}^p)$:
+- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions), BlockGas, pk_{G_\mathsf{B}})$
+- $\texttt{if }$
+  1. $(\mathsf{B}.Version = 0)$ 
+  2. $\texttt{and } (\mathsf{B}.Height = \mathsf{B}^p.Height)$
+  3. $\texttt{and } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$
+  4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
+  5. $\texttt{and } (\mathsf{B}.Timestamp \ge \mathsf{B}^p.Timestamp)$
+  6. $\texttt{and } (\mathsf{B}.Timestamp \le \mathsf{B}^p.Timestamp + MaxBlockTime)$
+  7. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
+  8. $\texttt{and } (\mathsf{B}^c.StateRoot = newState.Root):$
+     1. $\texttt{output } true$
+- $\texttt{else}:$
+   1. $\texttt{output } false$
+
+### CheckCertificate
+<!-- TODO : CheckBlockCertificate-->
+TBD
+
+**Parameters**
+- $\mathsf{B}$: block
+- $\mathsf{C}$: certificate
+
+$CheckCertificate(\mathsf{B},\mathsf{C})$
+
+### IncreaseTimeout
+*IncreaseTimeout* doubles a step timeout up to $MaxTimeout$.
+
+***Parameters***:
+- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Attestation$, $Reduction1$, or $Reduction2$)
+
+***Procedure***:
+
+$\textit{IncreaseTimeout}()$
+- $\tau_{Step} =$ *Max*$(\tau_{Step} \times 2, MaxTimeout)$
 
 <!-------------------- Footnotes -------------------->
 
@@ -221,7 +444,14 @@ Procedure:
 
 [^2]: A finality guarantee that is achieved through the accumulation of blocks over time, such that the probability of a block being reversed decreases exponentially as more blocks are added on top of it. This type of guarantee is in contrast to absolute finality, which is achieved when it is mathematically impossible for a block to be reversed.
 
+[^3]: For the sake of simplicity, we assume the node handle a single provisioner identity.
 
 <!-- LINKS -->
 [cp]: #consensus-parameters
 [ds]: ./sortition/
+[dsa]: ./sortition/README.md#deterministic-sortition-ds
+[att]: ./attestation/README.md#attestation-algorithm
+[red]: ./reduction/README.md#reduction-algorithm
+[rat]: ./ratification/README.md#ratification-algorithm
+[msg]: #message-creation
+[mx]: #message-exchange
