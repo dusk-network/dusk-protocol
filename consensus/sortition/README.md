@@ -76,11 +76,11 @@ The use of the modulo operation guarantees a provisioner is extracted within a s
 The *Seed* value is used to ensure the pseudo-randomicity and unpredictability of the score.
 
 This value is included in the [block header](../../blockchain/README.md#header-structure) and is updated in each block by the block generator. 
-Specifically, the $Seed$ of block $\mathsf{B}_h$ is set to the signature of the block generator $G$ on the seed of block $\mathsf{B}_{h-1}$.
+Specifically, the $Seed$ of block $`\mathsf{B}_h`$ is set to the signature of the block generator $G$ on the seed of block $`\mathsf{B}_{h-1}`$.
 
 Formally: 
 
-$$` Seed_h = Sign_{BLS}(sk_{G_h}, Seed_{h-1}).`$$
+$`$ Seed_h = Sign_{BLS}(sk_{G_h}, Seed_{h-1}).$`$
 
 As such, $Seed_h$ can only be computed by the generator of block $\mathsf{B}_h$. This prevents pre-calculating the score for future blocks, which in turn prevents predicting future block generators and committees.
 
@@ -122,7 +122,7 @@ $DS(r, s, credits)$:
 1. $C = \emptyset$
 2. $\texttt{for } P \texttt{ in } \mathbf{P}_r :$
    - $w_P = \sum_{i=0}^{|\mathbf{Stakes}_P|-1} \mathbf{Stakes}_P[i]$
-3. $W = \sum_{i=0}^{|\mathbf{P}_r|-1} w_{P_i} : P_i \in \mathbf{P}_r$
+3. $`W = \sum_{i=0}^{|\mathbf{P}_r|-1} w_{P_i} : P_i \in \mathbf{P}_r`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
    1. $Score_c^{r,s} = Int(Hash_{SHA3}( Seed_{r-1}||r||s||c)) \mod W$
    2. $\mathbf{P}_r' = SortByPK(\mathbf{P}_r)$
