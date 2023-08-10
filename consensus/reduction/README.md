@@ -1,11 +1,11 @@
 # Reduction Phase
-In the Reduction phase, the *candidate* block produced in the [Attestation](../attestation/) phase is validated by a subset of [provisioner](../README.md#participants), who verify the block and cast a vote in favor or against it. The phase is divided into two steps, each of which has a committee (using [*Deterministic Sortition*][ds]) vote on the validity of the block.
+In the Reduction phase, the *candidate* block produced in the [Attestation][att] phase is validated by a subset of [provisioner][p], who verify the block and cast a vote in favor or against it. The phase is divided into two steps, each of which has a committee (using [*Deterministic Sortition*][ds]) vote on the validity of the block.
 If the votes of both committees reach a quorum, an $\mathsf{Agreement}$ message broadcasted, which contains the (quorum) votes of both committees.
 
 ## Step Overview
 In each reduction step, selected committee members cast votes on the candidate block, if any. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Reduction}$ messages, and collected by other nodes, which accumulate them until a *quorum* is reached.
 
-When a quorum of votes is reached, a $StepVotes$ structure is produced, containing all (and only[^1]) the quorum votes aggregated, along with a bitset of the voters with respect to the [Voting Committee](../sortition/README.md#voting-committees).
+When a quorum of votes is reached, a $StepVotes$ structure is produced, containing all (and only[^1]) the quorum votes aggregated, along with a bitset of the voters with respect to the [Voting Committee][vc].
 
 If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produced with the $StepVotes$ structures of both steps. This message is passed to the Agreement process, which is responsible for its propagation in the network.
 
@@ -26,21 +26,21 @@ The message has the following structure:
 
 The $\mathsf{Reduction}$ message has a total size of 185 bytes.
 
-#### StepVotes
+### StepVotes
 The $StepVotes$ structure is produced at the end of a Reduction step and contains a quorum of votes in favor or against a candidate block.
 
 To specify the committee members, whose vote is included in $Votes$, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
 
 The structure is defined as follows:
 
-| Field    | Type          | Size      | Description                       |
-|----------|---------------|-----------|-----------------------------------|
-| $Voters$ | BitSet        | 64 bits   | Bitset of the voters              |
-| $Votes$  | BLS Signature | 48 bytes  | Aggregated $\mathsf{Reduction}$ signatures |
+| Field    | Type          | Size     | Description                                |
+|----------|---------------|----------|--------------------------------------------|
+| $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
+| $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
 
 Thus, the $StepVotes$ structure has a total size of 56 bytes.
 
-Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*](../README.md#consensus-parameters)).
+Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
 
 
 ## Reduction Algorithm
@@ -109,7 +109,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
       1. $\texttt{if } (pk_{\mathsf{M}^R} \in C)$
       <!-- TODO?: S = pk_M  set "Sender" -->
       2. $\texttt{and }($*VerifySignature*$(\mathsf{M}^R) = true):$
-         1. [*Propagate*][mx]($\mathsf{M}^R$)
+         1. [*Propagate*][mx]$(\mathsf{M}^R)$
          2. $v = \mathsf{H}_{\mathsf{M}^R}.BlockHash$
          3. *AggregateSig*$(\sigma^v, \sigma_{\mathsf{M}^R})$
          4. $m = m_{pk_{\mathsf{M}^R}}$ \
@@ -124,7 +124,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 
 ---
 
-#### VerifyCandidate
+### VerifyCandidate
 <!-- TODO: Replace with CheckBlockHeader or define common VerifyBlock -->
 *VerifyCandidate* returns $true$ if all candidate block header fields check out with respect to the current state (i.e., the $TIP$) and the candidate block's transactions. Otherwise it returns $false$.
 
@@ -148,10 +148,10 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 **Procedure**:
 
 $VerifyCandidate(\mathsf{B}^c)$:
-- $newState =$ *ExecuteTransactions*$(State, \mathsf{B}^c.Transactions), BlockGas, pk_{G_\mathsf{B}^c})$
+- $newState =$ *ExecuteTransactions*$(State, \mathsf{B}^c.Transactions), BlockGas, pk_{\mathcal{G}_{\mathsf{B}^c}})$
 1. $\texttt{if } (\mathsf{B}^c.Version = 0$)
 2. $\texttt{and } (\mathsf{B}^c.Height = \mathsf{B}^{Tip}.Height)$
-3. $\texttt{and } (\mathsf{B}^c.Hash =$ *Hash*$`_{SHA3}$(\mathsf{H}_{\mathsf{B}^c}))`$
+3. $\texttt{and } (\mathsf{B}^c.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}^c}))`$
 4. $\texttt{and } (\mathsf{B}^c.PreviousBlock = \mathsf{B}^{Tip}.Hash)$
 5. $\texttt{and } (\mathsf{B}^c.Timestamp \ge \mathsf{B}^{Tip}.Timestamp)$
 6. $\texttt{and } (\mathsf{B}^c.TransactionRoot = MerkleTree(\mathsf{B}^c.Transactions).Root)$
@@ -161,14 +161,19 @@ $VerifyCandidate(\mathsf{B}^c)$:
    1. $\texttt{output } false$
 
 
-<!-- FOOTNOTES -->
+<!----------------------- FOOTNOTES ----------------------->
+
 [^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
 
-<!-- LINKS -->
+<!------------------------- LINKS ------------------------->
+
 [cp]: ../README.md#consensus-parameters
+[p]: ../README.md#provisioners-and-stakes
 [ds]: ../sortition/README.md
 [dsa]: ../sortition/README.md#deterministic-sortition-ds
 [mh]: ../README.md#message-header
 [msg]: ../README.md#message-creation
 [sv]: #stepvotes
 [mx]: ../README.md#message-exchange
+[att]: ../attestation/
+[vc]: ../sortition/README.md#voting-committees

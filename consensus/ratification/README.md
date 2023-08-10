@@ -16,18 +16,20 @@ When a node generates or receives an $\mathsf{AggrAgreement}$ message, it also p
 
 When this occurs, the candidate block is tagged as *winning block* and accepted as the new chain tip, ending the current round.
 
-#### AggrAgreement Message
-<!-- TODO: "unpack" Agreement message and remove Signature -->
+### AggrAgreement Message
+<!-- TODO: Add description -->
 | Field           | Type                  | Size      | Description                                |
 |-----------------|-----------------------|-----------|--------------------------------------------|
-| $Header$        | [*MessageHeader*][mh] | 137 bytes | Message header                             |
-| $Agreement$     | $\mathsf{Agreement}$ Payload     | 160 bytes | Agreement message payload                  |
+| $Header$        | [*MessageHeader*][mh] | 137 bytes | Agreement Message header                   |
+| $Signature$     | BLS Signature         | 48 bytes  | Agreement Message signature                |
+| $RVotes$        | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes           |
 | $Signers$       | BitSet                | 32 bits   | Bitset of aggregated signature             |
 | $AggrSignature$ | BLS Signature         | 48 bytes  | Aggregated signature of Agreement's header |
 
 The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 
-#### Certificate
+### Certificate
+<!-- TODO: Add description -->
 | Field             | Type            | Size     | Description                          |
 |-------------------|-----------------|----------|--------------------------------------|
 | $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
@@ -36,6 +38,7 @@ The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 The $Certificate$ structure has a total size of 112 bytes.
 
 ## Ratification Algorithm
+<!-- TODO: Add description -->
 
 **Parameters**
 - [Consensus Parameters][cparams]
@@ -68,16 +71,15 @@ $\boldsymbol{\textit{Ratification}}( )$:
    1. $\texttt{if } (\mathsf{M}^A =$ [*Receive*][mx]$(\mathsf{Agreement}, Round_{SA})):$
        - $s = Step_{\mathsf{M}^A}$
       1. $\texttt{if } (pk_{\mathsf{M}^A} \in C_r^s):$
-          1. [*Propagate*][mx]($\mathsf{M}^A$)
-          <!-- TODO?: change to if VerifyAgreement = true -->
-          2. $isValid$ = [*VerifyAgreement*](#verifyagreement)($\mathsf{M}^A$)
+          1. [*Propagate*][mx]$(\mathsf{M}^A)$
+          2. $isValid$ = [*VerifyAgreement*](#verifyagreement)$(\mathsf{M}^A)$
           3. $\texttt{if } (isValid = true)$:
              1. $i = s \div 3$
              2. $S_i = S_i \cup \mathsf{M}^A$
              3. $\boldsymbol{signers}_i = GetSigners(S_i)$ \
-                $c_i$ = [*CountCredits*][cc]($\boldsymbol{signers}_i$)
+                $c_i$ = [*CountCredits*][cc]$(\boldsymbol{signers}_i)$
              4. $\texttt{if } (c_{i} \ge Quorum):$
-                1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*](#createaggragreement)($S_i$)
+                1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*](#createaggragreement)$(S_i)$
                 2. [*Broadcast*][mx]$(\mathsf{M}^{Ag})$
                 - $\mathsf{B}^c = \mathsf{H}_{S_i[0]}.BlockHash$
                 - $\boldsymbol{V} \leftarrow S_i[0].RVotes$
@@ -86,12 +88,12 @@ $\boldsymbol{\textit{Ratification}}( )$:
    2.  $\texttt{if } (\mathsf{M}^{Ag} =$ [*Receive*][mx]$(\mathsf{AggrAgreement}, r)):$
        - $`(\mathsf{H}_{\mathsf{M}^{Ag}}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^{Ag}`$
        - $`\_, \mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}} \leftarrow \mathsf{H}_{\mathsf{M}^{Ag}}`$
-       1. [VerifyAggregated](#verifyaggregated)$(\mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_\boldsymbol{bs})$
-       2.  [*Propagate*][mx]($\mathsf{M}^{Ag}$)
-       3.  $\mathsf{B}^w =$ [*MakeWinning*](#makewinning)($\mathsf{M}^{Ag}.Agreement$)
+       1. [VerifyAggregated](#verifyaggregated)$(\mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
+       2.  [*Propagate*][mx]$(\mathsf{M}^{Ag})$
+       3.  $\mathsf{B}^w =$ [*MakeWinning*](#makewinning)$(\mathsf{M}^{Ag}.Agreement)$
 
 
-#### VerifyAgreement
+### VerifyAgreement
 *VerifyAgreement* verifies the validity of an $\mathsf{Agreement}$ message.
 
 **Parameters**:
@@ -115,11 +117,11 @@ $VerifyAgreement(\mathsf{M})$
 2. $\texttt{if } (|\boldsymbol{V}| \ne 2): \texttt{output } false$
 3. $\texttt{if } (s_{\mathsf{M}} \gt maxSteps): \texttt{output } false$
 4. $`\mathsf{V}_1, \mathsf{V}_1 \leftarrow \boldsymbol{V}`$ \
-  $`r_1 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
-  $`r_2 =$ [*VerifyAggregated*](#verifyaggregated)$(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
+  $r_1 =$ [*VerifyAggregated*](#verifyaggregated)$`(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
+  $r_2 =$ [*VerifyAggregated*](#verifyaggregated)$`(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
 1. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) : \texttt{return } true$
 
-#### VerifyAggregated
+### VerifyAggregated
 $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggregated signature is valid for a specific candidate block, round, and step.
 
 **Parameters**:
@@ -127,10 +129,10 @@ $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggreg
 - $round$: round
 - $step$: step
 - $\boldsymbol{bs}$: bitset of voters
-- $\sigma_\boldsymbol{bs}$: aggregated signature
+- $\sigma_{\boldsymbol{bs}}$: aggregated signature
 
 **Algorithm**:
-1. Compute subcommittee $C^\boldsymbol{bs}$ from bitset
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from bitset
 2. If credits in subcommittee are less than $Quorum$
    1. Output false
 3. Aggregate public keys of subcommittee member
@@ -139,16 +141,16 @@ $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggreg
 
 **Procedure**:
 
-$VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_\boldsymbol{bs})$:
-1. $C^\boldsymbol{bs} = SubCommittee(C_{round}^{step}, \boldsymbol{bs})$
-2. $\texttt{if } (CountVotes(C^\boldsymbol{bs}) \lt Quorum):$
+$VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$:
+1. $C^{\boldsymbol{bs}} = SubCommittee(C_{round}^{step}, \boldsymbol{bs})$
+2. $\texttt{if } (CountVotes(C^{\boldsymbol{bs}}) \lt Quorum):$
    1. $\texttt{output } false$
-3. $pk_\boldsymbol{bs} = AggregatePKs(C^\boldsymbol{bs})$
+3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 4. $\eta = Hash(\mathsf{B}^c || round || step)$ <!-- TODO: specify hash function -->
-5. $\texttt{output } Verify_{BLS}(\eta, pk_\boldsymbol{bs}, \sigma_\boldsymbol{bs})$
+5. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
-#### CreateAggrAgreement
+### CreateAggrAgreement
 *CreateAggrAgreement* aggregates all the signatures of a set $\mathsf{Agreement}$ messages, generates an $\mathsf{AggrAgreement}$ message, and broadcasts it.
 
 **Parameters**:
@@ -161,38 +163,36 @@ $VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_\boldsymbol
 4. Output message
 
 **Procedure**
-<!-- TODO? Use Msg() -->
 
 $CreateAggrAgreement(S)$:
- - $`\mathsf{H}_{\mathsf{M}_1}, \_, \_ \leftarrow \mathsf{M}_1`$
+ - $`\mathsf{H}_{\mathsf{M}_1}, \sigma_{\mathsf{M}_1}, \boldsymbol{V} \leftarrow \mathsf{M}_1`$
  - $`\_, r, s, \_ \leftarrow \mathsf{H}_{\mathsf{M}_1}`$
  1. $`\boldsymbol{sigs} = `$ [*GetSignatures*](#getsignatures)$(S)$ \
     $\sigma_{S} = Aggregate_{BLS}(\boldsymbol{sigs})$
  2. $`\boldsymbol{signers} = `$ [*GetSigners*](#getsigners)$(S)$ \
     $`\boldsymbol{bs}_{S} = `$ [*BitSet*][bs]$(C_r^s, \boldsymbol{signers})$
- 3. $`\mathsf{M}^{Ag} = (\mathsf{M}_1, \boldsymbol{bs}_{S}, \sigma_S)`$
+ 3. $`\mathsf{M}^{Ag} = (\mathsf{H}_{\mathsf{M}_1}, \sigma_{\mathsf{M}_1}, \boldsymbol{V}, \boldsymbol{bs}_{S}, \sigma_S)`$
  4. $\texttt{output }\mathsf{M}^{Ag}$
 
-#### GetSignatures
+### GetSignatures
 *GetSignatures* gets a storage of messages and returns a vector of the message signatures.
 
 **Parameters**:
 - $S = \{\mathsf{M}_1,..., \mathsf{M}_n\}$: storage of messages
 
-<!-- TODO: Fix this: S is not used -->
 **Procedure**:
 $GetSignatures(S):$
 - $\boldsymbol{sigs} = []$
 1. $\texttt{for } i = 0 \dots n :$
-   1. $\boldsymbol{sigs}[i]=\mathsf{M}^A_i.Signature$
+   1. $\boldsymbol{sigs}[i]=\mathsf{M}_i.Signature$
 2. $\texttt{output } \boldsymbol{sigs}$
 
 
-#### GetSigners
+### GetSigners
 *GetSigners* gets a storage of messages and returns a vector of the message signers.
 
 **Parameters**:
-- $S = \{\mathsf{M}_1,..., \mathsf{M}_n\}$: storage of messages
+- $S = \{\mathsf{M}_1, \dots, \mathsf{M}_n\}$: storage of messages
 
 **Procedure**:
 $GetSigners(S):$
@@ -202,7 +202,7 @@ $GetSigners(S):$
 2. $\texttt{output } \boldsymbol{signers}$
 
 
-#### MakeWinning
+### MakeWinning
 *MakeWinning* creates a certificate and adds it to the candidate block.
 
 **Parameters**
@@ -222,6 +222,7 @@ $MakeWinning(\mathsf{B}^c, \mathsf{V}_1, \mathsf{V}_2):$
 3. $\texttt{output } \mathsf{B}^c$
 
 <!------------------------- LINKS ------------------------->
+
 [sv]: ../reduction/README.md#stepvotes
 [cert]: #certificate-structure
 [cparams]: ../README.md#parameters

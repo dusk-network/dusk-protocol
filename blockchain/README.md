@@ -1,5 +1,3 @@
-<!-- TODO: add JSON names? -->
-
 ## Block Structure
 
 | Field          | Type            | Size     | Description        |
@@ -43,5 +41,6 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 | $Type$    | uint   | 32 bits   | Transaction type    |
 | $Payload$ | byte[] | variable  | Transaction payload |
 
-<!--  -->
+<!------------------------- LINKS ------------------------->
+
 [sv]: ../consensus/reduction/README.md#stepvotes

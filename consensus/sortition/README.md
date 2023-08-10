@@ -1,11 +1,10 @@
 <!-- TODO: Define BlockGenerator() and Committee() procedures -->
 
 # Deterministic Sortition
-*Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](../README.md) protocol to select the *Block Generator* during the [*Attestation*](../attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*](../reduction) phases.
+*Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](../README.md) protocol to select the *Block Generator* during the [*Attestation*](../attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*][red] phases.
 
 ## Voting Committees
 <!-- TODO: move this to Consensus main README ? -->
-<!-- TODO:? change m to \mathsf{M} for committee members -->
 A *Voting Committee* is an array of provisioners entitled to cast votes on the validity of a candidate block in a specific Reduction step. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
 
 Formally, a voting committee is defined as:
@@ -33,7 +32,7 @@ For the sake of readability, in the rest of this documentation, we will use the 
 ### Reduction Committees
 Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][cp] $CommitteeCredits$, currently set to $64$.
 
-During a [Reduction](../reduction/) step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
+During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
 Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the Reduction voting process.
 
@@ -44,12 +43,13 @@ Formally, the block generator for round $r$ and step $s$ is defined as:
 
 $$ G_r^i = DS(r,s,1).$$
 
+<p><br></p>
 
 ## Algorithm Overview
 The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning credits to [eligible](../README.md#provisioners-and-stakes) provisioners.
 
 The algorithm takes as inputs the round number $r$ and step number $s$, and outputs the corresponding committee.
-It also uses the provisioner set $\mathbf{P}$, the block produced in the previous round ${B}_{r-1}$, and the number of credits to assign $credits$.
+It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{r-1}$, and the number of credits to assign $credits$.
 
 The algorithm assigns one credit at a time to a randomly-selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*Score*](#score), described below.
 
@@ -77,8 +77,8 @@ The use of the modulo operation guarantees a provisioner is extracted within a s
 ### Seed
 The *Seed* value is used to ensure the pseudo-randomicity and unpredictability of the score.
 
-This value is included in the [block header](../../blockchain/README.md#header-structure) and is updated in each block by the block generator. 
-Specifically, the $Seed$ of block $`\mathsf{B}_h`$ is set to the signature of the block generator $G$ on the seed of block $`\mathsf{B}_{h-1}`$.
+This value is included in the [block header][bh] and is updated in each block by the block generator. 
+Specifically, the $Seed$ of block $`\mathsf{B}_h`$ is set to the signature of the block generator $\mathcal{G}$ on the seed of block $`\mathsf{B}_{h-1}`$.
 
 Formally: 
 
@@ -88,20 +88,22 @@ As such, $Seed_h$ can only be computed by the generator of block $\mathsf{B}_h$.
 
 Note that $Seed_0$ is a randomly-generated value contained in the genesis block $\mathsf{B}_0$.
 
-### Algorithm
+<p><br></p>
+
+## Algorithm
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, $DS$ uses the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
 
 In the following, we describe both $DS$ and $DE$ first as natural-language algorithm and then as formal procedure.
 
-#### Deterministic Sortition (DS)
+### Deterministic Sortition (DS)
 
-***Parameters***:
+***Parameters***
  - $r$: consensus round
  - $s$: consensus step
  - $credits$: number of credits to assign
- - $\mathbf{P}_r = [P_0,\dots,P_n]$: provisioner set for round $r$
+ - $\boldsymbol{P}_r = [P_0,\dots,P_n]$: provisioner set for round $r$
 
-***Algorithm***:
+***Algorithm***
 1. Start with empty committee
 2. Set each provisioner's weight equal to the sum of its (mature) stakes
 3. Set total weight to the sum of all provisioner's weights
@@ -118,17 +120,17 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
 5. Output committee
 
 <!-- TODO: define provisioner set as ordered by pk; then remove step 2. -->
-***Procedure***:
+***Procedure***
 
 $DS(r, s, credits)$:
 1. $C = \emptyset$
-2. $\texttt{for } P \texttt{ in } \mathbf{P}_r :$
-   - $w_P = \sum_{i=0}^{|\mathbf{Stakes}_P|-1} \mathbf{Stakes}_P[i]$
-3. $`W = \sum_{i=0}^{|\mathbf{P}_r|-1} w_{P_i} : P_i \in \mathbf{P}_r`$
+2. $\texttt{for } P \texttt{ in } \boldsymbol{P}_r :$
+   - $w_P = \sum_{i=0}^{|\boldsymbol{Stakes}_P|-1} \boldsymbol{Stakes}_P[i]$
+3. $`W = \sum_{i=0}^{|\boldsymbol{P}_r|-1} w_{P_i} : P_i \in \boldsymbol{P}_r`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
    1. $Score_c^{r,s} = Int(Hash_{SHA3}( Seed_{r-1}||r||s||c)) \mod W$
-   2. $\mathbf{P}_r' = SortByPK(\mathbf{P}_r)$
-   3. $P_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \mathbf{P}_r')$
+   2. $\boldsymbol{P}_r' = SortByPK(\boldsymbol{P}_r)$
+   3. $P_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \boldsymbol{P}_r')$
    4. $\texttt{if } P_c \notin C$ : 
        - $m_{P_c}^C = (P_c,0)$ 
        - $C = C \cup m_{P_c}^C$
@@ -142,23 +144,23 @@ $DS(r, s, credits)$:
 
 <p><br></p>
 
-#### Deterministic Extraction (DE)
+### Deterministic Extraction (DE)
 
-***Parameters***:
+***Parameters***
  - $Score$: score for current credit assignation
- - $\mathbf{P} = [P_0,\dots,P_n]$: array of provisioners ordered by public key
+ - $\boldsymbol{P} = [P_0,\dots,P_n]$: array of provisioners ordered by public key
 
-***Algorithm***:
-  1. For each provisioner $P$ in $\mathbf{P}$
+***Algorithm***
+  1. For each provisioner $P$ in $\boldsymbol{P}$
      1. if $P$'s weight is higher than $Score$, 
         1. output $P$
      2. otherwise, 
         1. subtract $P$'s weight from $Score$
 
-***Procedure***:
+***Procedure***
 
-$`DE(Score_i^{r,s}, \mathbf{P})`$:
-  1. $\texttt{for }  P = \mathbf{P}[0] \dots \mathbf{P}[|\mathbf{P}|-1]$ :
+$`DE(Score_i^{r,s}, \boldsymbol{P})`$:
+  1. $\texttt{for }  P = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
      1. $\texttt{if }  w_{P} \ge Score$
         1. $\texttt{output }  P$
      2. $\texttt{\texttt{else }}$
@@ -171,22 +173,23 @@ $`DE(Score_i^{r,s}, \mathbf{P})`$:
 
 <!-- TODO: BitSet -->
 
-#### CountCredits
+### CountCredits
+<!-- TODO: fix \sum rendering -->
 $CountCredits$ gets a list of members of a committee and return the cumulative amount of credits belonging to such members.
 
 - $\boldsymbol{P}=[pk_1,\dots,pk_n]$: set of provisioner public keys
-<!-- TODO: change to set of provisioners -->
 - $C$: voting committee
 
 $CountCredits(\boldsymbol{P}, C)$:
-1. $sum = \sum_{i=0}^{n} m_{pk_i}^{C}.influence$
+1. $`sum = \sum_{i=0}^{n} m_{pk_i}^{C}.influence`$
 2. $\texttt{output } sum$
 
 
 <!-- TODO: SubCommittee(C, bitset) , CountVotes(C), AggregatePKs-->
 
 
-<!-- FOOTNOTES -->
+<!----------------------- FOOTNOTES ----------------------->
+
 [^1]: We will use *SHA3* to denote SHA3-256.
 
 <!-- REFS -->
@@ -197,6 +200,9 @@ $CountCredits(\boldsymbol{P}, C)$:
 
 [2]: "Short Signatures from the Weil Pairing", Dworkin, 2015, [https://doi.org/10.1007%2Fs00145-004-0314-9](https://doi.org/10.1007%2Fs00145-004-0314-9)
 
-<!--  -->
+<!------------------------- LINKS ------------------------->
+
 [de]: #deterministic-extraction-de
 [cp]: ../README.md#consensus-parameters
+[red]: ../reduction/README.md
+[bh]: ../../blockchain/README.md#blockheader-structure

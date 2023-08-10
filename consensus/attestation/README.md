@@ -1,23 +1,16 @@
  <!-- TODO: define functions ExtractGenerator() and ExtractCommittee() -->
+ <!-- TODO: describe Block Generator ? -->
+
 # Attestation Phase
-*Attestation* is the first phase in an [*SA iteration*](../README.md#workflow).
+*Attestation* is the first phase in an [*SA iteration*][cit].
 In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 
 ## Phase Overview
-Each provisioner node first executes the [*Deterministic Sortition*](../sortition/) algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $\mathsf{NewBlock}$ message.
-Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*](../reduction/) phase, where it will vote on the block validity. All other blocks are discarded.
+Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $\mathsf{NewBlock}$ message.
+Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*][red] phase, where it will vote on the block validity. All other blocks are discarded.
 
 If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
 
-
-<!-- TODO: Block Generator -->
-
-### Candidate Block
-A candidate block is the block generated in the Attestation step by the extracted provisioner. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
-
-Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration.
-
-Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate
 
 ### NewBlock Message
 The $\mathsf{NewBlock}$ message is used by a block generator to broadcast a candidate block.
@@ -34,15 +27,15 @@ The message has the following structure:
 The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block size.
 
 ## Attestation Algorithm
-***Parameters***: 
+***Parameters*** 
 - [Consensus Parameters][cp]
 - $Round$: round number
 - $Iteration$: iteration number
 
-***Algorithm***:
-1. Extract the block generator ($G$) [*DS*][ds]$(R,S,1)$
+***Algorithm***
+1. Extract the block generator ($\mathcal{G}$) [*DS*][dsa]$(R,S,1)$
 2. If this node's provisioner is the block generator:
-   1. Generate candidate block $\mathsf{B}^c$ [ [_GenerateBlock_()](#generateblock) ]
+   1. Generate candidate block $\mathsf{B}^c$
    2. Create $\mathsf{NewBlock}$ message $\mathsf{M}^B$ containing $\mathsf{B}^c$
    3. Broadcast $\mathsf{M}^B$
    4. Output candidate block
@@ -51,7 +44,7 @@ The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block 
    2. Loop:
       1. If a $\mathsf{NewBlock}$ message $\mathsf{M}^B$ is received for this round and step:
          1. If $\mathsf{M}^B$'s signature is valid
-         2. and $\mathsf{M}^B$'s signer is $G$
+         2. and $\mathsf{M}^B$'s signer is $\mathcal{G}$
          3. and $\mathsf{M}^B$'s $BlockHash$ corresponds to $Candidate$
             1. Propagate $\mathsf{M}^B$
             2. Output $\mathsf{M}^B$'s block ($\mathsf{B}^\mathsf{M}$)
@@ -59,15 +52,15 @@ The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block 
          1. Increase Attestation timeout
          2. Output $NIL$
 
-***Procedure***:
+***Procedure***
 
 $Attestation(Round, Iteration)$:
 1. $\texttt{set}$:
    - $r = Round$
    - $s = (Iteration-1) \times 3 + 1$
-2. $pk_{G} =$ [*DS*][ds]$(r,s,1)$
-3. $\texttt{if } (pk_\mathcal{N} == pk_{G}):$
-   1. $\mathsf{B}^c =$ [_GenerateBlock_](#generateblock)$()$
+2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(r,s,1)$
+3. $\texttt{if } (pk_\mathcal{N} == pk_{\mathcal{G}}):$
+   1. $\mathsf{B}^c =$ [*GenerateBlock*](#generateblock)$()$
    2. $\mathsf{M}^B =$ [*Msg*][msg]$(\mathsf{NewBlock}, \eta_{\mathsf{B}_{r-1}}, \mathsf{B}^c)$
       | Field       | Value                     | 
       |-------------|---------------------------|
@@ -85,7 +78,7 @@ $Attestation(Round, Iteration)$:
          - $`\eta_{\mathsf{B}^\mathsf{M}} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^\mathsf{M}})`$
          - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{B}^\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
          1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) == true \text{ })`$
-         2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{G} \text{ })`$
+         2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{\mathcal{G}} \text{ })`$
          3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^\mathsf{M}} \text{ }):`$
             1. $Propagate(\mathsf{M})$
             2. $\texttt{output } \mathsf{B}^\mathsf{M}$
@@ -95,9 +88,9 @@ $Attestation(Round, Iteration)$:
 
 <p><br></p>
 
-#### GenerateBlock
+### GenerateBlock
 
-***Algorithm***:
+***Algorithm***
 1. Fetch transactions from Mempool
 2. Execute transactions and get new state hash
 3. Compute transaction tree root
@@ -108,11 +101,11 @@ $Attestation(Round, Iteration)$:
 8. Create candidate block
 9. Output candidate block
 
-***Procedure***:
+***Procedure***
 
 $GenerateBlock()$
-1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [_SelectTransactions_](#selecttransactions)()
-2. $State_r =$ [*ExecuteTransactions*](../../vm)$`(\boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*](#selecttransactions)()
+2. $State_r =$ [*ExecuteTransactions*]()$`(\boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
 3. $`TxRoot_r = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`i = \lfloor\frac{s}{3}\rfloor`$
 5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
@@ -133,32 +126,29 @@ $GenerateBlock()$
     <!-- | $Header Hash           | string | -->
     <!-- | Certificate           |    ?   | -->
 7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
-    | Field          | Value                         | 
-    |----------------|-------------------------------|
+    | Field          | Value                       | 
+    |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
-    | $Transactions$ | $\boldsymbol{tx}$            |
+    | $Transactions$ | $\boldsymbol{tx}$           |
 8. $\texttt{output } \mathsf{B}^c_{r,i}$
 
 <p><br></p>
 
-#### SelectTransactions
+### SelectTransactions
 $`SelectTransactions`$ selects a set of transactions from the Mempool to be included in a new block.
 The criteria used for the selection is arbitrary and is left to the Block Generator.
 
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
-<!-- TODO: In our implementation:
-To ease this process, transactions in the Mempool are ordered by their gas price. -->
+<!------------------------- LINKS ------------------------->
 
-<!-- FOOTNOTES -->
-[^1]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
-
-<!--  -->
 [cp]: ../README.md#consensus-parameters
-[mh]: ../README.md#consensus-message-header
+[cit]: ../README.md#saiteration
+[mh]: ../README.md#message-header
 [b]: ../../blockchain/README.md#block-structure
-[ds]: ../sortition/README.md#deterministic-sortition-ds
+[ds]: ../sortition/
+[dsa]: ../sortition/README.md#deterministic-sortition-ds
 [msg]: ../README.md#create-message
 [red]: ../reduction/README.md
 [it]: ../README.md#increasetimeout
