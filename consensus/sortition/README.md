@@ -168,25 +168,36 @@ $`DE(Score_i^{r,s}, \boldsymbol{P})`$:
 
 <!-- Note that the outer $loop$ means that if the $for$ loop ends (i.e. no provisioner was extracted), it starts over with $j=0$. -->
 
+<p><br></p>
 
 ## Subcommittees
+When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
 
-<!-- TODO: BitSet -->
+To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
+
+For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
+
+### BitSet
+$BitSet$ takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
+
+$BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
+
+### SubCommittee
+$SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
+
+$SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
 
 ### CountCredits
 <!-- TODO: fix \sum rendering -->
-$CountCredits$ gets a list of members of a committee and return the cumulative amount of credits belonging to such members.
+$CountCredits$ takes a voting committee $C$ and a list of members $\boldsymbol{P}$ and returns the cumulative amount of credits belonging to such members with respect to $C$.
 
-- $\boldsymbol{P}=[pk_1,\dots,pk_n]$: set of provisioner public keys
-- $C$: voting committee
+***Procedure***
 
-$CountCredits(\boldsymbol{P}, C)$:
-1. $`sum = \sum_{i=0}^{n} m_{pk_i}^{C}.influence`$
-2. $\texttt{output } sum$
+$CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
+1. $`credits = \sum_{i=0}^{n} m_{pk_i}^{C}.influence`$
+2. $\texttt{output } credits$
 
-
-<!-- TODO: SubCommittee(C, bitset) , CountVotes(C), AggregatePKs-->
-
+<!-- TODO: AggregatePKs-? ->
 
 <!----------------------- FOOTNOTES ----------------------->
 

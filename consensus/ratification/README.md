@@ -76,8 +76,8 @@ $\boldsymbol{\textit{Ratification}}( )$:
           3. $\texttt{if } (isValid = true)$:
              1. $i = s \div 3$
              2. $S_i = S_i \cup \mathsf{M}^A$
-             3. $\boldsymbol{signers}_i = GetSigners(S_i)$ \
-                $c_i$ = [*CountCredits*][cc]$(\boldsymbol{signers}_i)$
+             3. $\boldsymbol{signers}_i =$ [GetSigners](#getsigners)$(S_i)$ \
+                $c_i$ = [*CountCredits*][cc]$(C_r^s, \boldsymbol{signers}_i)$
              4. $\texttt{if } (c_{i} \ge Quorum):$
                 1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*](#createaggragreement)$(S_i)$
                 2. [*Broadcast*][mx]$(\mathsf{M}^{Ag})$
@@ -143,7 +143,7 @@ $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggreg
 
 $VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$:
 1. $C^{\boldsymbol{bs}} = SubCommittee(C_{round}^{step}, \boldsymbol{bs})$
-2. $\texttt{if } (CountVotes(C^{\boldsymbol{bs}}) \lt Quorum):$
+2. $\texttt{if } ($[*CountCredits*][cc]$(C_{round}^{step}, C^{\boldsymbol{bs}}) \lt Quorum):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 4. $\eta = Hash(\mathsf{B}^c || round || step)$ <!-- TODO: specify hash function -->
