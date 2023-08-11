@@ -41,16 +41,16 @@ The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block 
    4. Output candidate block
 3. Otherwise:
    1. Start Attestation timeout
-   2. Loop:
+   2. While timeout is not expired:
       1. If a $\mathsf{NewBlock}$ message $\mathsf{M}^B$ is received for this round and step:
          1. If $\mathsf{M}^B$'s signature is valid
          2. and $\mathsf{M}^B$'s signer is $\mathcal{G}$
          3. and $\mathsf{M}^B$'s $BlockHash$ corresponds to $Candidate$
             1. Propagate $\mathsf{M}^B$
             2. Output $\mathsf{M}^B$'s block ($\mathsf{B}^\mathsf{M}$)
-      2. If timeout expired
-         1. Increase Attestation timeout
-         2. Output $NIL$
+   3. If timeout expired
+      1. Increase Attestation timeout
+      2. Output $NIL$
 
 ***Procedure***
 
@@ -72,7 +72,7 @@ $Attestation(Round, Iteration)$:
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else }:$
    1. $\tau_{Start} = \tau_{Now}$
-   2. $\texttt{loop}:$  <!-- TODO: change this to while t_now <= t_start + timeout  -->
+   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Attestation}):$
       1. $\texttt{if } (\mathsf{M} {=} Receive(\mathsf{NewBlock},r,s) \ne NIL)$:
          - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}^\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
          - $`\eta_{\mathsf{B}^\mathsf{M}} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^\mathsf{M}})`$
@@ -82,9 +82,9 @@ $Attestation(Round, Iteration)$:
          3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^\mathsf{M}} \text{ }):`$
             1. $Propagate(\mathsf{M})$
             2. $\texttt{output } \mathsf{B}^\mathsf{M}$
-      2. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Attestation}):$
-         1. [*IncreaseTimeout*][it]$(\tau_{Attestation})$
-         2. $\texttt{output } NIL$
+   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Attestation}):$
+      1. [*IncreaseTimeout*][it]$(\tau_{Attestation})$
+      2. $\texttt{output } NIL$
 
 <p><br></p>
 
