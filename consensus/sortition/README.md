@@ -98,12 +98,14 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
 ### Deterministic Sortition (DS)
 
 ***Parameters***
+
  - $r$: consensus round
  - $s$: consensus step
  - $credits$: number of credits to assign
  - $\boldsymbol{P}_r = [P_0,\dots,P_n]$: provisioner set for round $r$
 
 ***Algorithm***
+
 1. Start with empty committee
 2. Set each provisioner's weight equal to the sum of its (mature) stakes
 3. Set total weight to the sum of all provisioner's weights
@@ -119,7 +121,6 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
    9. If total weight reaches 0, output the partial committee
 5. Output committee
 
-<!-- TODO: define provisioner set as ordered by pk; then remove step 2. -->
 ***Procedure***
 
 $DS(r, s, credits)$:
@@ -199,17 +200,18 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 
 <!-- TODO: AggregatePKs-? ->
 
-<!----------------------- FOOTNOTES ----------------------->
-
-[^1]: We will use *SHA3* to denote SHA3-256.
-
-<!-- REFS -->
+<!----------------------- REFERENCES ----------------------->
 ## References
 <!-- TODO: mv to Consensus README. SHA3 is also used for the block header -->
 <a name="rsha3"></a>
 [1]: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions", Boneh et al., 2004, [https://doi.org/10.6028/NIST.FIPS.202](https://doi.org/10.6028/NIST.FIPS.202)
 
 [2]: "Short Signatures from the Weil Pairing", Dworkin, 2015, [https://doi.org/10.1007%2Fs00145-004-0314-9](https://doi.org/10.1007%2Fs00145-004-0314-9)
+
+
+<!----------------------- FOOTNOTES ----------------------->
+
+[^1]: We will use *SHA3* to denote SHA3-256.
 
 <!------------------------- LINKS ------------------------->
 

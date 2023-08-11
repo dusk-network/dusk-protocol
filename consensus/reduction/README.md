@@ -45,13 +45,13 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
 
 ## Reduction Algorithm
 
-**Parameters**:
+***Parameters***
 - $Round$: round number
 - $Iteration$: iteration number
 - $rstep$ : Reduction step number (1 or 2)
 - $\mathsf{B}^c$: candidate block
 
-**Algorithm**
+***Algorithm***
 1. Extract voting committee for the step
 2. Start timeout
 3. If part of the committee:
@@ -77,13 +77,13 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
     1. Increase Reduction timeout
     2. Output $NIL$
 
-**Procedure**
+***Procedure***
 
 $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 - $\sigma^{\mathsf{B}^c}$ : aggregate signature for candidate
-- $\boldsymbol{vbs}^{\mathsf{B}^c}$ : Voters bitset for candidate
+- $\boldsymbol{bs}^{\mathsf{B}^c}$ : Voters bitset for candidate
 - $\sigma^{NIL}$ : aggregate signature for vote NIL
-- $\boldsymbol{vbs}^{NIL}$ : Voters bitset for NIL
+- $\boldsymbol{bs}^{NIL}$ : Voters bitset for NIL
 - $r = Round$
 - $s = (Iteration-1) \times 3 + 1 + rstep$
 1. $C$ = [*DS*][dsa]$(r,s,CommitteeCredits)$
@@ -92,7 +92,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
    1. $\texttt{if } (\mathsf{B}^c == NIL):$
       1. $v = NIL$
    2. $\texttt{else}:$
-      1. $isValid$ = [*VerifyCandidate*](#verifycandidate)$(\mathsf{B}^c)$
+      1. $isValid$ = [*CheckBlockHeader*][cbh]$(Tip,\mathsf{B}^c)$
       2. $\texttt{if } (isValid = true) : v =$ *Hash*$`_{SHA3}(\mathsf{H}^{\mathsf{B}^c})`$
       3. $\texttt{else}: v = NIL$
    3. $`\mathsf{M}^R = `$ [*Msg*][msg]$(\mathsf{Reduction}, v)$
@@ -107,15 +107,14 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Reduction_1}):$
    1. $\texttt{if } (\mathsf{M}^R =$ [*Receive*][mx]$(\mathsf{Reduction},r,s) \ne NIL):$
       1. $\texttt{if } (pk_{\mathsf{M}^R} \in C)$
-      <!-- TODO?: S = pk_M  set "Sender" -->
       2. $\texttt{and }($*VerifySignature*$(\mathsf{M}^R) = true):$
          1. [*Propagate*][mx]$(\mathsf{M}^R)$
          2. $v = \mathsf{H}_{\mathsf{M}^R}.BlockHash$
          3. *AggregateSig*$(\sigma^v, \sigma_{\mathsf{M}^R})$
          4. $m = m_{pk_{\mathsf{M}^R}}$ \
-            $\boldsymbol{vbs}^{v}[i_m^C] = 1$
-         5. $\texttt{if } ($*countSetBits*$(\boldsymbol{vbs}^v) \ge Quorum):$
-            1. $\mathsf{V} = (\sigma^v, \boldsymbol{vbs}^v)$
+            $\boldsymbol{bs}^{v}[i_m^C] = 1$
+         5. $\texttt{if } ($*countSetBits*$(\boldsymbol{bs}^v) \ge Quorum):$
+            1. $\mathsf{V} = (\sigma^v, \boldsymbol{bs}^v)$
             2. $\texttt{output } \mathsf{V}$
 
  5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Reduction_{rstep}}):$
@@ -124,43 +123,6 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 
 ---
 
-### VerifyCandidate
-<!-- TODO: Replace with CheckBlockHeader or define common VerifyBlock -->
-*VerifyCandidate* returns $true$ if all candidate block header fields check out with respect to the current state (i.e., the $TIP$) and the candidate block's transactions. Otherwise it returns $false$.
-
-**Parameters**  :
-  - $\mathsf{B}^c$: candidate block
-  - [Consensus Parameters][cp]
-
-**Algorithm**:
-1. If $Version$ is $0$
-2. and $Height$ is $TIP$'s height plus 1
-3. and $Hash$ is the header's hash
-4. and $PrevBlock$ is $TIP$
-5. and $Timestamp$ is higher than $TIP$'s one
-6. and $Timestamp$ is not higher than $TIP$'s timestamp plus $MaxBlockTime$
-7. and transaction root corresponds to the transaction set
-8. and state hash corresponds to the result of the state transition
-   1. Output $true$
-9. Otherwise,
-   1.  Output $false$
-
-**Procedure**:
-
-$VerifyCandidate(\mathsf{B}^c)$:
-- $newState =$ *ExecuteTransactions*$(State, \mathsf{B}^c.Transactions), BlockGas, pk_{\mathcal{G}_{\mathsf{B}^c}})$
-1. $\texttt{if } (\mathsf{B}^c.Version = 0$)
-2. $\texttt{and } (\mathsf{B}^c.Height = \mathsf{B}^{Tip}.Height)$
-3. $\texttt{and } (\mathsf{B}^c.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}^c}))`$
-4. $\texttt{and } (\mathsf{B}^c.PreviousBlock = \mathsf{B}^{Tip}.Hash)$
-5. $\texttt{and } (\mathsf{B}^c.Timestamp \ge \mathsf{B}^{Tip}.Timestamp)$
-6. $\texttt{and } (\mathsf{B}^c.TransactionRoot = MerkleTree(\mathsf{B}^c.Transactions).Root)$
-7. $\texttt{and } (\mathsf{B}^c.StateRoot = newState.Root):$
-   1. $\texttt{output } true$
-8. $\texttt{else}:$
-   1. $\texttt{output } false$
-
-
 <!----------------------- FOOTNOTES ----------------------->
 
 [^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
@@ -168,6 +130,7 @@ $VerifyCandidate(\mathsf{B}^c)$:
 <!------------------------- LINKS ------------------------->
 
 [cp]: ../README.md#consensus-parameters
+[cbh]: ../README.md#checkblockheader
 [p]: ../README.md#provisioners-and-stakes
 [ds]: ../sortition/README.md
 [dsa]: ../sortition/README.md#deterministic-sortition-ds

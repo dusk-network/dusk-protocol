@@ -1,7 +1,4 @@
- <!-- TODO: define functions ExtractGenerator() and ExtractCommittee() -->
- <!-- TODO: describe Block Generator ? -->
-
-# Attestation Phase
+ # Attestation Phase
 *Attestation* is the first phase in an [*SA iteration*][cit].
 In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 

@@ -1,13 +1,3 @@
-<!-- TODO: rename NewBlock to Candidate ? -->
-<!-- TODO: use \rightarrow to indicate procedure output ?-->
-<!-- TODO: add a Crypto Tools section -->
-<!-- TODO: do not use bold for vectors. choose another font, so we can use bold words in text without confusion -->
-<!-- TODO: add *finality* definition (and possibly block field) -->
-<!-- TODO: better define State (differentiate between node state and system state?) 
-  - Provisioner is Net State
-  - Tip is Chain state
--->
-
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
@@ -69,7 +59,6 @@ A candidate block that reaches an agreement is called a *winning* block.
 
 ## Provisioners and Stakes
 <!-- TODO: link to Stake Contract -->
-<!-- TODO: mention minimum amount of stake -->
 A provisioner is a user that locked a certain amount of their Dusk coins as *stake* (see [*Stake Contract*]()).
 Formally, we define a *provisioner* $\mathcal{P}$ as:
 
@@ -79,19 +68,17 @@ where $pk_\mathcal{P}$ is the BLS public key of the provisioner, and $\boldsymbo
 
 In turn, a *stake* is defined as:
 $$S^\mathcal{P}=(Amount, Height),$$
-where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included).
+where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cp] $MinStake$, and is currently equivalent to 1000 Dusk.
 
 We say a stake $S$ is *mature* if it was locked more than two *epochs* before the current chain tip. Formally, given a stake $S$, we say $S$ is mature if 
 
 $$Height_{Tip} \gt Height_S + (2 \times Epoch),$$
 
-where $Height_{Tip}$ is the current tip's height, $Height_S$ is the stake's height, and $Epoch$ is a global [Consensus Parameter][cp]. 
+where $Height_{Tip}$ is the current tip's height, $Height_S$ is the stake's height, and $Epoch$ is a [global parameter][cp]. 
 
 Moreover, we say a provisioner is *eligible* if it has at least one mature stake.
 
 Note that only eligible provisioners participate in the consensus protocol.
-
-<!-- TODO: mv Voting Committees here? -->
 
 ## Consensus Messages
 To run the SA protocol, participating nodes exchange consensus messages. There are four types of message:
@@ -109,7 +96,6 @@ where $`\mathsf{H_M}`$ is the message header (defined below), $`\sigma_\mathsf{M
 In the following, we describe both the header and signature in detail.
 
 ### Message Header
-<!-- TODO: mv $Signer$ outside the header -->
 All consensus messages share a common $MessageHeader$ structure, defined as follows:
 
 | Field       | Type    | Size      | Description                      |
@@ -200,10 +186,7 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 
 **Global Parameters**
 <!-- TODO: check when MaxBlockTime is removed -->
-<!-- TODO: MaxTxSetSize:
-  -  is never used here). check in the code 
-  -  Motivate MaxTxSetSize = 825000  
--->
+
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
 | Name               | Value          | Description                                     |
@@ -215,11 +198,11 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $MaxIterations$    | 71             | Maximum number of iterations for a single round |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)               |
 | $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)  |
-| $MaxBlockTime$     | 360 seconds    | Maximum time to produce a block                 | 
-| $Epoch$            | 2160           | Epoch duration in number of blocks              |
+| $MaxBlockTime$     | 360 seconds    | Maximum time to produce a block                 |
 | $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)              |
+| $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)      |
+| $Epoch$            | 2160           | Epoch duration in number of blocks              |
 | $BlockGas$         | 5.000.000.000  | Gas limit for a single block                    |
-| $MaxTxSetSize$     | 825000         | Maximum size of transaction set in a block      |
 
 
 **Chain State**
@@ -393,11 +376,11 @@ The procedures defined here are common subroutines used throughout the consensus
 ### CheckBlockHeader
 *CheckBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
-**Parameters**  :
+***Parameters***
 - $\mathsf{B}$: block to verify
 - $\mathsf{B}^p$: previous block
 
-**Algorithm**:
+***Algorithm***
 1. Check $Version$ is $0$
 2. Check $Height$ is $\mathsf{B}^p$'s height plus 1
 3. Check $Hash$ is the header's hash
@@ -411,7 +394,7 @@ The procedures defined here are common subroutines used throughout the consensus
 - Otherwise
   1. Output $false$
 
-**Procedure**:
+***Procedure***
 
 $CheckBlockHeader(\mathsf{B}, \mathsf{B}^p)$:
 - $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions), BlockGas, pk_{G_\mathsf{B}})$
@@ -428,11 +411,11 @@ $CheckBlockHeader(\mathsf{B}, \mathsf{B}^p)$:
 - $\texttt{else}:$
    1. $\texttt{output } false$
 
-### CheckCertificate
-<!-- TODO : CheckBlockCertificate-->
+### VerifyCertificate
+<!-- TODO : VerifyCertificate-->
 TBD
 
-**Parameters**
+***Parameters***
 - $\mathsf{B}$: block
 - $\mathsf{C}$: certificate
 
