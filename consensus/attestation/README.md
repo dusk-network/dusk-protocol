@@ -67,7 +67,7 @@ $Attestation(Round, Iteration)$:
       | $Signature$ | $\sigma_\mathsf{M}$       |
    3. $Broadcast(\mathsf{M}^B)$
    4. $\texttt{output } \mathsf{B}^c$
-4. $\texttt{else }:$
+4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Attestation}):$
       1. $\texttt{if } (\mathsf{M} {=} Receive(\mathsf{NewBlock},r,s) \ne NIL)$:

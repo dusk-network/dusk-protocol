@@ -92,7 +92,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
    1. $\texttt{if } (\mathsf{B}^c == NIL):$
       1. $v = NIL$
    2. $\texttt{else}:$
-      1. $isValid$ = [*CheckBlockHeader*][cbh]$(Tip,\mathsf{B}^c)$
+      1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
       2. $\texttt{if } (isValid = true) : v =$ *Hash*$`_{SHA3}(\mathsf{H}^{\mathsf{B}^c})`$
       3. $\texttt{else}: v = NIL$
    3. $`\mathsf{M}^R = `$ [*Msg*][msg]$(\mathsf{Reduction}, v)$
@@ -121,8 +121,6 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
     1. *IncreaseTimeout*$(\tau_{Reduction_{rstep}})$
     2. $\texttt{output } NIL$
 
----
-
 <!----------------------- FOOTNOTES ----------------------->
 
 [^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
@@ -130,7 +128,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 <!------------------------- LINKS ------------------------->
 
 [cp]: ../README.md#consensus-parameters
-[cbh]: ../README.md#checkblockheader
+[vbh]: ../chain-management/README.md#verifyblockheader
 [p]: ../README.md#provisioners-and-stakes
 [ds]: ../sortition/README.md
 [dsa]: ../sortition/README.md#deterministic-sortition-ds
