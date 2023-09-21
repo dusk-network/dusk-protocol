@@ -89,7 +89,7 @@ $\boldsymbol{\textit{Ratification}}( )$:
    2.  $\texttt{if } (\mathsf{M}^{Ag} =$ [*Receive*][mx]$(\mathsf{AggrAgreement}, r)):$
        - $`(\mathsf{H}_{\mathsf{M}^{Ag}}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^{Ag}`$
        - $`\_, \mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}} \leftarrow \mathsf{H}_{\mathsf{M}^{Ag}}`$
-       1. [VerifyAggregated](#verifyaggregated)$(\mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
+       1. [VerifyAggregated](#verifyaggregated)$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
        2.  [*Propagate*][mx]$(\mathsf{M}^{Ag})$
        3.  $\mathsf{B}^w =$ [*MakeWinning*](#makewinning)$(\mathsf{M}^{Ag}.Agreement)$
 
@@ -108,8 +108,6 @@ $\boldsymbol{\textit{Ratification}}( )$:
 5. If votes are valid, return true
 
 ***Procedure***
-<!-- TODO: use VerifyCertificate -->
-
 $VerifyAgreement(\mathsf{M})$
 - $`\mathsf{H_M}, \sigma_{\mathsf{M}}, \boldsymbol{V} \leftarrow \mathsf{M}`$
 - $`\_, r_{\mathsf{M}}, s_{\mathsf{M}}, \mathsf{B}^c \leftarrow \mathsf{H_M}`$
@@ -118,15 +116,15 @@ $VerifyAgreement(\mathsf{M})$
 2. $\texttt{if } (|\boldsymbol{V}| \ne 2): \texttt{output } false$
 3. $\texttt{if } (s_{\mathsf{M}} \gt maxSteps): \texttt{output } false$
 4. $`\mathsf{V}_1, \mathsf{V}_1 \leftarrow \boldsymbol{V}`$ \
-  $r_1 =$ [*VerifyAggregated*](#verifyaggregated)$`(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
-  $r_2 =$ [*VerifyAggregated*](#verifyaggregated)$`(\mathsf{B}^c, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
+  $r_1 =$ [*VerifyAggregated*](#verifyaggregated)$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
+  $r_2 =$ [*VerifyAggregated*](#verifyaggregated)$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
 1. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) : \texttt{return } true$
 
 ### VerifyAggregated
-$VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggregated signature is valid for a specific candidate block, round, and step.
+$VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggregated signature is valid for a specific block's hash, round, and step.
 
 ***Parameters***
-- $\mathsf{B}^c$: candidate block
+- $hash$: the block's hash
 - $round$: round
 - $step$: step
 - $\boldsymbol{bs}$: bitset of voters
@@ -142,12 +140,12 @@ $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggreg
 
 ***Procedure***
 
-$VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$:
+$VerifyAggregated(hash, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$:
 1. $C^{\boldsymbol{bs}} = [SubCommittee][sc](C_{round}^{step}, \boldsymbol{bs})$
 2. $\texttt{if } ($[*CountCredits*][cc]$(C_{round}^{step}, C^{\boldsymbol{bs}}) \lt Quorum):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
-4. $\eta = Hash_{Blake2B}(round || step || \eta_{\mathsf{B}^c})$
+4. $\eta = Hash_{Blake2B}(round || step || hash)$
 5. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
@@ -155,11 +153,9 @@ $VerifyAggregated(\mathsf{B}^c, round, step, \boldsymbol{bs}, \sigma_{\boldsymbo
 *CreateAggrAgreement* aggregates all the signatures of a set $\mathsf{Agreement}$ messages, generates an $\mathsf{AggrAgreement}$ message, and broadcasts it.
 
 ***Parameters***
-
-- $S = \{\mathsf{M}_1,..., \mathsf{M}_n\}$: storage of messages
+- $S = \{\mathsf{M}_1,..., \mathsf{M}_n\}$: vector of messages
 
 ***Algorithm***
-
 1. Aggregate signatures
 2. Create bitset
 3. Create $\mathsf{AggrAgreement}$ message $\mathsf{M}$

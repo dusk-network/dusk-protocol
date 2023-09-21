@@ -162,9 +162,9 @@ $DS(r, s, credits)$:
 
 $`DE(Score_i^{r,s}, \boldsymbol{P})`$:
   1. $\texttt{for }  P = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
-     1. $\texttt{if }  w_{P} \ge Score$
-        1. $\texttt{output }  P$
-     2. $\texttt{\texttt{else }}$
+     1. $\texttt{if } w_{P} \ge Score$
+        1. $\texttt{output } P$
+     2. $\texttt{\texttt{else}}:$
         1. $Score = Score - w_{P}$
 
 <!-- Note that the outer $loop$ means that if the $for$ loop ends (i.e. no provisioner was extracted), it starts over with $j=0$. -->

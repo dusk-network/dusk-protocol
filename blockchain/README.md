@@ -4,7 +4,7 @@
 |----------------|-----------------|-----------|--------------------|
 | $Header$       | Block Header    | 112 bytes | Block header       |
 | $Transactions$ | Transaction [ ] | variable  | Block transactions |
-<!-- | $Final$        | Boolean         | 1 bit    | Final state ($true$ if final, $false$ otherwise) | -->
+<!-- TODO? | $Final$        | Boolean         | 1 bit    | Final state ($true$ if final, $false$ otherwise) | -->
 
 ## BlockHeader Structure
 | Field             | Type               | Size      | Description                               |
