@@ -16,7 +16,7 @@ In this documentation we will use the following notation:
 - $\boldsymbol{Bold}$ is used for vectors (e.g. a bitset $\boldsymbol{bs}$)
 - $\mathcal{Calligrafic}$ is used for actors (e.g. a provisioner $\mathcal{P}$)
 - $\mathsf{Sans Serif}$ is used for structures (e.g. a block $\mathsf{B}$, or a $\mathsf{Reduction}$ message)
-- *Italic* is used for functions names (e.g. the *Hash* function)
+- *Italic* is used for function names (e.g. the *Hash* function)
 
 Moreover, we will conventionally use the following symbols:
 - $pk$ and $sk$ are used to denote public and secret keys, respectively
@@ -94,7 +94,7 @@ To run the SA protocol, participating nodes exchange consensus messages. There a
 - $\mathsf{NewBlock}$: this message stores a candidate block for a certain round and iteration. It is used during the [Attestation](./attestation/) phase;
 - $\mathsf{Reduction}$: this message contains the vote of a provisioner, selected as a member of the voting committee, on the validity of a candidate block. It is used during the [Reduction](./reduction/) phase;
 - $\mathsf{Agreement}$: this message contains the aggregated votes of a Reduction phase. It is used at the end of a Reduction phase, if a quorum is reached;
-- $\mathsf{AggrAgreement}$: it contains an aggregation of $\mathsf{Agreement}$ messages. It is used in the in the [Ratification](./ratification) phase, if a quorum of such messages is received.
+- $\mathsf{AggrAgreement}$: it contains an aggregation of $\mathsf{Agreement}$ messages. It is used in the [Ratification](./ratification) phase, if a quorum of such messages is received.
 
 Formally, we denote a consensus message $\mathsf{M}$ as:
 
@@ -216,7 +216,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $MaxIterations$    | 71             | Maximum number of iterations for a single round |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)               |
 | $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)  |
-| $MaxBlockTime$     | 360 seconds    | Maximum time to produce a block                 |
+| $MaxBlockTime$     | 360            | Maximum time to produce a block (in seconds)    |
 | $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)              |
 | $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)      |
 | $Epoch$            | 2160           | Epoch duration in number of blocks              |
@@ -250,7 +250,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 The SA consensus algorithm is defined by the [*SAConsensus*](#saconsensus) procedure, which executes an SA round ([*SARound*](#saround)) for each new block to generate. In turn, the *SARound* procedure runs a loop of [*SAIteration*](#saiteration)s in parallel with the *Ratification* procedure. As soon as a winning block ($\mathsf{B}^w$) for the round is produced, the state is updated ([*AcceptBlock*][ab]), the $Tip$ is set to the winning block, and a new round begins.
 
 ### SAConsensus
-The *SAConsensus* procedure is the entry point of a consensus node. Upon booting, the node check if there is a local state saved and, if so, loads it. Otherwise, it starts from the *Genesis Block*. Then, it probes the network to check if it is in sync or not with the blockchain. If not, it starts a synchronization procedure. When in sync, it executes the consensus algorithm per rounds. At the end of each round, if a winning block has been produced, it updates the state and starts a new round. 
+The *SAConsensus* procedure is the entry point of a consensus node. Upon booting, the node checks if there is a local state saved and, if so, loads it. Otherwise, it starts from the *Genesis Block*. Then, it probes the network to check if it is in sync or not with the blockchain. If not, it starts a synchronization procedure. When in sync, it executes the consensus algorithm per rounds. At the end of each round, if a winning block has been produced, it updates the state and starts a new round. 
 
 If, at any time, the node falls behind the network, the synchronization procedure is run before restarting the rounds loop.
 
@@ -280,7 +280,7 @@ $\textit{SAConsensus}():$
 ### SALoop
 The *SALoop* procedure executes SA rounds (*SARound*). We define this as a separate procedure to allow it to be stopped and restarted when synchronizing the blockchain.
 
-The procedure executes an infinite loop of SA rounds. At each iteration, the $Round_{SA}$ global variable is set to $Tip$'s height plus one; then the SA round is executed; if the round produced a winning block, it executes the state transition using this block. If any round ends with no winning block, the consensus process is considered as faulty and halts. This events can only be recovered from manually.
+The procedure executes an infinite loop of SA rounds. At each iteration, the $Round_{SA}$ global variable is set to $Tip$'s height plus one; then the SA round is executed; if the round produced a winning block, it executes the state transition using this block. If any round ends with no winning block, the consensus process is considered as faulty and halts. Suc an event requires a manual recovery procedure.
 
 ***Algorithm***
 
