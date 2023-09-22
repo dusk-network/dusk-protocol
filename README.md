@@ -1,5 +1,6 @@
 # Dusk Network Protocol Documentation
-[WIP]
+| :exclamation:  This repo is still WIP |
+|---------------------------------------|
 
 This repository is intended to host complete and formal documentation about the Dusk Network protocol. Here you will find the detailed specifications of the Dusk Network components, protocols, and algorithms. The documentation is 
 
