@@ -23,7 +23,7 @@
 | $Certificate$     | [StepVotes][sv] [] | 112 bytes | Reduction votes                           |
 
 The $BlockHeader$ structure has a total size of 410 bytes.
-This is reduced to 298 for a [*candidate block*](../consensus/README.md#candidate-block), since the $Certificate$ is missing.
+This is reduced to 298 for a [*candidate block*][cb], since the $Certificate$ is missing.
 
 ### Notation
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
@@ -42,5 +42,7 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 | $Payload$ | byte[] | variable  | Transaction payload |
 
 <!------------------------- LINKS ------------------------->
-
-[sv]: consensus/reduction/README.md#stepvotes
+<!-- Consensus -->
+[cb]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#candidate-block
+<!-- Reduction -->
+[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes

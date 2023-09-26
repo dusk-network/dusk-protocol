@@ -61,7 +61,7 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
       1. Verify candidate block
       2. If block is valid, set vote $v$ to block's hash
       3. Otherwise, set $v$ to $NIL$
-   3. Send $\mathsf{Reduction}$ message with vote $v$
+   3. Broadcast $\mathsf{Reduction}$ message with vote $v$
 4. While timeout is not expired:
    1. If a $\mathsf{Reduction}$ message $\mathsf{M}$ is received for round $r$ and step $s$:
       1. If sender is in the committee
@@ -128,14 +128,17 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 <!------------------------- LINKS ------------------------->
 
 [sv]: #stepvotes
-
-[att]: consensus/attestation/
-[cp]:  consensus/README.md#consensus-parameters
-[ds]:  consensus/sortition/README.md
-[dsa]: consensus/sortition/README.md#deterministic-sortition-ds
-[mh]:  consensus/README.md#message-header
-[msg]: consensus/README.md#message-creation
-[mx]:  consensus/README.md#message-exchange
-[p]:   consensus/README.md#provisioners-and-stakes
-[vbh]: consensus/chain-management/README.md#verifyblockheader
-[vc]:  consensus/sortition/README.md#voting-committees
+<!-- Consensus -->
+[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
+[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
+[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
+[p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
+<!-- Attestation -->
+[att]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
+<!-- Sortition -->
+[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
+[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+[vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#voting-committees
+<!-- Chain Management -->
+[vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader

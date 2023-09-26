@@ -47,7 +47,7 @@ The environment for the block-processing procedures include node-level parameter
 
 
 ## Block Verification
-We here define the procedures to verify the validity of a block: [*VerifyBlock*](#verifyblock), [*VerifyBlockHeader*][vbh], and [*VerifyCertificate*](#verifycertificate). 
+We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], and [*VerifyCertificate*][vc]. 
 These procedures are used both when processing new blocks from the network ([ProcessBlock][pb]); [*VerifyBlockHeader*][vbh] is also used during the [Reduction][red] phase to validate a candidate block.
 
 ### VerifyBlock
@@ -174,7 +174,7 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 
 ### ProcessBlock
 The *ProcessBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
-The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*](#fallback) procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
+The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
 
 ***Parameters*** 
 - $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
@@ -188,7 +188,7 @@ The procedure acts depending on the block's height: if the block has the same he
    2. If the block is valid
    3. And block's iteration is lower than $Tip$
    4. And block is not $Tip$
-      1. Start *fallback* procedure ([*Fallback*](#fallback))
+      1. Start *fallback* procedure ([*Fallback*][fal])
 4. If block height is lower than $Tip$
    1. Discard block 
 5. If block height is higher than $Tip$
@@ -207,7 +207,7 @@ $\textit{ProcessBlock}(\mathsf{M}^{Block}):$
    2. $\texttt{if } (isValid = true)$
    3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
    4. $\texttt{and } (\mathsf{B} \ne Tip) :$
-      1. [*Fallback*](#fallback)$()$
+      1. [*Fallback*][fal]$()$
    <!-- B.Height < Tip.Height -->
 4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
    1. $\texttt{stop}$
@@ -270,11 +270,11 @@ More specifically, the protocol works as follows:
 
 During the protocol, if the sync peer sends a valid $Tip$'s successor, the node considers such peer as trustworthy and stops the SA loop ([*SALoop*][sl]) for efficiency purposes. 
 
-Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout](#environment)) to transmit blocks. If the timeout expires, the protocol is ended (see [*HandleSyncTimeout*](#handlesynctimeout)) and consensus restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided by the syncpeer.
+Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the protocol is ended (see [*HandleSyncTimeout*][hst]) and consensus restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided by the syncpeer.
 
 
 ### SyncBlock
-The *SyncBlock* procedure handles potential successors of the local $Tip$. The procedure accepts valid $Tip$'s successors and is responsible for initiating ([*StartSync*](#startsync)) and handling synchronization protocols run with nodes peers. Only one synchronization protocol can be run at a time, and only with a single peer (the *sync peer*).
+The *SyncBlock* procedure handles potential successors of the local $Tip$. The procedure accepts valid $Tip$'s successors and is responsible for initiating ([*StartSync*][ss]) and handling synchronization protocols run with nodes peers. Only one synchronization protocol can be run at a time, and only with a single peer (the *sync peer*).
 
 When receiving blocks with higher height than the $Tip$'s successor, they are stored in the $BlockPool$. If receiving a valid $Tip$'s successor, this is accepted along with all valid successors in the $BlockPool$.
 
@@ -290,7 +290,7 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
    <!-- B > Tip+1 -->
    1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
       1. Add $\mathsf{B}$ to the $BlockPool$
-      2. Start synchronization protocol ([*StartSync*](#startsync)) with peer $\mathcal{S}$
+      2. Start synchronization protocol ([*StartSync*][ss]) with peer $\mathcal{S}$
    <!-- B = Tip+1 -->
    2. If $\mathsf{B}$ is the $Tip$'s successor:
       1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
@@ -326,13 +326,13 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
    <!-- B > Tip+1 -->
    1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
       1. $BlockPool = BlockPool \cup \mathsf{B}$
-      2. [*StartSync*](#startsync)$(\mathsf{B}, \mathcal{S})$
+      2. [*StartSync*][ss]$(\mathsf{B}, \mathcal{S})$
    <!-- B = Tip+1 -->
    2. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
       1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
       2. $\texttt{if } (isValid = false): \texttt{stop}$
       3. [*AcceptBlock*][ab]$(\mathsf{B})$
-      4. *Propagate*$(\mathsf{B})$
+      4. [*Propagate*][mx]$(\mathsf{B})$
       5. $\texttt{restart}$([*SALoop*][sl])
 
 <!-- outSync -->
@@ -346,7 +346,7 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
       1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
       2. $\texttt{if } (isValid = true):$
          1. [*AcceptBlock*][ab]$(\mathsf{B})$
-         2. [*AcceptPoolBlocks*][apb]()
+         2. [*AcceptPoolBlocks*][apb]$()$
          3. $\texttt{if } (Tip.Height = syncFrom) :$
             1. $\texttt{stop}$([*SALoop*][sl])
       3. $\texttt{else}:$
@@ -380,7 +380,7 @@ $\textit{StartSync}(\mathsf{B}, \mathcal{S}):$
 3. [*Send*][mx]$(\mathsf{GetBlocks}(Tip.Hash))$
 4. $syncPeer = \mathcal{S}$
 5. $\tau_{Sync} = \tau_{Now}$
-6. [*HandleSyncTimeout*](#handlesynctimeout)$()$
+6. [*HandleSyncTimeout*][hst]$()$
 7. $inSync = false$
 
 ### HandleSyncTimeout
@@ -427,20 +427,27 @@ $\textit{AcceptPoolBlocks}():$
 
 
 <!------------------------- LINKS ------------------------->
-
+[env]: #environment
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
 [fal]: #fallback
+[hst]: #handlesynctimeout
 [pb]:  #processblock
 [syn]: #synchronization
 [sb]:  #syncblock
+[ss]:  #startsync
 [vb]:  #verifyblock
+[vc]:  #verifycertificate
 
-[b]:   blockchain/README.md#block-structure
-[fin]: consensus/README.md#finality
-[mx]:  consensus/README.md#message-exchange
-[red]: consensus/reduction/README.md
-[sl]:  consensus/README.md#saloop
-[va]:  consensus/ratification/README.md#verifyaggregated
-[vbh]: consensus/README.md#verifyblockheader
-[vc]:  consensus/README.md#verifycertificate
+<!-- Blockchain -->
+[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
+<!-- Consensus -->
+[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
+[sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
+[vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader
+[vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
+<!-- Reduction -->
+[red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
+<!-- Ratification -->
+[va]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#verifyaggregated

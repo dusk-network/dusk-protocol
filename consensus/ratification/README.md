@@ -73,25 +73,25 @@ $\boldsymbol{\textit{Ratification}}( )$:
        - $s = Step_{\mathsf{M}^A}$
       1. $\texttt{if } (pk_{\mathsf{M}^A} \in C_r^s):$
           1. [*Propagate*][mx]$(\mathsf{M}^A)$
-          2. $isValid$ = [*VerifyAgreement*](#verifyagreement)$(\mathsf{M}^A)$
+          2. $isValid$ = [*VerifyAgreement*][va]$(\mathsf{M}^A)$
           3. $\texttt{if } (isValid = true)$:
              1. $i = s \div 3$
              2. $S_i = S_i \cup \mathsf{M}^A$
-             3. $\boldsymbol{signers}_i =$ [GetSigners](#getsigners)$(S_i)$ \
+             3. $\boldsymbol{signers}_i =$ [GetSigners][gs]$(S_i)$ \
                 $c_i$ = [*CountCredits*][cc]$(C_r^s, \boldsymbol{signers}_i)$
              4. $\texttt{if } (c_{i} \ge Quorum):$
-                1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*](#createaggragreement)$(S_i)$
+                1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*][caa]$(S_i)$
                 2. [*Broadcast*][mx]$(\mathsf{M}^{Ag})$
                 - $\mathsf{B}^c = \mathsf{H}_{S_i[0]}.BlockHash$
                 - $\boldsymbol{V} \leftarrow S_i[0].RVotes$
-                1. $\mathsf{B}^w$ = [*MakeWinning*](#makewinning)$(\mathsf{B}^c, \boldsymbol{V}[0], \boldsymbol{V}[1])$
+                1. $\mathsf{B}^w$ = [*MakeWinning*][mw]$(\mathsf{B}^c, \boldsymbol{V}[0], \boldsymbol{V}[1])$
    
    2.  $\texttt{if } (\mathsf{M}^{Ag} =$ [*Receive*][mx]$(\mathsf{AggrAgreement}, r)):$
        - $`(\mathsf{H}_{\mathsf{M}^{Ag}}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^{Ag}`$
        - $`\_, \mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}} \leftarrow \mathsf{H}_{\mathsf{M}^{Ag}}`$
-       1. [VerifyAggregated](#verifyaggregated)$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
-       2.  [*Propagate*][mx]$(\mathsf{M}^{Ag})$
-       3.  $\mathsf{B}^w =$ [*MakeWinning*](#makewinning)$(\mathsf{M}^{Ag}.Agreement)$
+       1. [VerifyAggregated][vaa]$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
+       2. [*Propagate*][mx]$(\mathsf{M}^{Ag})$
+       3. $\mathsf{B}^w =$ [*MakeWinning*][mw]$(\mathsf{M}^{Ag}.Agreement)$
 
 
 ### VerifyAgreement
@@ -116,8 +116,8 @@ $VerifyAgreement(\mathsf{M})$
 2. $\texttt{if } (|\boldsymbol{V}| \ne 2): \texttt{output } false$
 3. $\texttt{if } (s_{\mathsf{M}} \gt maxSteps): \texttt{output } false$
 4. $`\mathsf{V}_1, \mathsf{V}_1 \leftarrow \boldsymbol{V}`$ \
-  $r_1 =$ [*VerifyAggregated*](#verifyaggregated)$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
-  $r_2 =$ [*VerifyAggregated*](#verifyaggregated)$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
+  $r_1 =$ [*VerifyAggregated*][vaa]$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}-1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$ \
+  $r_2 =$ [*VerifyAggregated*][vaa]$`(\eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}}, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
 1. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) : \texttt{return } true$
 
 ### VerifyAggregated
@@ -141,7 +141,7 @@ $VerifyAggregated$ checks the aggregated vote reaches the quorum, and the aggreg
 ***Procedure***
 
 $VerifyAggregated(hash, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$:
-1. $C^{\boldsymbol{bs}} = [SubCommittee][sc](C_{round}^{step}, \boldsymbol{bs})$
+1. $C^{\boldsymbol{bs}} = $[SubCommittee][sc]$(C_{round}^{step}, \boldsymbol{bs})$
 2. $\texttt{if } ($[*CountCredits*][cc]$(C_{round}^{step}, C^{\boldsymbol{bs}}) \lt Quorum):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
@@ -166,9 +166,9 @@ $VerifyAggregated(hash, round, step, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
 $CreateAggrAgreement(S)$:
  - $`\mathsf{H}_{\mathsf{M}_1}, \sigma_{\mathsf{M}_1}, \boldsymbol{V} \leftarrow \mathsf{M}_1`$
  - $`\_, r, s, \_ \leftarrow \mathsf{H}_{\mathsf{M}_1}`$
- 1. $`\boldsymbol{sigs} = `$ [*GetSignatures*](#getsignatures)$(S)$ \
+ 1. $`\boldsymbol{sigs} = `$ [*GetSignatures*][gss]$(S)$ \
     $\sigma_{S} = Aggregate_{BLS}(\boldsymbol{sigs})$
- 2. $`\boldsymbol{signers} = `$ [*GetSigners*](#getsigners)$(S)$ \
+ 2. $`\boldsymbol{signers} = `$ [*GetSigners*][gs]$(S)$ \
     $`\boldsymbol{bs}_{S} = `$ [*BitSet*][bs]$(C_r^s, \boldsymbol{signers})$
  3. $`\mathsf{M}^{Ag} = (\mathsf{H}_{\mathsf{M}_1}, \sigma_{\mathsf{M}_1}, \boldsymbol{V}, \boldsymbol{bs}_{S}, \sigma_S)`$
  4. $\texttt{output }\mathsf{M}^{Ag}$
@@ -230,11 +230,20 @@ $MakeWinning(\mathsf{B}^c, \mathsf{V}_1, \mathsf{V}_2):$
 <!------------------------- LINKS ------------------------->
 
 [cert]: #certificate-structure
+[caa]:  #createaggragreement
+[gs]:   #getsigners
+[gss]:  #getsignatures
+[mw]:   #makewinning
+[va]:   #verifyagreement
+[vaa]:  #verifyaggregated
 
-[cparams]: consensus/README.md#parameters
-[bs]: consensus/sortition/README.md#bitset
-[cc]: consensus/sortition/README.md#countcredits
-[mh]: consensus/README.md#message-header
-[mx]: consensus/README.md#message-exchange
-[sc]: consensus/sortition/README.md#subcommittee
-[sv]: consensus/reduction/README.md#stepvotes
+<!-- Consensus -->
+[cparams]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#parameters
+[mh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
+[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
+<!-- Sortition -->
+[bs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#bitset
+[cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
+[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
+<!-- Reduction -->
+[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes

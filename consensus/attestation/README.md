@@ -1,5 +1,5 @@
  # Attestation Phase
-*Attestation* is the first phase in an [*SA iteration*][cit].
+*Attestation* is the first phase in an [*SA iteration*][sai].
 In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 
 ## Phase Overview
@@ -57,7 +57,7 @@ $Attestation(Round, Iteration)$:
    - $s = (Iteration-1) \times 3 + 1$
 2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(r,s,1)$
 3. $\texttt{if } (pk_\mathcal{N} == pk_{\mathcal{G}}):$
-   1. $\mathsf{B}^c =$ [*GenerateBlock*](#generateblock)$()$
+   1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$()$
    2. $\mathsf{M}^B =$ [*Msg*][msg]$(\mathsf{NewBlock}, \eta_{\mathsf{B}_{r-1}}, \mathsf{B}^c)$
       | Field       | Value                     | 
       |-------------|---------------------------|
@@ -65,19 +65,19 @@ $Attestation(Round, Iteration)$:
       | $PrevHash$  | $\eta_{\mathsf{B}_{r-1}}$ |
       | $Candidate$ | $\mathsf{B}^c$            |
       | $Signature$ | $\sigma_\mathsf{M}$       |
-   3. $Broadcast(\mathsf{M}^B)$
+   3. [*Broadcast*][mx]$(\mathsf{M}^B)$
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Attestation}):$
-      1. $\texttt{if } (\mathsf{M} {=} Receive(\mathsf{NewBlock},r,s) \ne NIL)$:
+      1. $\texttt{if } (\mathsf{M} {=}$ [*Receive*][mx]$(\mathsf{NewBlock},r,s) \ne NIL)$:
          - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}^\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
          - $`\eta_{\mathsf{B}^\mathsf{M}} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^\mathsf{M}})`$
          - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{B}^\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
          1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) == true \text{ })`$
          2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{\mathcal{G}} \text{ })`$
          3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^\mathsf{M}} \text{ }):`$
-            1. $Propagate(\mathsf{M})$
+            1. [*Propagate*][mx]$(\mathsf{M})$
             2. $\texttt{output } \mathsf{B}^\mathsf{M}$
    3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Attestation}):$
       1. [*IncreaseTimeout*][it]$(\tau_{Attestation})$
@@ -101,8 +101,8 @@ $Attestation(Round, Iteration)$:
 ***Procedure***
 
 $GenerateBlock()$
-1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*](#selecttransactions)()
-2. $State_r =$ [*ExecuteTransactions*]()$`(\boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
+2. $State_r =$ [*ExecuteTransactions*][xt]$`(\boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
 3. $`TxRoot_r = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`i = \lfloor\frac{s}{3}\rfloor`$
 5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
@@ -139,13 +139,23 @@ Typically, the Generator's strategy will aim at maximizing profits by selecting 
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
 <!------------------------- LINKS ------------------------->
+[gb]: #generateblock
+[st]: #selecttransactions
 
-[cp]:  consensus/README.md#consensus-parameters
-[cit]: consensus/README.md#saiteration
-[mh]:  consensus/README.md#message-header
-[b]:   blockchain/README.md#block-structure
-[ds]:  consensus/sortition/
-[dsa]: consensus/sortition/README.md#deterministic-sortition-ds
-[msg]: consensus/README.md#message-creation
-[red]: consensus/reduction/README.md
-[it]:  consensus/README.md#increasetimeout
+<!-- Blockchain -->
+[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
+<!-- Consensus -->
+[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
+[it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
+[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
+[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
+[sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+<!-- Sortition -->
+[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
+[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+<!-- Reduction -->
+[red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
+
+<!-- TODO: Add ExecuteTransactions -->
+[xt]: https://github.com/dusk-network/dusk-protocol/tree/main/
