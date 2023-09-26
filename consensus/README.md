@@ -91,10 +91,10 @@ Note that only eligible provisioners participate in the consensus protocol.
 
 ## Consensus Messages
 To run the SA protocol, participating nodes exchange consensus messages. There are four types of message:
-- $\mathsf{NewBlock}$: this message stores a candidate block for a certain round and iteration. It is used during the [Attestation](./attestation/) phase;
-- $\mathsf{Reduction}$: this message contains the vote of a provisioner, selected as a member of the voting committee, on the validity of a candidate block. It is used during the [Reduction](./reduction/) phase;
+- $\mathsf{NewBlock}$: this message stores a candidate block for a certain round and iteration. It is used during the [Attestation][att] phase;
+- $\mathsf{Reduction}$: this message contains the vote of a provisioner, selected as a member of the voting committee, on the validity of a candidate block. It is used during the [Reduction][red] phase;
 - $\mathsf{Agreement}$: this message contains the aggregated votes of a Reduction phase. It is used at the end of a Reduction phase, if a quorum is reached;
-- $\mathsf{AggrAgreement}$: it contains an aggregation of $\mathsf{Agreement}$ messages. It is used in the [Ratification](./ratification) phase, if a quorum of such messages is received.
+- $\mathsf{AggrAgreement}$: it contains an aggregation of $\mathsf{Agreement}$ messages. It is used in the [Ratification][rat] phase, if a quorum of such messages is received.
 
 Formally, we denote a consensus message $\mathsf{M}$ as:
 
@@ -263,7 +263,7 @@ If, at any time, the node falls behind the network, the synchronization procedur
    1. Check state validity
    2. Set $State$ to loaded state
    3. Set $Tip$ to last block
-4. Start SA loop procedure ([*SALoop*](#saloop))
+4. Start SA loop procedure ([*SALoop*][sl])
 
 ***Procedure***
 
@@ -275,7 +275,7 @@ $\textit{SAConsensus}():$
    1. *ValidateState*$(S)$    <!-- TODO -->
    2. $State = S.State$
    3. $Tip = S.Tip$
-4. $\texttt{start}$([*SALoop*](#saloop))
+4. $\texttt{start}$([*SALoop*][sl])
 
 ### SALoop
 The *SALoop* procedure executes SA rounds (*SARound*). We define this as a separate procedure to allow it to be stopped and restarted when synchronizing the blockchain.
@@ -324,7 +324,7 @@ $\textit{SARound}(Round_{SA}):$
    - $\tau_{Attestation}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration_{SA} = 1$
-2. $\texttt{start}$([*Ratification*][rat]$(Round_{SA}))$
+2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
 3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} < MaxIterations$)
    1. [*SAIteration*](#saiteration)$(Round_{SA}, Iteration_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
@@ -350,9 +350,9 @@ This procedure executes a sequence of *Attestation*, to generate a new candidate
 $\textit{SAIteration}(Round, Iteration):$
 - $r2Step = (Iteration{-}1) \times 3 + 3$
 - $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
-1. $\mathsf{B}^c =$ [*Attestation*][att]$(Round, Iteration)$
-2. $\mathsf{V}^1 =$ [*Reduction*][red]$(Round, Iteration, 1, \mathsf{B}^c)$
-3. $\mathsf{V}^2 =$ [*Reduction*][red]$(Round, Iteration, 2, \mathsf{B}^c)$
+1. $\mathsf{B}^c =$ [*Attestation*][atta]$(Round, Iteration)$
+2. $\mathsf{V}^1 =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
+3. $\mathsf{V}^2 =$ [*Reduction*][reda]$(Round, Iteration, 2, \mathsf{B}^c)$
 4. $\texttt{if } (\mathsf{V}^1 \ne NIL) \texttt{ and } (\mathsf{V}^2 \ne NIL)$
 5. $\texttt{and } (pk_\mathcal{N} \in C^{R2}):$
     1. $\mathsf{M}^A =$ [*Msg*][msg]$(\mathsf{Agreement}, [\mathsf{V}^1,\mathsf{V}^2])$
@@ -401,10 +401,13 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 [sl]:  #saloop
 
 [ab]:  consensus/chain-management/README.md#acceptblock
-[att]: consensus/attestation/README.md#attestation-algorithm
+[att]: consensus/attestation/
+[atta]: consensus/attestation/README.md#attestation-algorithm
 [ds]:  consensus/sortition/
 [dsa]: consensus/sortition/README.md#deterministic-sortition-ds
 [pb]:  consensus/chain-management/README.md#processblock
-[rat]: consensus/ratification/README.md#ratification-algorithm
-[red]: consensus/reduction/README.md#reduction-algorithm
+[rat]: consensus/ratification/
+[rata]: consensus/ratification/README.md#ratification-algorithm
+[red]: consensus/reduction/
+[reda]: consensus/reduction/README.md#reduction-algorithm
 [sv]:  consensus/reduction/README.md#stepvotes
