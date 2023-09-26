@@ -247,7 +247,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 <!-- $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->
 
 ## SA Algorithm
-The SA consensus algorithm is defined by the [*SAConsensus*](#saconsensus) procedure, which executes an SA round ([*SARound*](#saround)) for each new block to generate. In turn, the *SARound* procedure runs a loop of [*SAIteration*](#saiteration)s in parallel with the *Ratification* procedure. As soon as a winning block ($\mathsf{B}^w$) for the round is produced, the state is updated ([*AcceptBlock*][ab]), the $Tip$ is set to the winning block, and a new round begins.
+The SA consensus algorithm is defined by the [*SAConsensus*][sac] procedure, which executes an SA round ([*SARound*][sar]) for each new block to generate. In turn, the *SARound* procedure runs a loop of [*SAIteration*][sai]s in parallel with the *Ratification* procedure. As soon as a winning block ($\mathsf{B}^w$) for the round is produced, the state is updated ([*AcceptBlock*][ab]), the $Tip$ is set to the winning block, and a new round begins.
 
 ### SAConsensus
 The *SAConsensus* procedure is the entry point of a consensus node. Upon booting, the node checks if there is a local state saved and, if so, loads it. Otherwise, it starts from the *Genesis Block*. Then, it probes the network to check if it is in sync or not with the blockchain. If not, it starts a synchronization procedure. When in sync, it executes the consensus algorithm per rounds. At the end of each round, if a winning block has been produced, it updates the state and starts a new round. 
@@ -263,7 +263,7 @@ If, at any time, the node falls behind the network, the synchronization procedur
    1. Check state validity
    2. Set $State$ to loaded state
    3. Set $Tip$ to last block
-4. Start SA loop procedure ([*SALoop*][sl])
+4. Start SA loop procedure ([*SALoop*][sal])
 
 ***Procedure***
 
@@ -275,7 +275,7 @@ $\textit{SAConsensus}():$
    1. *ValidateState*$(S)$    <!-- TODO -->
    2. $State = S.State$
    3. $Tip = S.Tip$
-4. $\texttt{start}$([*SALoop*][sl])
+4. $\texttt{start}$([*SALoop*][sal])
 
 ### SALoop
 The *SALoop* procedure executes SA rounds (*SARound*). We define this as a separate procedure to allow it to be stopped and restarted when synchronizing the blockchain.
@@ -295,7 +295,7 @@ The procedure executes an infinite loop of SA rounds. At each iteration, the $Ro
 $\textit{SALoop}():$
 1. $\texttt{loop}:$
    1. $Round_{SA} = Tip.Height + 1$
-   2. $\mathsf{B}^w =$ [*SARound*](#saround)$(Round_{SA})$
+   2. $\mathsf{B}^w =$ [*SARound*][sar]$(Round_{SA})$
    3. $\texttt{if } (\mathsf{B}^w = NIL):$ 
        - $\texttt{stop}$
    4. $State =$ [*AcceptBlock*][ab]$(\mathsf{B}^w)$
@@ -326,7 +326,7 @@ $\textit{SARound}(Round_{SA}):$
    - $Iteration_{SA} = 1$
 2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
 3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} < MaxIterations$)
-   1. [*SAIteration*](#saiteration)$(Round_{SA}, Iteration_{SA})$
+   1. [*SAIteration*][sai]$(Round_{SA}, Iteration_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
 5. [*Broadcast*][mx]$(\mathsf{B}^w)$
@@ -398,16 +398,24 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 [msg]: #message-creation
 [mx]:  #message-exchange
 [mh]:  #message-header
-[sl]:  #saloop
+[sac]: #saconsensus
+[sar]: #saround
+[sai]: #saiteration
+[sal]:  #saloop
 
-[ab]:  consensus/chain-management/README.md#acceptblock
-[att]: consensus/attestation/
-[atta]: consensus/attestation/README.md#attestation-algorithm
-[ds]:  consensus/sortition/
-[dsa]: consensus/sortition/README.md#deterministic-sortition-ds
-[pb]:  consensus/chain-management/README.md#processblock
-[rat]: consensus/ratification/
-[rata]: consensus/ratification/README.md#ratification-algorithm
-[red]: consensus/reduction/
-[reda]: consensus/reduction/README.md#reduction-algorithm
-[sv]:  consensus/reduction/README.md#stepvotes
+<!-- Chain Management -->
+[ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
+[pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
+<!-- Sortition -->
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
+[dsa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+<!-- Attestation -->
+[att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
+[atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm
+<!-- Reduction -->
+[red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
+[reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
+<!-- Ratification -->
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
+[rata]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#ratification-algorithm

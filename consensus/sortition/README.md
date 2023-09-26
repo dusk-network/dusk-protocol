@@ -112,7 +112,7 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
 4. Assign credit $i$ as follows:
    1. Compute $Score$
    2. Order provisioners by ascending public key
-   3. Extract provisioner $P$ with [*DE*][de]()
+   3. Extract provisioner $P$ with [*DE*][de]
    4. Add $P$ to committee, if necessary
    5. Assign credit to $P$
    6. Compute $d$ as the minimum between $1$ Dusk and $P$'s weight
@@ -216,7 +216,9 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 <!------------------------- LINKS ------------------------->
 
 [de]: #deterministic-extraction-de
-
-[bh]:  blockchain/README.md#blockheader-structure
-[cp]:  consensus/README.md#consensus-parameters
-[red]: consensus/reduction/README.md
+<!-- Blockchain -->
+[bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader-structure
+<!-- Consensus -->
+[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/README.md#consensus-parameters
+<!-- Reduction -->
+[red]: https://github.com/dusk-network/dusk-protocol/tree/main/reduction/README.md
