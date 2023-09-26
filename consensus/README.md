@@ -394,16 +394,16 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 
 <!------------------------- LINKS ------------------------->
 
-[ab]: ./chain-management/README.md#acceptblock
-[att]: ./attestation/README.md#attestation-algorithm
+[ab]:  chain-management/README.md#acceptblock
+[att]: attestation/README.md#attestation-algorithm
 [cp]:  #consensus-parameters
-[ds]:  ./sortition/
-[dsa]: ./sortition/README.md#deterministic-sortition-ds
+[ds]:  sortition/
+[dsa]: sortition/README.md#deterministic-sortition-ds
 [msg]: #message-creation
 [mx]:  #message-exchange
 [mh]:  #message-header
-[pb]:  ./chain-management/README.md#processblock
-[rat]: ./ratification/README.md#ratification-algorithm
-[red]: ./reduction/README.md#reduction-algorithm
+[pb]:  chain-management/README.md#processblock
+[rat]: ratification/README.md#ratification-algorithm
+[red]: reduction/README.md#reduction-algorithm
 [sl]:  #saloop
-[sv]:  ./reduction/README.md#stepvotes
+[sv]:  reduction/README.md#stepvotes
