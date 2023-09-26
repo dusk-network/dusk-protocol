@@ -229,11 +229,12 @@ $MakeWinning(\mathsf{B}^c, \mathsf{V}_1, \mathsf{V}_2):$
 
 <!------------------------- LINKS ------------------------->
 
-[sv]: ../reduction/README.md#stepvotes
 [cert]: #certificate-structure
-[cparams]: ../README.md#parameters
-[mh]: ../README.md#message-header
-[mx]: ../README.md#message-exchange
-[cc]: ../sortition/README.md#countcredits
-[bs]: ../sortition/README.md#bitset
-[sc]: ../sortition/README.md#subcommittee
+
+[cparams]: consensus/README.md#parameters
+[bs]: consensus/sortition/README.md#bitset
+[cc]: consensus/sortition/README.md#countcredits
+[mh]: consensus/README.md#message-header
+[mx]: consensus/README.md#message-exchange
+[sc]: consensus/sortition/README.md#subcommittee
+[sv]: consensus/reduction/README.md#stepvotes

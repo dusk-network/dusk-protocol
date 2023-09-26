@@ -127,14 +127,15 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 
 <!------------------------- LINKS ------------------------->
 
-[cp]: ../README.md#consensus-parameters
-[vbh]: ../chain-management/README.md#verifyblockheader
-[p]: ../README.md#provisioners-and-stakes
-[ds]: ../sortition/README.md
-[dsa]: ../sortition/README.md#deterministic-sortition-ds
-[mh]: ../README.md#message-header
-[msg]: ../README.md#message-creation
 [sv]: #stepvotes
-[mx]: ../README.md#message-exchange
-[att]: ../attestation/
-[vc]: ../sortition/README.md#voting-committees
+
+[att]: consensus/attestation/
+[cp]:  consensus/README.md#consensus-parameters
+[ds]:  consensus/sortition/README.md
+[dsa]: consensus/sortition/README.md#deterministic-sortition-ds
+[mh]:  consensus/README.md#message-header
+[msg]: consensus/README.md#message-creation
+[mx]:  consensus/README.md#message-exchange
+[p]:   consensus/README.md#provisioners-and-stakes
+[vbh]: consensus/chain-management/README.md#verifyblockheader
+[vc]:  consensus/sortition/README.md#voting-committees

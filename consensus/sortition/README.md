@@ -1,7 +1,7 @@
 <!-- TODO: Define BlockGenerator() and Committee() procedures -->
 
 # Deterministic Sortition
-*Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](../README.md) protocol to select the *Block Generator* during the [*Attestation*](../attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*][red] phases.
+*Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](consensus/README.md) protocol to select the *Block Generator* during the [*Attestation*](consensus/attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*][red] phases.
 
 ## Voting Committees
 <!-- TODO: move this to Consensus main README ? -->
@@ -46,7 +46,7 @@ $$ G_r^i = DS(r,s,1).$$
 <p><br></p>
 
 ## Algorithm Overview
-The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning credits to [eligible](../README.md#provisioners-and-stakes) provisioners.
+The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning credits to [eligible](consensus/README.md#provisioners-and-stakes) provisioners.
 
 The algorithm takes as inputs the round number $r$ and step number $s$, and outputs the corresponding committee.
 It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{r-1}$, and the number of credits to assign $credits$.
@@ -216,6 +216,7 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 <!------------------------- LINKS ------------------------->
 
 [de]: #deterministic-extraction-de
-[cp]: ../README.md#consensus-parameters
-[red]: ../reduction/README.md
-[bh]: ../../blockchain/README.md#blockheader-structure
+
+[bh]:  blockchain/README.md#blockheader-structure
+[cp]:  consensus/README.md#consensus-parameters
+[red]: consensus/reduction/README.md

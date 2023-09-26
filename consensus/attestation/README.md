@@ -140,12 +140,12 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 
 <!------------------------- LINKS ------------------------->
 
-[cp]: ../README.md#consensus-parameters
-[cit]: ../README.md#saiteration
-[mh]: ../README.md#message-header
-[b]: ../../blockchain/README.md#block-structure
-[ds]: ../sortition/
-[dsa]: ../sortition/README.md#deterministic-sortition-ds
-[msg]: ../README.md#create-message
-[red]: ../reduction/README.md
-[it]: ../README.md#increasetimeout
+[cp]:  consensus/README.md#consensus-parameters
+[cit]: consensus/README.md#saiteration
+[mh]:  consensus/README.md#message-header
+[b]:   blockchain/README.md#block-structure
+[ds]:  consensus/sortition/
+[dsa]: consensus/sortition/README.md#deterministic-sortition-ds
+[msg]: consensus/README.md#message-creation
+[red]: consensus/reduction/README.md
+[it]:  consensus/README.md#increasetimeout

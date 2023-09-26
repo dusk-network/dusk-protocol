@@ -43,4 +43,4 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 
 <!------------------------- LINKS ------------------------->
 
-[sv]: ../consensus/reduction/README.md#stepvotes
+[sv]: consensus/reduction/README.md#stepvotes

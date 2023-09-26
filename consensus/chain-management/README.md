@@ -428,18 +428,19 @@ $\textit{AcceptPoolBlocks}():$
 
 <!------------------------- LINKS ------------------------->
 
-[ab]:  ../README.md#acceptblock
+[ab]:  #acceptblock
 [apb]: #acceptpoolblocks
-[b]:   ../../blockchain/README.md#block-structure
 [fal]: #fallback
-[fin]: ../README.md#finality
-[mx]:  ../README.md#message-exchange
 [pb]:  #processblock
-[red]: ../reduction/README.md
 [syn]: #synchronization
 [sb]:  #syncblock
-[sl]:  ../README.md#saloop
-[va]:  ../ratification/README.md#verifyaggregated
 [vb]:  #verifyblock
-[vbh]: ../README.md#verifyblockheader
-[vc]:  ../README.md#verifycertificate
+
+[b]:   blockchain/README.md#block-structure
+[fin]: consensus/README.md#finality
+[mx]:  consensus/README.md#message-exchange
+[red]: consensus/reduction/README.md
+[sl]:  consensus/README.md#saloop
+[va]:  consensus/ratification/README.md#verifyaggregated
+[vbh]: consensus/README.md#verifyblockheader
+[vc]:  consensus/README.md#verifycertificate
