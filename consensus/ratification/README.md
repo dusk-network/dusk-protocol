@@ -90,8 +90,8 @@ $\boldsymbol{\textit{Ratification}}( )$:
        - $`(\mathsf{H}_{\mathsf{M}^{Ag}}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^{Ag}`$
        - $`\_, \mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}} \leftarrow \mathsf{H}_{\mathsf{M}^{Ag}}`$
        1. [VerifyAggregated][vaa]$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
-       2.  [*Propagate*][mx]$(\mathsf{M}^{Ag})$
-       3.  $\mathsf{B}^w =$ [*MakeWinning*][mw]$(\mathsf{M}^{Ag}.Agreement)$
+       2. [*Propagate*][mx]$(\mathsf{M}^{Ag})$
+       3. $\mathsf{B}^w =$ [*MakeWinning*][mw]$(\mathsf{M}^{Ag}.Agreement)$
 
 
 ### VerifyAgreement

@@ -61,7 +61,7 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
       1. Verify candidate block
       2. If block is valid, set vote $v$ to block's hash
       3. Otherwise, set $v$ to $NIL$
-   3. Send $\mathsf{Reduction}$ message with vote $v$
+   3. Broadcast $\mathsf{Reduction}$ message with vote $v$
 4. While timeout is not expired:
    1. If a $\mathsf{Reduction}$ message $\mathsf{M}$ is received for round $r$ and step $s$:
       1. If sender is in the committee

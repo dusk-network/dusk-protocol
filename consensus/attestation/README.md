@@ -65,19 +65,19 @@ $Attestation(Round, Iteration)$:
       | $PrevHash$  | $\eta_{\mathsf{B}_{r-1}}$ |
       | $Candidate$ | $\mathsf{B}^c$            |
       | $Signature$ | $\sigma_\mathsf{M}$       |
-   3. $Broadcast(\mathsf{M}^B)$
+   3. [*Broadcast*][mx]$(\mathsf{M}^B)$
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Attestation}):$
-      1. $\texttt{if } (\mathsf{M} {=} Receive(\mathsf{NewBlock},r,s) \ne NIL)$:
+      1. $\texttt{if } (\mathsf{M} {=}$ [*Receive*][mx]$(\mathsf{NewBlock},r,s) \ne NIL)$:
          - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}^\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
          - $`\eta_{\mathsf{B}^\mathsf{M}} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^\mathsf{M}})`$
          - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{B}^\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
          1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) == true \text{ })`$
          2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{\mathcal{G}} \text{ })`$
          3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^\mathsf{M}} \text{ }):`$
-            1. $Propagate(\mathsf{M})$
+            1. [*Propagate*][mx]$(\mathsf{M})$
             2. $\texttt{output } \mathsf{B}^\mathsf{M}$
    3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Attestation}):$
       1. [*IncreaseTimeout*][it]$(\tau_{Attestation})$
@@ -149,6 +149,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/

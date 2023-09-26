@@ -158,7 +158,7 @@ In case of $\mathsf{Reduction}$, the parameter $f_1$, i.e. the vote $v$, is assi
 
 
 ### Message Exchange
-While the underlying network protocol is described in the [Network](../network) section, we here define some generic network functions that will be used in the consensus procedures.
+While the underlying network protocol is described in the [Network][net] section, we here define some generic network functions that will be used in the consensus procedures.
 
 ***Broadcast***
 The *Broadcast* function is used by the creator of a new message to initiate the network propagation of the message. The function simply takes any consensus message in input and is assumed to not fail (only within the context of this description) so it does not return anything.
@@ -403,6 +403,8 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 [sai]: #saiteration
 [sal]:  #saloop
 
+[net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
+
 <!-- Chain Management -->
 [ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
@@ -419,3 +421,4 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 <!-- Ratification -->
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
 [rata]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#ratification-algorithm
+

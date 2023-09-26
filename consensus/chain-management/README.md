@@ -332,7 +332,7 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
       1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
       2. $\texttt{if } (isValid = false): \texttt{stop}$
       3. [*AcceptBlock*][ab]$(\mathsf{B})$
-      4. *Propagate*$(\mathsf{B})$
+      4. [*Propagate*][mx]$(\mathsf{B})$
       5. $\texttt{restart}$([*SALoop*][sl])
 
 <!-- outSync -->
