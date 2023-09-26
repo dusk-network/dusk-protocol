@@ -402,7 +402,7 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 
 [ab]:  consensus/chain-management/README.md#acceptblock
 [att]: consensus/attestation/README.md#attestation-algorithm
-[ds]:  sortition/
+[ds]:  consensus/sortition/
 [dsa]: consensus/sortition/README.md#deterministic-sortition-ds
 [pb]:  consensus/chain-management/README.md#processblock
 [rat]: consensus/ratification/README.md#ratification-algorithm
