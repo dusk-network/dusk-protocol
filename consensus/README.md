@@ -289,6 +289,7 @@ The procedure executes an infinite loop of SA rounds. At each iteration, the $Ro
    2. Execute Round $Round_{SA}$ to produce winning block $\mathsf{B}^w$
    3. If no winning block has been produced, halt consensus
    4. Execute state transition
+   5. Broadcast block
 
 ***Procedure***
 
@@ -299,6 +300,7 @@ $\textit{SALoop}():$
    3. $\texttt{if } (\mathsf{B}^w = NIL):$ 
        - $\texttt{stop}$
    4. $State =$ [*AcceptBlock*][ab]$(\mathsf{B}^w)$
+   5. [*Broadcast*][mx]$(\mathsf{B}^w)$
 
 ### SARound
 The *SARound* procedure handles the execution of a consensus round: first, it initializes the *Round State* variables; then, it starts the Ratification process in background, and starts executing SA iterations. If, at any time, a winning block is produced by the Ratification process, the round stops.
