@@ -394,7 +394,7 @@ red2: (Block.Iteration-1) \times 3 + 1 + 2
 
 <!------------------------- LINKS ------------------------->
 
-[ab]:  chain-management/README.md#acceptblock
+[ab]:  consensus/chain-management/README.md#acceptblock
 [att]: attestation/README.md#attestation-algorithm
 [cp]:  #consensus-parameters
 [ds]:  sortition/
