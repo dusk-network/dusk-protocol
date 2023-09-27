@@ -1,4 +1,5 @@
 <!-- TODO: mention ProcessBlock -->
+<!-- TODO rename Consensus Parameters to Environment -->
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
@@ -17,14 +18,14 @@ Provisioners participate in turns to the production and validation of each new b
     - [Message Hash and Signature](#message-hash-and-signature)
     - [Message Creation](#message-creation)
     - [Message Exchange](#message-exchange)
-    - [Agreement Message](#agreement-message)
+    - [`Agreement` Message](#agreement-message)
   - [Consensus Parameters](#consensus-parameters)
   - [SA Algorithm](#sa-algorithm)
-    - [SAConsensus](#saconsensus)
-    - [SALoop](#saloop)
-    - [SARound](#saround)
-    - [SAIteration](#saiteration)
-    - [IncreaseTimeout](#increasetimeout)
+    - [*SAConsensus*](#saconsensus)
+    - [*SALoop*](#saloop)
+    - [*SARound*](#saround)
+    - [*SAIteration*](#saiteration)
+    - [*IncreaseTimeout*](#increasetimeout)
 
 
 ## Notation

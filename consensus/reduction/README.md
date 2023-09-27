@@ -4,8 +4,8 @@ If the votes of both committees reach a quorum, an $\mathsf{Agreement}$ message 
 
 ### ToC
 - [Overview](#overview)
-  - [Reduction Message](#reduction-message)
-  - [StepVotes](#stepvotes)
+  - [`Reduction` Message](#reduction-message)
+  - [`StepVotes`](#stepvotes)
 - [Reduction Algorithm](#reduction-algorithm)
 
 ## Overview
@@ -50,6 +50,7 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
 
 
 ## Reduction Algorithm
+<!-- TODO: Add description; Add #RunReduction? -->
 
 ***Parameters***
 - $Round$: round number

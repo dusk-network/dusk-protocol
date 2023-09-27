@@ -7,15 +7,15 @@ Each $\mathsf{Agreement}$ message ensures a provisioner of the committee receive
 
 ### ToC
 - [Overview](#overview)
-  - [AggrAgreement Message](#aggragreement-message)
-  - [Certificate](#certificate)
+  - [`AggrAgreement` Message](#aggragreement-message)
+  - [`Certificate`](#certificate)
 - [Ratification Algorithm](#ratification-algorithm)
-  - [VerifyAgreement](#verifyagreement)
-  - [VerifyAggregated](#verifyaggregated)
-  - [CreateAggrAgreement](#createaggragreement)
-  - [GetSignatures](#getsignatures)
-  - [GetSigners](#getsigners)
-  - [MakeWinning](#makewinning)
+  - [*VerifyAgreement*](#verifyagreement)
+  - [*VerifyAggregated*](#verifyaggregated)
+  - [*CreateAggrAgreement*](#createaggragreement)
+  - [*GetSignatures*](#getsignatures)
+  - [*GetSigners*](#getsigners)
+  - [*MakeWinning*](#makewinning)
 
 ## Overview
 During the Ratification phase, each node collects all $\mathsf{Agreement}$ messages coming from members of the second Reduction committee of the current round and iteration.
@@ -41,6 +41,7 @@ When this occurs, the candidate block is tagged as *winning block* and accepted 
 The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 
 ### Certificate
+<!-- TODO: add description -->
 
 | Field             | Type            | Size     | Description                          |
 |-------------------|-----------------|----------|--------------------------------------|

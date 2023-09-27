@@ -11,12 +11,12 @@
   - [Score](#score)
   - [Seed](#seed)
 - [Algorithm](#algorithm)
-  - [Deterministic Sortition (DS)](#deterministic-sortition-ds)
-  - [Deterministic Extraction (DE)](#deterministic-extraction-de)
+  - [*Deterministic Sortition* (DS)](#deterministic-sortition-ds)
+  - [*Deterministic Extraction* (DE)](#deterministic-extraction-de)
 - [Subcommittees](#subcommittees)
-  - [BitSet](#bitset)
-  - [SubCommittee](#subcommittee)
-  - [CountCredits](#countcredits)
+  - [*BitSet*](#bitset)
+  - [*SubCommittee*](#subcommittee)
+  - [*CountCredits*](#countcredits)
 
 ## Voting Committees
 <!-- TODO: move this to Consensus main README ? -->
