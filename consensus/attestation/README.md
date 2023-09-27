@@ -2,7 +2,14 @@
 *Attestation* is the first phase in an [*SA iteration*][sai].
 In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
 
-## Phase Overview
+#### ToC
+- [Overview](#overview)
+  - [`NewBlock` Message](#newblock-message)
+- [Attestation Algorithm](#attestation-algorithm)
+  - [*GenerateBlock*](#generateblock)
+  - [*SelectTransactions*](#selecttransactions)
+
+## Overview
 Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $\mathsf{NewBlock}$ message.
 Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*][red] phase, where it will vote on the block validity. All other blocks are discarded.
 

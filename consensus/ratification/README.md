@@ -5,7 +5,19 @@ All network nodes participate to this phase, collecting $\mathsf{Agreement}$ mes
 
 Each $\mathsf{Agreement}$ message ensures a provisioner of the committee received a quorum of votes for the candidate block and is then aware of the reached consensus.
 
-## Phase Overview
+### ToC
+- [Overview](#overview)
+  - [`AggrAgreement` Message](#aggragreement-message)
+  - [`Certificate`](#certificate)
+- [Ratification Algorithm](#ratification-algorithm)
+  - [*VerifyAgreement*](#verifyagreement)
+  - [*VerifyAggregated*](#verifyaggregated)
+  - [*CreateAggrAgreement*](#createaggragreement)
+  - [*GetSignatures*](#getsignatures)
+  - [*GetSigners*](#getsigners)
+  - [*MakeWinning*](#makewinning)
+
+## Overview
 During the Ratification phase, each node collects all $\mathsf{Agreement}$ messages coming from members of the second Reduction committee of the current round and iteration.
 
 Each $\mathsf{Agreement}$ message is counted as many times as the influence (voting credits) of the member that created it.
@@ -29,6 +41,7 @@ When this occurs, the candidate block is tagged as *winning block* and accepted 
 The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 
 ### Certificate
+<!-- TODO: add description -->
 
 | Field             | Type            | Size     | Description                          |
 |-------------------|-----------------|----------|--------------------------------------|

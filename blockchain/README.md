@@ -1,9 +1,19 @@
+# Blockchain
+This section describes the formal definition of the block and transaction structures
+
+#### ToC
+- [`Block` Structure](#block-structure)
+- [`BlockHeader` Structure](#blockheader-structure)
+  - [Block Notation](#block-notation)
+- [`Transaction` Structure](#transaction-structure)
+
+
 ## Block Structure
 
 | Field          | Type            | Size      | Description        |
 |----------------|-----------------|-----------|--------------------|
-| $Header$       | Block Header    | 112 bytes | Block header       |
-| $Transactions$ | Transaction [ ] | variable  | Block transactions |
+| $Header$       | `BlockHeader`    | 112 bytes | Block header       |
+| $Transactions$ | `Transaction` [ ] | variable  | Block transactions |
 <!-- TODO? | $Final$        | Boolean         | 1 bit    | Final state ($true$ if final, $false$ otherwise) | -->
 
 ## BlockHeader Structure
@@ -25,7 +35,7 @@
 The $BlockHeader$ structure has a total size of 410 bytes.
 This is reduced to 298 for a [*candidate block*][cb], since the $Certificate$ is missing.
 
-### Notation
+### Block Notation
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define a *block's hash* as:

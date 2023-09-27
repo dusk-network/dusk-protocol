@@ -1,4 +1,29 @@
 # Chain Management
+*Chain management* refers to how the SA protocol handles the local chain with respect to consensus-produced winning blocks, fork and out-of-sync events.
+
+In particular, this section describes how new blocks are accepted to the local blockchain and how this chain can be updated when receiving valid blocks from the network.
+
+### ToC
+- [Overview](#overview)
+  - [Block Finality](#block-finality)
+  - [`Block` Message](#block-message)
+- [Environment](#environment)
+- [Block Verification](#block-verification)
+  - [*VerifyBlock*](#verifyblock)
+  - [*VerifyCertificate*](#verifycertificate)
+  - [*VerifyBlockHeader*](#verifyblockheader)
+- [Block Management](#block-management)
+  - [*AcceptBlock*](#acceptblock)
+  - [*ProcessBlock*](#processblock)
+- [Fallback](#fallback)
+  - [*Fallback* Procedure](#fallback-procedure)
+- [Synchronization](#synchronization)
+  - [*SyncBlock*](#syncblock)
+  - [*StartSync*](#startsync)
+  - [*HandleSyncTimeout*](#handlesynctimeout)
+  - [*AcceptPoolBlocks*](#acceptpoolblocks)
+
+## Overview
 At node level, there are two ways for blocks to be added to the local chain. The first one is through the consensus protocol, that is, at the end of a successful round. In this case, the candidate block, for which a quorum has been reached in both Reduction phases, becomes a *winning block* and is therefore added to the chain as the new tip, updating the state accordingly (see [*AcceptBlock*][ab]).
 At the same time, it is possible that a block is received from the network, which has already reached consensus (proved by the *block certificate*). When the received block is not in the local chain, it can indicate two possible situations:
  
@@ -7,6 +32,8 @@ At the same time, it is possible that a block is received from the network, whic
  - *fork*: two or more blocks have reached consensus at the same height (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
 
 Incoming blocks (transmitted via $\mathsf{Block}$ messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+
+
 
 ### Block Finality
 Due to the asynchronous nature of the network, it is possible that more than one block reaches consensus in one round (in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
