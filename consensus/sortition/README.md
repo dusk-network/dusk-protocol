@@ -1,7 +1,22 @@
 <!-- TODO: Define BlockGenerator() and Committee() procedures -->
-
+<!-- TODO: Add # Overview -->
 # Deterministic Sortition
 *Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](consensus/README.md) protocol to select the *Block Generator* during the [*Attestation*](consensus/attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*][red] phases.
+
+### ToC
+- [Voting Committees](#voting-committees)
+  - [Reduction Committees](#reduction-committees)
+  - [Block Generator Extraction](#block-generator-extraction)
+- [Algorithm Overview](#algorithm-overview)
+  - [Score](#score)
+  - [Seed](#seed)
+- [Algorithm](#algorithm)
+  - [Deterministic Sortition (DS)](#deterministic-sortition-ds)
+  - [Deterministic Extraction (DE)](#deterministic-extraction-de)
+- [Subcommittees](#subcommittees)
+  - [BitSet](#bitset)
+  - [SubCommittee](#subcommittee)
+  - [CountCredits](#countcredits)
 
 ## Voting Committees
 <!-- TODO: move this to Consensus main README ? -->

@@ -2,7 +2,13 @@
 In the Reduction phase, the *candidate* block produced in the [Attestation][att] phase is validated by a subset of [provisioner][p], who verify the block and cast a vote in favor or against it. The phase is divided into two steps, each of which has a committee (using [*Deterministic Sortition*][ds]) vote on the validity of the block.
 If the votes of both committees reach a quorum, an $\mathsf{Agreement}$ message broadcasted, which contains the (quorum) votes of both committees.
 
-## Step Overview
+### ToC
+- [Overview](#overview)
+  - [Reduction Message](#reduction-message)
+  - [StepVotes](#stepvotes)
+- [Reduction Algorithm](#reduction-algorithm)
+
+## Overview
 In each reduction step, selected committee members cast votes on the candidate block, if any. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Reduction}$ messages, and collected by other nodes, which accumulate them until a *quorum* is reached.
 
 When a quorum of votes is reached, a $StepVotes$ structure is produced, containing all (and only[^1]) the quorum votes aggregated, along with a bitset of the voters with respect to the [Voting Committee][vc].

@@ -6,6 +6,27 @@ The protocol is run by Dusk stakers, known as ***provisioners***, which are resp
 
 Provisioners participate in turns to the production and validation of each new block of the ledger. Participation in each round is decided with a [*Deterministic Sortition*][ds] (*DS*) algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
 
+### ToC
+  - [Notation](#notation)
+    - [Procedure Execution](#procedure-execution)
+  - [Protocol Overview](#protocol-overview)
+    - [Candidate Block](#candidate-block)
+  - [Provisioners and Stakes](#provisioners-and-stakes)
+  - [Consensus Messages](#consensus-messages)
+    - [Message Header](#message-header)
+    - [Message Hash and Signature](#message-hash-and-signature)
+    - [Message Creation](#message-creation)
+    - [Message Exchange](#message-exchange)
+    - [Agreement Message](#agreement-message)
+  - [Consensus Parameters](#consensus-parameters)
+  - [SA Algorithm](#sa-algorithm)
+    - [SAConsensus](#saconsensus)
+    - [SALoop](#saloop)
+    - [SARound](#saround)
+    - [SAIteration](#saiteration)
+    - [IncreaseTimeout](#increasetimeout)
+
+
 ## Notation
 In this documentation we will use the following notation:
 
