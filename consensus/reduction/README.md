@@ -92,7 +92,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 - $\sigma^{NIL}$ : aggregate signature for vote NIL
 - $\boldsymbol{bs}^{NIL}$ : Voters bitset for NIL
 - $r = Round$
-- $s = (Iteration-1) \times 3 + 1 + rstep$
+- $s = Iteration \times 3 + rstep$
 1. $C$ = [*DS*][dsa]$(r,s,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in C):$

@@ -121,8 +121,8 @@ $\textit{VerifyCertificate}(\mathsf{B}):$
 1. $\texttt{set}:$
    - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{B}.Certificate`$
    - $r = Block.Height$
-   - $rstep_1 = (Block.Iteration-1) \times 3 + 2$
-   - $rstep_2 = (Block.Iteration-1) \times 3 + 3$
+   - $rstep_1 = (Block.Iteration) \times 3 + 1$
+   - $rstep_2 = (Block.Iteration) \times 3 + 2$
 2. $r_1 =$ [*VerifyAggregated*][va]$`(\eta_{\mathsf{B}}, r, rstep_1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$
 3. $r_2 =$ [*VerifyAggregated*][va]$`(\eta_{\mathsf{B}}, r, rstep_2, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
 4. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) :$

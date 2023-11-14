@@ -61,7 +61,7 @@ The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block 
 $Attestation(Round, Iteration)$:
 1. $\texttt{set}$:
    - $r = Round$
-   - $s = (Iteration-1) \times 3 + 1$
+   - $s = (Iteration) \times 3$
 2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(r,s,1)$
 3. $\texttt{if } (pk_\mathcal{N} == pk_{\mathcal{G}}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$()$
