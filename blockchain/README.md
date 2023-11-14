@@ -29,10 +29,11 @@ This section describes the formal definition of the block and transaction struct
 | $Generator$       | Public Key         | 96 bytes  | Generator Public Key                      |
 | $TransactionRoot$ | Blake3 Hash        | 32 bytes  | Root of transactions Merkle tree          |
 | $StateRoot$       | Sha3 Hash          | 32 bytes  | Root of contracts state Merkle tree       |
+| $PrevBlockCertificate$       | 	StepVotes []          | 112 bytes  | Reduction votes of previous block      |
 | $Hash$            | Sha3 Hash          | 32 bytes  | Hash of previous fields                   |
 | $Certificate$     | [StepVotes][sv] [] | 112 bytes | Reduction votes                           |
 
-The $BlockHeader$ structure has a total size of 410 bytes.
+The $BlockHeader$ structure has a total size of 522 bytes.
 This is reduced to 298 for a [*candidate block*][cb], since the $Certificate$ is missing.
 
 ### Block Notation
@@ -40,7 +41,7 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define a *block's hash* as:
 
-$$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||\\PreviousBlock||Seed||Generator||TransactionRoot||StateRoot)$$
+$$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||\\PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate)$$
 
 
 ## Transaction Structure

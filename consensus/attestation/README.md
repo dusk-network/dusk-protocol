@@ -126,6 +126,7 @@ $GenerateBlock()$
     | $Generator$     | $pk_\mathcal{N}$          |
     | $TxRoot$        | $TxRoot_r$                |
     | $State$         | $State_r$                 |
+    | $PrevBlockCertificate$ |    $Certificate$   | 
 
     <!-- | $Header Hash           | string | -->
     <!-- | Certificate           |    ?   | -->

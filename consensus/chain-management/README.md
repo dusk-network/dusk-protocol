@@ -96,9 +96,11 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 $\textit{VerifyBlock}(\mathsf{B}):$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output} false$
-3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B})$
+3. $isValid$ = [*VerifyPrevBlockCertificate*][vc]$(\mathsf{B})$
 4. $\texttt{if } (isValid = false): \texttt{output} false$
-5. $\texttt{output} true$
+5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B})$
+6. $\texttt{if } (isValid = false): \texttt{output} false$
+7. $\texttt{output }true$
 
 ### VerifyCertificate
 *VerifyCertificate* checks a block's certificate by verifying the two Reduction aggregated signatures against the respective committees.
