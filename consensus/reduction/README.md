@@ -15,7 +15,7 @@ When a quorum of votes is reached, a $StepVotes$ structure is produced, containi
 
 If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produced with the $StepVotes$ structures of both steps. This message is passed to the Agreement process, which is responsible for its propagation in the network.
 
-If any of the two steps produces a $NIL$ result, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
+If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
 <!-- Currently, if the first step produces $NIL$, nodes still execute the second step.
 This behavior should be avoided. If the goal is to spend time, just wait timeout. -->
 
