@@ -127,9 +127,8 @@ $GenerateBlock()$
     | $TxRoot$        | $TxRoot_r$                |
     | $State$         | $State_r$                 |
     | $PrevBlockCertificate$ |    $Certificate$   | 
-
     <!-- | $Header Hash           | string | -->
-    <!-- | Certificate           |    ?   | -->
+    
 7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 
     |----------------|-----------------------------|

@@ -87,18 +87,20 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 ***Algorithm***
 1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
 2. If header's not valid, output $false$
-3. Verify $\mathsf{B}$'s certificate ([*VerifyCertificate*][vc])
+3. Verify $\mathsf{B}^p$'s certificate ([*VerifyCertificate*][vc])
 4. If certificate's not valid, output $false$
-5. If both verifications succeded, output $true$
+5. Verify $\mathsf{B}$'s certificate ([*VerifyCertificate*][vc])
+6. If certificate's not valid, output $false$
+7. If all verifications succeded, output $true$
 
 ***Procedure***
 
 $\textit{VerifyBlock}(\mathsf{B}):$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output} false$
-3. $isValid$ = [*VerifyPrevBlockCertificate*][vc]$(\mathsf{B})$
+3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B}^p,\mathsf{B}.PrevBlockCertificate)$
 4. $\texttt{if } (isValid = false): \texttt{output} false$
-5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B})$
+5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B}, \mathsf{B}.Certificate)$
 6. $\texttt{if } (isValid = false): \texttt{output} false$
 7. $\texttt{output }true$
 
@@ -107,9 +109,10 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 
 ***Parameters***
 - $\mathsf{B}$: the block to verify
+- $\mathsf{C}$: the block's certificate
 
 ***Algorithm***
-1. Extract stepvotes ($\mathsf{V}_1, \mathsf{V}_2$), round, and iteration from $\mathsf{B}$
+1. Extract stepvotes ($\mathsf{V}_1, \mathsf{V}_2$) from $\mathsf{C}$, and round and iteration from $\mathsf{B}$
 2. Verify First-Reduction votes
 3. Verify Second-Reduction votes
 4. If both Reduction votes are valid:
@@ -119,9 +122,9 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 
 ***Procedure***
 
-$\textit{VerifyCertificate}(\mathsf{B}):$
+$\textit{VerifyCertificate}(\mathsf{B}, \mathsf{C}):$
 1. $\texttt{set}:$
-   - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{B}.Certificate`$
+   - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{C}`$
    - $r = Block.Height$
    - $rstep_1 = (Block.Iteration) \times 3 + 1$
    - $rstep_2 = (Block.Iteration) \times 3 + 2$
@@ -478,5 +481,6 @@ $\textit{AcceptPoolBlocks}():$
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
 <!-- Reduction -->
 [red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Ratification -->
 [va]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#verifyaggregated
