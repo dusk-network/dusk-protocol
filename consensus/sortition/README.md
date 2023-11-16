@@ -198,6 +198,8 @@ $BitSet$ takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and ou
 
 $BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
 
+<!-- TODO: countSetBits -->
+
 ### SubCommittee
 $SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
 
