@@ -348,7 +348,7 @@ $\textit{SARound}(Round_{SA}):$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration_{SA} = 0$
 2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} <= MaxIterations$)
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} \le MaxIterations$)
    1. [*SAIteration*][sai]$(Round_{SA}, Iteration_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
