@@ -15,7 +15,7 @@ When a quorum of votes is reached, a $StepVotes$ structure is produced, containi
 
 If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produced with the $StepVotes$ structures of both steps. This message is passed to the Agreement process, which is responsible for its propagation in the network.
 
-If any of the two steps produces a $NIL$ result, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
+If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
 <!-- Currently, if the first step produces $NIL$, nodes still execute the second step.
 This behavior should be avoided. If the goal is to spend time, just wait timeout. -->
 
@@ -77,7 +77,8 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
          2. Set vote $v$ to $\mathsf{M}$'s $BlockHash$ (candidate or $NIL$)
          3. Aggregate $v$ to corresponding aggregated signature
          4. Add sender to corresponding voters bitset
-         5. If aggregated $v$ votes reached a quorum:
+         5. If $v$ is $NIL$ and votes reached $NilQuorum$
+         6. or $v$ is not $NIL$ and votes reached $Quorum$:
             1. Create $StepVotes$ $\mathsf{V}$ with aggregated $v$
             2. Output $\mathsf{V}$
  5. If timeout expired:
@@ -92,7 +93,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 - $\sigma^{NIL}$ : aggregate signature for vote NIL
 - $\boldsymbol{bs}^{NIL}$ : Voters bitset for NIL
 - $r = Round$
-- $s = (Iteration-1) \times 3 + 1 + rstep$
+- $s = Iteration \times 3 + rstep$
 1. $C$ = [*DS*][dsa]$(r,s,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in C):$
@@ -120,7 +121,8 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
          3. *AggregateSig*$(\sigma^v, \sigma_{\mathsf{M}^R})$
          4. $m = m_{pk_{\mathsf{M}^R}}$ \
             $\boldsymbol{bs}^{v}[i_m^C] = 1$
-         5. $\texttt{if } ($*countSetBits*$(\boldsymbol{bs}^v) \ge Quorum):$
+         5. $\texttt{if } (v=NIL \texttt{ and } $*countSetBits*$(\boldsymbol{bs}^v) \ge NilQuorum)$
+         6. $\texttt{or } (v \ne NIL \texttt{ and }$*countSetBits*$(\boldsymbol{bs}^v) \ge Quorum):$
             1. $\mathsf{V} = (\sigma^v, \boldsymbol{bs}^v)$
             2. $\texttt{output } \mathsf{V}$
 

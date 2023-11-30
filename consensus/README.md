@@ -235,6 +235,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Version$          | 0              | Protocol version number                         |
 | $CommitteeCredits$ | 64             | Total credits in a voting committee             |
 | $Quorum$           | 43             | Quorum threshold ($CommitteeCredits \times \frac{2}{3}$) |
+| $NilQuorum$        | 22             | Nil Quorum threshold ($CommitteeCredits \times \frac{1}{3}$ + 1) |
 | $MaxIterations$    | 71             | Maximum number of iterations for a single round |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)               |
 | $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)  |
@@ -330,7 +331,7 @@ The *SARound* procedure handles the execution of a consensus round: first, it in
 1. Set variables:
    - Initialize Attestation and Reduction timeouts
    - Set candidate and winning block to $NIL$
-   - Set iteration to 1
+   - Set iteration to 0
 2. Start Ratification process
 3. While iteration number is less than $MaxIterations$ and no winning block has been produced
    1. Execute SA iteration
@@ -345,9 +346,9 @@ $\textit{SARound}(Round_{SA}):$
 1. $\texttt{set }$:
    - $\tau_{Attestation}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-   - $Iteration_{SA} = 1$
+   - $Iteration_{SA} = 0$
 2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} < MaxIterations$)
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} \le MaxIterations$)
    1. [*SAIteration*][sai]$(Round_{SA}, Iteration_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
@@ -370,7 +371,7 @@ This procedure executes a sequence of *Attestation*, to generate a new candidate
 ***Procedure***
 
 $\textit{SAIteration}(Round, Iteration):$
-- $r2Step = (Iteration{-}1) \times 3 + 3$
+- $r2Step = Iteration\times 3 + 2$
 - $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
 1. $\mathsf{B}^c =$ [*Attestation*][atta]$(Round, Iteration)$
 2. $\mathsf{V}^1 =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
@@ -399,9 +400,9 @@ $\textit{IncreaseTimeout}(\tau_{Step}):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} \times 2, MaxTimeout)$
 
 <!-- TODO: Define $GetStepNumber$ 
-attestation: (Block.Iteration-1) \times 3 + 1
-red1: (Block.Iteration-1) \times 3 + 1 + 1
-red2: (Block.Iteration-1) \times 3 + 1 + 2
+attestation: (Block.Iteration) \times 3 + 1
+red1: (Block.Iteration) \times 3 + 1
+red2: (Block.Iteration) \times 3 + 2
 -->
 
 <!----------------------- FOOTNOTES ----------------------->

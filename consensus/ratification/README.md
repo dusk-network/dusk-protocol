@@ -41,14 +41,16 @@ When this occurs, the candidate block is tagged as *winning block* and accepted 
 The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 
 ### Certificate
-<!-- TODO: add description -->
+The $\mathsf{Certificate}$ structure contains the Reduction votes of the [quorum committee][sc] that reached consensus on a certain block.
+It is composed of two $\mathsf{StepVotes}$ structures, each for each Reduction step.
+
 
 | Field             | Type            | Size     | Description                          |
 |-------------------|-----------------|----------|--------------------------------------|
 | $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
 | $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
 
-The $Certificate$ structure has a total size of 112 bytes.
+The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 ## Ratification Algorithm
 The Ratification procedure collects $\mathsf{Agreement}$ messages for the current round until a specific candidate block reaches a quorum of such messages (with respect to the Second Reduction committee). When this occurs, an $\mathsf{AggrAgreement}$ message is broadcast, which contains the aggregated signatures from the collected $\mathsf{Agreement}$ messages, and the corresponding candidate block is marked as the winning block of the round. 
