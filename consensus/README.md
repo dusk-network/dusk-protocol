@@ -13,6 +13,7 @@ Provisioners participate in turns to the production and validation of each new b
   - [Protocol Overview](#protocol-overview)
     - [Candidate Block](#candidate-block)
   - [Provisioners and Stakes](#provisioners-and-stakes)
+    - [Epochs and Eligibility](#epochs-and-eligibility)
   - [Consensus Parameters](#consensus-parameters)
   - [SA Algorithm](#sa-algorithm)
     - [*SAConsensus*](#saconsensus)
@@ -83,9 +84,8 @@ Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not 
 A candidate block that reaches an agreement is called a *winning* block.
 
 ## Provisioners and Stakes
-<!-- TODO: link to Stake Contract -->
-A provisioner is a user that locked a certain amount of their Dusk coins as *stake* (see [*Stake Contract*]()).
-Formally, we define a *provisioner* $\mathcal{P}$ as:
+A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][sc]).
+Formally, we define a *Provisioner* $\mathcal{P}$ as:
 
 $$\mathcal{P}=(pk_\mathcal{P},\boldsymbol{Stakes}_\mathcal{P}),$$
 
@@ -95,18 +95,28 @@ In turn, a *stake* is defined as:
 $$S^\mathcal{P}=(Amount, Height),$$
 where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cp] $MinStake$, and is currently equivalent to 1000 Dusk.
 
-We say a stake $S$ is *mature* if it was locked more than two *epochs* before the current chain tip. Formally, given a stake $S$, we say $S$ is mature if 
+### Epochs and Eligibility
+Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][cp] $Epoch$ (currently equal to 2160).
+<!-- TODO: why 2160 ? -->
 
-$$Height_{Tip} \gt Height_S + (2 \times Epoch),$$
+The *Provisioners Set* during an epoch is fixed: all `stake` and `unstake` operations take effect at the beginning of an epoch. We refer to this property as *epoch stability*.
 
-where $Height_{Tip}$ is the current tip's height, $Height_S$ is the stake's height, and $Epoch$ is a [global parameter][cp]. 
+Additionally, for a Provisioner to be included in the Provisioners List, its stake is required to wait a certain number of blocks known as the *maturity* period. After this period, the stake and the Provisioner are said to be *eligible* for Sortition.
 
-Moreover, we say a provisioner is *eligible* if it has at least one mature stake.
+Formally, we say a Stake $S$ is *eligible* at round $R$, if $R$ is at least $Maturity$ blocks higher than the round in which $S$ was staked:
 
-Note that only eligible provisioners participate in the consensus protocol.
+$$`R \ge Round_S + M,`$$
 
+where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* period defined as:
 
+$$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
+where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^4]. Therefore the value of $M$ will vary depending on $Round_S$:
+
+$$`Epoch \lt M \le 2{\times}Epoch.`$$
+
+Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
+Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
 ## Consensus Parameters
 <!-- Rename to Environment -->
@@ -117,7 +127,7 @@ Parameters are divided into:
 - *chain state*: represent the current system state, as per result of the execution of all transactions in the blockchain;
 - *round state*: local variables used to handle the consensus state 
 
-Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^4] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
+Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^5] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
 
 **Global Parameters**
 <!-- TODO: check when MaxBlockTime is removed -->
@@ -309,7 +319,9 @@ red2: (Block.Iteration) \times 3 + 2
 
 [^3]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
 
-[^4]: For the sake of simplicity, we assume the node handle a single provisioner identity.
+[^4]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
+
+[^5]: For the sake of simplicity, we assume the node handles a single provisioner identity.
 
 <!------------------------- LINKS ------------------------->
 
@@ -344,3 +356,6 @@ red2: (Block.Iteration) \times 3 + 2
 [amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
 [nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
+
+<!-- TODO: link to Stake Contract -->
+[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
