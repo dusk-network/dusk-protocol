@@ -1,10 +1,8 @@
 # Reduction Phase
-In the Reduction phase, the *candidate* block produced in the [Attestation][att] phase is validated by a subset of [provisioner][p], who verify the block and cast a vote in favor or against it. The phase is divided into two steps, each of which has a committee (using [*Deterministic Sortition*][ds]) vote on the validity of the block.
-If the votes of both committees reach a quorum, an $\mathsf{Agreement}$ message broadcasted, which contains the (quorum) votes of both committees.
+In the Reduction phase, the *candidate* block produced in the [Attestation][att] phase is validated by a subset of [Provisioners][p], who verify the block and cast a vote in favor or against it. The phase is divided into two steps, each of which has a committee (using [*Deterministic Sortition*][ds]) vote on the validity of the block via a [Reduction][rmsg] message.
 
 ### ToC
 - [Overview](#overview)
-  - [`Reduction` Message](#reduction-message)
   - [`StepVotes`](#stepvotes)
 - [Reduction Algorithm](#reduction-algorithm)
 
@@ -18,19 +16,6 @@ If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produce
 If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
 <!-- Currently, if the first step produces $NIL$, nodes still execute the second step.
 This behavior should be avoided. If the goal is to spend time, just wait timeout. -->
-
-
-### Reduction Message
-The $\mathsf{Reduction}$ message is used by a member of a Reduction committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if containing a $NIL$, the vote is against the candidate block of the $Round$ and $Step$ specified in the $Header$.
-
-
-The message has the following structure:
-| Field       | Type                  | Size      | Description           |
-|-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
-| $Signature$ | BLS Signature         | 48 bytes  | Signature of $Header$ |
-
-The $\mathsf{Reduction}$ message has a total size of 185 bytes.
 
 ### StepVotes
 The $StepVotes$ structure is produced at the end of a Reduction step and contains a quorum of votes in favor or against a candidate block.
@@ -151,3 +136,10 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#voting-committees
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
+<!-- Messages -->
+[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
+[amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
+[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message

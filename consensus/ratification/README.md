@@ -1,13 +1,12 @@
 # Ratification Phase
 The *Ratification* phase certifies that a consensus has been reached on a candidate block and that a quorum of the last reduction committee is aware of that. 
 
-All network nodes participate to this phase, collecting $\mathsf{Agreement}$ messages from the network, and aggregating them into an $\mathsf{AggrAgreement}$ message to be broadcast to other nodes as soon as enough of them have been received.
+All network nodes participate to this phase, collecting [Agreement][amsg] messages from the network, and aggregating them into an [AggrAgreement][aamsg] message to be broadcast to other nodes as soon as enough of them have been received.
 
 Each $\mathsf{Agreement}$ message ensures a provisioner of the committee received a quorum of votes for the candidate block and is then aware of the reached consensus.
 
 ### ToC
 - [Overview](#overview)
-  - [`AggrAgreement` Message](#aggragreement-message)
   - [`Certificate`](#certificate)
 - [Ratification Algorithm](#ratification-algorithm)
   - [*VerifyAgreement*](#verifyagreement)
@@ -22,23 +21,11 @@ During the Ratification phase, each node collects all $\mathsf{Agreement}$ messa
 
 Each $\mathsf{Agreement}$ message is counted as many times as the influence (voting credits) of the member that created it.
 
-When a node collects a quorum of $\mathsf{Agreement}$ messages, with respect to the committee of the second Reduction, it aggregates all the signatures of such messages and broadcast an $\mathsf{AggrAgreement}$ message containing one of the received $\mathsf{Agreement}$ messages and the aggregated signature over it.
+When a node collects a quorum of $\mathsf{Agreement}$ messages, with respect to the committee of the second Reduction, it aggregates all the signatures of such messages and broadcast an $\mathsf{AggrAgreement}$  message containing one of the received $\mathsf{Agreement}$ messages and the aggregated signature over it.
 
-When a node generates or receives an $\mathsf{AggrAgreement}$ message, it also produces a [Certificate][cert] for the candidate block, which contains the votes of the two Reduction committees (as per one $\mathsf{Agreement}$ message) and adds it to the block. 
+When a node generates or receives an $\mathsf{AggrAgreement}$ message, it also produces a $\mathsf{Certificate}$ for the candidate block, which contains the votes of the two Reduction committees (as per one $\mathsf{Agreement}$ message) and adds it to the block. 
 
 When this occurs, the candidate block is tagged as *winning block* and accepted as the new chain tip, ending the current round.
-
-### AggrAgreement Message
-
-| Field           | Type                  | Size      | Description                                |
-|-----------------|-----------------------|-----------|--------------------------------------------|
-| $Header$        | [*MessageHeader*][mh] | 137 bytes | Agreement Message header                   |
-| $Signature$     | BLS Signature         | 48 bytes  | Agreement Message signature                |
-| $RVotes$        | [StepVotes][sv][ ]    | 112 bytes | First and second Reduction votes           |
-| $Signers$       | BitSet                | 32 bits   | Bitset of aggregated signature             |
-| $AggrSignature$ | BLS Signature         | 48 bytes  | Aggregated signature of Agreement's header |
-
-The $\mathsf{AggrAgreement}$ message has a total size of 349 bytes
 
 ### Certificate
 The $\mathsf{Certificate}$ structure contains the Reduction votes of the [quorum committee][sc] that reached consensus on a certain block.
@@ -82,6 +69,7 @@ Receiving an $\mathsf{AggrAgreement}$ message from the network produces the same
          2. Create winning block $\mathsf{B}^w$
 
 ***Procedure***
+
 $\boldsymbol{\textit{Ratification}}( )$:
 1. $\texttt{loop}$:
    1. $\texttt{if } (\mathsf{M}^A =$ [*Receive*][mx]$(\mathsf{Agreement}, Round_{SA})):$
@@ -254,11 +242,17 @@ $MakeWinning(\mathsf{B}^c, \mathsf{V}_1, \mathsf{V}_2):$
 
 <!-- Consensus -->
 [cparams]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#parameters
-[mh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
-[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
 <!-- Sortition -->
 [bs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#bitset
 [cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 <!-- Reduction -->
 [sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
+<!-- Messages -->
+[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
+[amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
+[aamsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#aggragreement-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
+[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message

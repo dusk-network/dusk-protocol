@@ -6,7 +6,6 @@ In particular, this section describes how new blocks are accepted to the local b
 ### ToC
 - [Overview](#overview)
   - [Block Finality](#block-finality)
-  - [`Block` Message](#block-message)
 - [Environment](#environment)
 - [Block Verification](#block-verification)
   - [*VerifyBlock*](#verifyblock)
@@ -31,7 +30,7 @@ At the same time, it is possible that a block is received from the network, whic
 
  - *fork*: two or more blocks have reached consensus at the same height (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
 
-Incoming blocks (transmitted via $\mathsf{Block}$ messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 
 
@@ -44,10 +43,6 @@ Given the above, at any moment, the local chain can be considered as made of two
 
 **Last Final Block**
 Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
-
-### Block Message
-The $\mathsf{Block}$ message is used to propagate a winning block to other peers.
-This message only contains a full block structure ([*Block*][b]) including a Certificate, plus the sender peer $\mathcal{S}$.
 
 ## Environment
 The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
@@ -484,3 +479,5 @@ $\textit{AcceptPoolBlocks}():$
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Ratification -->
 [va]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#verifyaggregated
+<!-- Messages -->
+[bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message

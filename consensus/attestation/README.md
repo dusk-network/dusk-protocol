@@ -4,31 +4,16 @@ In this phase, a selected provisioner is appointed to generate a new block. All 
 
 #### ToC
 - [Overview](#overview)
-  - [`NewBlock` Message](#newblock-message)
 - [Attestation Algorithm](#attestation-algorithm)
   - [*GenerateBlock*](#generateblock)
   - [*SelectTransactions*](#selecttransactions)
 
 ## Overview
-Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a $\mathsf{NewBlock}$ message.
+Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a [NewBlock][nbmsg] message.
 Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*][red] phase, where it will vote on the block validity. All other blocks are discarded.
 
 If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
 
-
-### NewBlock Message
-The $\mathsf{NewBlock}$ message is used by a block generator to broadcast a candidate block.
-
-The message has the following structure:
-
-| Field       | Type                  | Size      | Description           |
-|-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
-| $PrevHash$  | SHA3 Hash             | 256 bits  | Previous block's hash |
-| $Candidate$ | [*Block*][b]          |           | Candidate block       |
-| $Signature$ | BLS Signature         | 48 bytes  | Message signature     |
-
-The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block size.
 
 ## Attestation Algorithm
 ***Parameters*** 
@@ -154,9 +139,6 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 <!-- Consensus -->
 [cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
-[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
@@ -166,3 +148,11 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 
 <!-- TODO: Add ExecuteTransactions -->
 [xt]: https://github.com/dusk-network/dusk-protocol/tree/main/
+
+<!-- Messages -->
+[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
+[amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
+[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
