@@ -1,5 +1,6 @@
 <!-- TODO: mention ProcessBlock -->
 <!-- TODO rename Consensus Parameters to Environment -->
+<!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 

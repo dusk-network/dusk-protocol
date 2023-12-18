@@ -1,14 +1,13 @@
-# Ratification Phase
-The *Ratification* phase certifies that a consensus has been reached on a candidate block and that a quorum of the last reduction committee is aware of that. 
+# Ratification
+When the two [Reduction][red] votes reach a quorum, an [Agreement][amsg] message is produced, containing a [Certificate][cert] with the aggregated votes of the two quorum committees.
+Since the certificate proves a candidate reached a quorum, this message is sufficient to accept the voted candidate into the local chain.
 
-All network nodes participate to this phase, collecting [Agreement][amsg] messages from the network, and aggregating them into an [AggrAgreement][aamsg] message to be broadcast to other nodes as soon as enough of them have been received.
-
-Each $\mathsf{Agreement}$ message ensures a provisioner of the committee received a quorum of votes for the candidate block and is then aware of the reached consensus.
+The *Ratification* task manages [Agreement][amsg] messages produced by the node or received from the network. In particular, when such a message is received (or produced), the corresponding candidate block is accepted ([*MakeWinning*](#makewinning)).
 
 ### ToC
 - [Overview](#overview)
-  - [`Certificate`](#certificate)
-- [Ratification Algorithm](#ratification-algorithm)
+- [`Certificate`](#certificate)
+- [Ratification Task](#ratification-task)
   - [*VerifyAgreement*](#verifyagreement)
   - [*VerifyAggregated*](#verifyaggregated)
   - [*CreateAggrAgreement*](#createaggragreement)
@@ -17,19 +16,15 @@ Each $\mathsf{Agreement}$ message ensures a provisioner of the committee receive
   - [*MakeWinning*](#makewinning)
 
 ## Overview
-During the Ratification phase, each node collects all $\mathsf{Agreement}$ messages coming from members of the second Reduction committee of the current round and iteration.
+When a node generates or receives an $\mathsf{Agreement}$ message, it adds the included $\mathsf{Certificate}$ to the candidate block and make it a *winning block* for the corresponding round and iteration. 
 
-Each $\mathsf{Agreement}$ message is counted as many times as the influence (voting credits) of the member that created it.
+If the $\mathsf{Agreement}$ message was received from the network, the aggregated votes ([StepVotes][sv]) are verified against the generator and committee members of the corresponding round and iteration. Both the validity of the votes and the quorum quota is verified.
 
-When a node collects a quorum of $\mathsf{Agreement}$ messages, with respect to the committee of the second Reduction, it aggregates all the signatures of such messages and broadcast an $\mathsf{AggrAgreement}$  message containing one of the received $\mathsf{Agreement}$ messages and the aggregated signature over it.
+The winning block will then be accepted as the new tip of the local chain.
 
-When a node generates or receives an $\mathsf{AggrAgreement}$ message, it also produces a $\mathsf{Certificate}$ for the candidate block, which contains the votes of the two Reduction committees (as per one $\mathsf{Agreement}$ message) and adds it to the block. 
-
-When this occurs, the candidate block is tagged as *winning block* and accepted as the new chain tip, ending the current round.
-
-### Certificate
-The $\mathsf{Certificate}$ structure contains the Reduction votes of the [quorum committee][sc] that reached consensus on a certain block.
-It is composed of two $\mathsf{StepVotes}$ structures, each for each Reduction step.
+## Certificate
+The $\mathsf{Certificate}$ structure contains the [Reduction][rmsg] votes of the [quorum committee][sc] that reached consensus on a candidate block.
+It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
 
 
 | Field             | Type            | Size     | Description                          |
@@ -39,62 +34,31 @@ It is composed of two $\mathsf{StepVotes}$ structures, each for each Reduction s
 
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
-## Ratification Algorithm
-The Ratification procedure collects $\mathsf{Agreement}$ messages for the current round until a specific candidate block reaches a quorum of such messages (with respect to the Second Reduction committee). When this occurs, an $\mathsf{AggrAgreement}$ message is broadcast, which contains the aggregated signatures from the collected $\mathsf{Agreement}$ messages, and the corresponding candidate block is marked as the winning block of the round. 
-Receiving an $\mathsf{AggrAgreement}$ message from the network produces the same effect.
+## Ratification Procedure
+The Ratification procedure receives and manages $\mathsf{Agreement}$ messages for a specific round and iteration. If the message was received from the network, it is first verified ([VerifyAgreement][va]) and then propagated.
+The corresponding candidate block is then marked as the winning block of the round. 
 
 ***Parameters***
 - [Consensus Parameters][cparams]
 
-**Environment**
-- $S_i = \{\mathsf{M}^A_1,..., \mathsf{M}^A_n\}$ : Agreement message storage ($i$ is an iteration number, and $\mathsf{M}^A$ is an Agreement message for iteration $i$).
-
 ***Algorithm***
-1. Infinite Loop:
-   1. If an $\mathsf{Agreement}$ message $\mathsf{M}^A$ for round $r$ is received:
-      1. If the signer is in the committee of the $\mathsf{M}^A$'s $Round$ and $Step$:
-         1. Check $\mathsf{M}^A$'s validity
-         2. Propagate $\mathsf{M}^A$
-         3. If $\mathsf{M}^A$ is valid:
-            1. Collect $\mathsf{M}^A$
-            2. Count $\mathsf{Agreement}$ messages for $\mathsf{M}^A$'s round/iteration
-            3. If a quorum has been reached
-               1. Create $\mathsf{AggrAgreement}$ message $\mathsf{M}^{Ag}$
-               2. Broadcast $\mathsf{M}^{Ag}$
-               3. Create winning block $\mathsf{B}^w$
-   2. If an $\mathsf{AggrAgreement}$ message $\mathsf{M}^{Ag}$ is received:
-      1. Check if $\mathsf{M}^{Ag}$ is valid
+1. Loop:
+   1. If an $\mathsf{Agreement}$ message $\mathsf{M}^A$ is received for the current round and iteration:
+      1. Verify $\mathsf{M}^A$ is valid
       2. If valid:
-         1. Propagate $\mathsf{M}^{Ag}$
-         2. Create winning block $\mathsf{B}^w$
+         1. Propagate $\mathsf{M}^A$
+         2. Create winning block $\mathsf{B}^w$ with $\mathsf{M}^A.Certificate$
 
 ***Procedure***
 
 $\boldsymbol{\textit{Ratification}}( )$:
-1. $\texttt{loop}$:
-   1. $\texttt{if } (\mathsf{M}^A =$ [*Receive*][mx]$(\mathsf{Agreement}, Round_{SA})):$
-       - $s = Step_{\mathsf{M}^A}$
-      1. $\texttt{if } (pk_{\mathsf{M}^A} \in C_r^s):$
-          1. [*Propagate*][mx]$(\mathsf{M}^A)$
-          2. $isValid$ = [*VerifyAgreement*][va]$(\mathsf{M}^A)$
-          3. $\texttt{if } (isValid = true)$:
-             1. $i = s \div 3$
-             2. $S_i = S_i \cup \mathsf{M}^A$
-             3. $\boldsymbol{signers}_i =$ [GetSigners][gs]$(S_i)$ \
-                $c_i$ = [*CountCredits*][cc]$(C_r^s, \boldsymbol{signers}_i)$
-             4. $\texttt{if } (c_{i} \ge Quorum):$
-                1. $\mathsf{M}^{Ag}$ = [*CreateAggrAgreement*][caa]$(S_i)$
-                2. [*Broadcast*][mx]$(\mathsf{M}^{Ag})$
-                - $\mathsf{B}^c = \mathsf{H}_{S_i[0]}.BlockHash$
-                - $\boldsymbol{V} \leftarrow S_i[0].RVotes$
-                1. $\mathsf{B}^w$ = [*MakeWinning*][mw]$(\mathsf{B}^c, \boldsymbol{V}[0], \boldsymbol{V}[1])$
-   
-   2.  $\texttt{if } (\mathsf{M}^{Ag} =$ [*Receive*][mx]$(\mathsf{AggrAgreement}, r)):$
-       - $`(\mathsf{H}_{\mathsf{M}^{Ag}}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^{Ag}`$
-       - $`\_, \mathsf{B}^c, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}} \leftarrow \mathsf{H}_{\mathsf{M}^{Ag}}`$
-       1. [VerifyAggregated][vaa]$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^{Ag}}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
-       2. [*Propagate*][mx]$(\mathsf{M}^{Ag})$
-       3. $\mathsf{B}^w =$ [*MakeWinning*][mw]$(\mathsf{M}^{Ag}.Agreement)$
+1. $\texttt{loop}$:   
+   1.  $\texttt{if } (\mathsf{M}^A =$ [*Receive*][mx]$(\mathsf{Agreement}, r)):$
+       - $`(\mathsf{H}_{\mathsf{M}^A}, \_ , \boldsymbol{bs}, \sigma_A) \leftarrow \mathsf{M}^A`$
+       - $`\_, \mathsf{B}^c, r_{\mathsf{M}^A}, s_{\mathsf{M}^A} \leftarrow \mathsf{H}_{\mathsf{M}^A}`$
+       1. [VerifyAggregated][vaa]$(\eta_{\mathsf{B}^c}, r_{\mathsf{M}^A}, s_{\mathsf{M}^{Ag}}, \boldsymbol{bs}, \sigma_{\boldsymbol{bs}})$
+       2. [*Propagate*][mx]$(\mathsf{M}^A)$
+       3. $\mathsf{B}^w =$ [*MakeWinning*][mw]$(\mathsf{M}^A.Agreement)$
 
 
 ### VerifyAgreement
@@ -247,6 +211,7 @@ $MakeWinning(\mathsf{B}^c, \mathsf{V}_1, \mathsf{V}_2):$
 [cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 <!-- Reduction -->
+[red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md 
 [sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
