@@ -231,6 +231,9 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 [^1]: We will use *SHA3* to denote SHA3-256.
 
 <!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md  -->
+[cc]: #countcredits
+[sc]: #subcommittee
 
 [de]: #deterministic-extraction-de
 <!-- Blockchain -->

@@ -32,7 +32,17 @@ At the same time, it is possible that a block is received from the network, whic
 
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
+## Certificate
+The $\mathsf{Certificate}$ structure contains the [Reduction][rmsg] votes of the [quorum committee][sc] that reached consensus on a candidate block.
+It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
 
+
+| Field             | Type            | Size     | Description                          |
+|-------------------|-----------------|----------|--------------------------------------|
+| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
+| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
+
+The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 ### Block Finality
 Due to the asynchronous nature of the network, it is possible that more than one block reaches consensus in one round (in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
@@ -69,8 +79,7 @@ The environment for the block-processing procedures include node-level parameter
 
 
 ## Block Verification
-We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], and [*VerifyCertificate*][vc]. 
-These procedures are used both when processing new blocks from the network ([ProcessBlock][pb]); [*VerifyBlockHeader*][vbh] is also used during the [Reduction][red] phase to validate a candidate block.
+We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyCertificate*][vc], and [*VerifyVotes*][vv].
 
 ### VerifyBlock
 The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid certificate. If both conditions are met, it returns $true$, otherwise, it returns $false$.
@@ -91,47 +100,19 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 ***Procedure***
 
 $\textit{VerifyBlock}(\mathsf{B}):$
+- $\textit{set }:$
+  - $\mathsf{C}^p = \mathsf{B}.PrevBlockCertificate$
+  - $\mathsf{C} = \mathsf{B}.Certificate$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
-2. $\texttt{if } (isValid = false): \texttt{output} false$
-3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B}^p,\mathsf{B}.PrevBlockCertificate)$
-4. $\texttt{if } (isValid = false): \texttt{output} false$
-5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{B}, \mathsf{B}.Certificate)$
-6. $\texttt{if } (isValid = false): \texttt{output} false$
-7. $\texttt{output }true$
-
-### VerifyCertificate
-*VerifyCertificate* checks a block's certificate by verifying the two Reduction aggregated signatures against the respective committees.
-
-***Parameters***
-- $\mathsf{B}$: the block to verify
-- $\mathsf{C}$: the block's certificate
-
-***Algorithm***
-1. Extract stepvotes ($\mathsf{V}_1, \mathsf{V}_2$) from $\mathsf{C}$, and round and iteration from $\mathsf{B}$
-2. Verify First-Reduction votes
-3. Verify Second-Reduction votes
-4. If both Reduction votes are valid:
-   1. Output $true$
-5. Otherwise: 
-   1. Output $false$
-
-***Procedure***
-
-$\textit{VerifyCertificate}(\mathsf{B}, \mathsf{C}):$
-1. $\texttt{set}:$
-   - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{C}`$
-   - $r = Block.Height$
-   - $rstep_1 = (Block.Iteration) \times 3 + 1$
-   - $rstep_2 = (Block.Iteration) \times 3 + 2$
-2. $r_1 =$ [*VerifyAggregated*][va]$`(\eta_{\mathsf{B}}, r, rstep_1, \boldsymbol{bs}_{\mathsf{V}_1}, \sigma_{\mathsf{V}_1})`$
-3. $r_2 =$ [*VerifyAggregated*][va]$`(\eta_{\mathsf{B}}, r, rstep_2, \boldsymbol{bs}_{\mathsf{V}_2}, \sigma_{\mathsf{V}_2})`$
-4. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) :$
-   1. $\texttt{output } true$
-5. $\texttt{else}:$ 
-   1. $\texttt{output } false$
-
+2. $\texttt{if } (isValid = false): \texttt{output } false$
+3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}^p,\eta_{\mathsf{B}^p},r_{\mathsf{B}^p},s_{\mathsf{B}^p})$
+4. $\texttt{if } (isValid = false): \texttt{output } false$
+5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C},\eta_{\mathsf{B}^p},r_{\mathsf{B}},s_{\mathsf{B}})$
+6. $\texttt{if } (isValid = false): \texttt{output } false$
+7. $\texttt{output } true$
 
 ### VerifyBlockHeader
+<!-- TODO: verify Iteration? -->
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
 ***Parameters***
@@ -170,7 +151,91 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
    1. $\texttt{output } false$
 
 
+### VerifyCertificate
+*VerifyCertificate* checks a block's certificate by verifying the two Reduction aggregated signatures against the respective committees.
+
+***Parameters***
+- $\mathsf{C}$: the block's certificate
+- $b$: block's hash
+- $r$: round
+- $s$: step
+
+***Algorithm***
+1. Check both Reduction votes are present
+2. Verify First-Reduction votes
+   1. If votes are not valid, output $false$
+3. Verify Second-Reduction votes
+   1. If votes are not valid, output $false$
+4. Output $true$
+
+***Procedure***
+
+$\textit{VerifyCertificate}(\mathsf{C}, b, r, i):$
+- $\texttt{set}:$
+   - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{C}`$
+   - $s_1 = i \times 3 + 1$
+   - $s_2 = i \times 3 + 2$
+1. $\texttt{if } (\mathsf{V}_1 = NIL) \texttt{ or } (\mathsf{V}_2 = NIL):$
+   1. $\texttt{output } false$
+2. $r_1 =$ [*VerifyVotes*][vv]$`(\mathsf{V}_1, b, r, s_1)`$
+3. $r_2 =$ [*VerifyVotes*][vv]$`(\mathsf{V}_2, b, r, s_2)`$
+4. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) :$
+   1. $\texttt{output } true$
+5. $\texttt{else}:$ 
+   1. $\texttt{output } false$
+
+### VerifyVotes
+$VerifyVotes$ checks the aggregated votes for a candidate are valid and reach the quorum.
+
+***Parameters***
+- $\mathsf{V}$: $\mathsf{StepVotes}$ with the aggregated votes
+- $b$: the block's hash
+- $r$: round
+- $s$: step
+
+***Algorithm***
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from bitset
+2. If credits in subcommittee are less than $Quorum$
+   1. Output false
+3. Aggregate public keys of subcommittee member
+4. Compute hash of candidate block, round, and step
+5. Verify aggregated signature over hash
+
+***Procedure***
+
+$VerifyVotes(\mathsf{V}, b, r, s)$:
+- $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{V}$
+1. $C^{\boldsymbol{bs}} = $ [SubCommittee][sc]$(C_{r}^{s}, \boldsymbol{bs})$
+2. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, C^{\boldsymbol{bs}}) \lt Quorum):$
+   1. $\texttt{output } false$
+3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
+4. $\eta = Hash_{Blake2B}(r||s||hash)$
+5. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
+
+
 ## Block Management
+We here define block-management procedures: 
+  - $MakeWinning$: sets a candidate block as the winning block of the round
+  - $AcceptBlock$: accept a block as the new tip
+  - $ProcessBlock$: process a block from the network
+
+### MakeWinning
+*MakeWinning* adds a certificate to a candidate block and set the winning block variable $\mathsf{B}^w$.
+
+***Parameters***
+- $\mathsf{B}$: candidate block
+- $\mathsf{C}$: block certificate
+
+***Algorithm***
+1. Add certificate $\mathsf{C}$ to candidate block $\mathsf{B}$
+2. Set winning block $\mathsf{B}^w$ to $\mathsf{B}$
+
+***Procedure***
+
+$MakeWinning(\mathsf{B}, \mathsf{C}):$
+1. $\mathsf{B}.Certificate = \mathsf{C}$
+2. $\mathsf{B}^w = \mathsf{B}$
+
 
 ### AcceptBlock
 *AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable.
@@ -454,7 +519,9 @@ $\textit{AcceptPoolBlocks}():$
 
 
 <!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
 [env]: #environment
+[cert]: #certificate
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
 [fal]: #fallback
@@ -465,19 +532,21 @@ $\textit{AcceptPoolBlocks}():$
 [ss]:  #startsync
 [vb]:  #verifyblock
 [vc]:  #verifycertificate
+[vv]:  #verifyvotes
 
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
 <!-- Consensus -->
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
 <!-- Reduction -->
 [red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
-<!-- Ratification -->
-[va]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#verifyaggregated
+[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Messages -->
+[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
+<!-- Sortition -->
+[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
+[cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits

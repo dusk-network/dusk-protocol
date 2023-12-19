@@ -1,5 +1,7 @@
 <!-- TODO: mention ProcessBlock -->
 <!-- TODO rename Consensus Parameters to Environment -->
+<!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
+<!-- TODO: Define sth like Candidate "signature": block_hash, round, iteration -->
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
 
@@ -253,7 +255,7 @@ $\textit{SARound}(Round_{SA}):$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration_{SA} = 0$
 2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} \le MaxIterations$)
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} \le MaxIterations)$
    1. [*SAIteration*][sai]$(Round_{SA}, Iteration_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
