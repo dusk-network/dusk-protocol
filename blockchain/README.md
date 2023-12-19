@@ -41,16 +41,18 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define a *block's hash* as:
 
-$$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||\\PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate)$$
+<!-- TODO: define \eta as function: \eta(B) -->
+$$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate)$$
 
+<!-- TODO: define block's round and iteration: r_{\mathsf{B}^p},s_{\mathsf{B}^p} -->
 
 ## Transaction Structure
 
-| Field     | Type   | Size      | Description         |
-|-----------|--------|-----------|---------------------|
-| $Version$ | uint   | 32 bits   | Transaction version |
-| $Type$    | uint   | 32 bits   | Transaction type    |
-| $Payload$ | byte[] | variable  | Transaction payload |
+| Field     | Type    | Size      | Description         |
+|-----------|---------|-----------|---------------------|
+| $Version$ | uint    | 32 bits   | Transaction version |
+| $Type$    | uint    | 32 bits   | Transaction type    |
+| $Payload$ | byte[ ] | variable  | Transaction payload |
 
 <!------------------------- LINKS ------------------------->
 <!-- Consensus -->

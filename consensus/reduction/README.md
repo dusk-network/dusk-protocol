@@ -18,6 +18,7 @@ If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, th
 This behavior should be avoided. If the goal is to spend time, just wait timeout. -->
 
 ### StepVotes
+<!-- TODO mv to a Structures file -->
 The $StepVotes$ structure is produced at the end of a Reduction step and contains a quorum of votes in favor or against a candidate block.
 
 To specify the committee members, whose vote is included in $Votes$, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
@@ -120,13 +121,11 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 [^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
 
 <!------------------------- LINKS ------------------------->
-
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md -->
 [sv]: #stepvotes
+
 <!-- Consensus -->
 [cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
-[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-header
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#message-exchange
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
 <!-- Attestation -->
 [att]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
@@ -139,7 +138,4 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
-[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
-[amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
-[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
