@@ -91,28 +91,32 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 ***Algorithm***
 1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
 2. If header's not valid, output $false$
-3. Verify $\mathsf{B}^p$'s certificate ([*VerifyCertificate*][vc])
-4. If certificate's not valid, output $false$
-5. Verify $\mathsf{B}$'s certificate ([*VerifyCertificate*][vc])
+3. Verify $\mathsf{B}^p$'s certificate $\mathsf{C}_\mathsf{B^p}$ ([*VerifyCertificate*][vc])
+4. If $\mathsf{C}^p$ is not valid, output $false$
+5. Verify $\mathsf{B}$'s certificate $\mathsf{C}_\mathsf{B}$ ([*VerifyCertificate*][vc])
 6. If certificate's not valid, output $false$
-7. If all verifications succeded, output $true$
+7. For each certificate $\mathsf{C}_i$ in $FailedIterations$
+   1. Verify $\mathsf{C}_i$ ([*VerifyCertificate*][vc])
+8. If all verifications succeeded, output $true$
 
 ***Procedure***
 
 $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
-  - $\mathsf{C}^p = \mathsf{B}.PrevBlockCertificate$
-  - $\mathsf{C} = \mathsf{B}.Certificate$
+  - $\mathsf{C}_\mathsf{B^p} = \mathsf{B}.PrevBlockCertificate$
+  - $\mathsf{C}_\mathsf{B} = \mathsf{B}.Certificate$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}^p,\eta_{\mathsf{B}^p},r_{\mathsf{B}^p},s_{\mathsf{B}^p})$
+3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_\mathsf{B^p},\eta_{\mathsf{B}^p},r_{\mathsf{B}^p},s_{\mathsf{B}^p})$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C},\eta_{\mathsf{B}^p},r_{\mathsf{B}},s_{\mathsf{B}})$
+5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_\mathsf{B},\eta_{\mathsf{B}^p},r_{\mathsf{B}},s_{\mathsf{B}})$
 6. $\texttt{if } (isValid = false): \texttt{output } false$
-7. $\texttt{output } true$
+7. $\texttt{for } \mathsf{C}_i \texttt{ in } \mathsf{B}.FailedIterations$
+   1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i)$
+   2. $\texttt{if } (isValid = false): \texttt{output } false$
+8.  $\texttt{output } true$
 
 ### VerifyBlockHeader
-<!-- TODO: verify Iteration? -->
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
 ***Parameters***
@@ -127,10 +131,9 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 5. Check $Timestamp$ is higher than $\mathsf{B}^p$'s timestamp
 6. Check transaction root is correct with respect to the transaction set
 7. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
-- If all checks passed
-  1. Output $true$
-- Otherwise
+- If any check failed
   1. Output $false$
+- Otherwise, output $true$
 
 ***Procedure***
 
@@ -193,22 +196,29 @@ $VerifyVotes$ checks the aggregated votes for a candidate are valid and reach th
 
 ***Algorithm***
 1. Compute subcommittee $C^{\boldsymbol{bs}}$ from bitset
-2. If credits in subcommittee are less than $Quorum$
+2. If $b$ is a timeout vote ($NIL$)
+   1. Set quorum target $q$ to $NilQuorum$
+3. Otherwise, set $q$ to $Quorum$
+4. If credits in subcommittee are less than $q$
    1. Output false
-3. Aggregate public keys of subcommittee member
-4. Compute hash of candidate block, round, and step
-5. Verify aggregated signature over hash
+5. Aggregate public keys of subcommittee member
+6. Compute hash of candidate block, round, and step
+7. Verify aggregated signature over hash
 
 ***Procedure***
 
 $VerifyVotes(\mathsf{V}, b, r, s)$:
-- $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{V}$
+- $\texttt{set}:$
+  - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{V}$
 1. $C^{\boldsymbol{bs}} = $ [SubCommittee][sc]$(C_{r}^{s}, \boldsymbol{bs})$
-2. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, C^{\boldsymbol{bs}}) \lt Quorum):$
+2. $\texttt{if } (b = NIL):$
+   1. $\texttt{set } q = NilQuorum$
+3. $\texttt{else}: \texttt{set } q = Quorum$
+4. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, C^{\boldsymbol{bs}}) \lt q):$
    1. $\texttt{output } false$
-3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
-4. $\eta = Hash_{Blake2B}(r||s||hash)$
-5. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
+5. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
+6. $\eta = Hash_{Blake2B}(r||s||hash)$
+7. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
 ## Block Management
