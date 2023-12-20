@@ -136,20 +136,21 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value          | Description                                     |
-|--------------------|----------------|-------------------------------------------------|
-| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                    |
-| $Version$          | 0              | Protocol version number                         |
-| $CommitteeCredits$ | 64             | Total credits in a voting committee             |
-| $Quorum$           | 43             | Quorum threshold ($CommitteeCredits \times \frac{2}{3}$) |
-| $MaxIterations$    | 71             | Maximum number of iterations for a single round |
-| $InitTimeout$      | 5              | Initial step timeout (in seconds)               |
-| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)  |
-| $MaxBlockTime$     | 360            | Maximum time to produce a block (in seconds)    |
-| $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)              |
-| $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)      |
-| $Epoch$            | 2160           | Epoch duration in number of blocks              |
-| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                    |
+| Name               | Value          | Description                                         |
+|--------------------|----------------|-----------------------------------------------------|
+| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                        |
+| $Version$          | 0              | Protocol version number                             |
+| $CommitteeCredits$ | 64             | Total credits in a voting committee                 |
+| $Quorum$           | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
+| $NilQuorum$        | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
+| $MaxIterations$    | 71             | Maximum number of iterations for a single round     |
+| $InitTimeout$      | 5              | Initial step timeout (in seconds)                   |
+| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)      |
+| $MaxBlockTime$     | 360            | Maximum time to produce a block (in seconds)        |
+| $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)                  |
+| $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)          |
+| $Epoch$            | 2160           | Epoch duration in number of blocks                  |
+| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                        |
 
 **Chain State**
 <!-- TODO: Add Type column -->

@@ -38,7 +38,7 @@ Note that the 64-bit bitset is enough to represent the maximum number of members
 ## Reduction Algorithm
 <!-- TODO: Add description; Add #RunReduction? -->
 
-When the number of $NIL$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$ we consider it as a "non-quorum", since it's not possible to reach the $Quorum$ value with the other votes. We represent this non-quorum values with $NilQuorum$.
+When the number of $NIL$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$ we consider it as a "non-quorum", since it's not possible to reach the $Quorum$ value with the other votes. We represent this non-quorum values with $NilQuorum$ (see [Consensus Parameters][cp]).
 
 ***Parameters***
 - $Round$: round number
@@ -82,7 +82,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 - $\boldsymbol{bs}^{NIL}$ : Voters bitset for NIL
 - $r = Round$
 - $s = Iteration \times 3 + rstep$
-- $NilQuorum = CommitteeCredits - Quorum +1$
+
 1. $C$ = [*DS*][dsa]$(r,s,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in C):$
