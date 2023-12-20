@@ -78,17 +78,17 @@ $Attestation(Round, Iteration)$:
 <p><br></p>
 
 ### GenerateBlock
+<!-- TODO: Add description -->
 
 ***Algorithm***
 1. Fetch transactions from Mempool
 2. Execute transactions and get new state hash
 3. Compute transaction tree root
-4. Set timestamp to current time
-5. Compute iteration number
-6. Set new $Seed$ by signing the previous one
-7. Create header
-8. Create candidate block
-9. Output candidate block
+4. Compute iteration number
+5. Set new $Seed$ by signing the previous one
+6. Create header
+7. Create candidate block
+8. Output candidate block
 
 ***Procedure***
 
@@ -98,7 +98,7 @@ $GenerateBlock()$
 3. $`TxRoot_r = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`i = \lfloor\frac{s}{3}\rfloor`$
 5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
-6. $`\mathsf{H}_{\mathsf{B}^c_{r,i}} = (v,r,\tau_{now},BlockGas,i,\eta_{\mathsf{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r)`$
+6. $`\mathsf{H}_{\mathsf{B}^c_{r,i}} = (v,r,\tau_{now},BlockGas,i,\eta_{\mathsf{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r,\boldsymbol{PrevIterations})`$
     | Field           | Value                     | 
     |-----------------|---------------------------|
     | $Version$       | $V$                       |
@@ -111,7 +111,8 @@ $GenerateBlock()$
     | $Generator$     | $pk_\mathcal{N}$          |
     | $TxRoot$        | $TxRoot_r$                |
     | $State$         | $State_r$                 |
-    | $PrevBlockCertificate$ |    $Certificate$   | 
+    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$   | 
+    | $FailedIterations$ | $\boldsymbol{PrevIterations}$ |
     <!-- | $Header Hash           | string | -->
     
 7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
