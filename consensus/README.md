@@ -172,6 +172,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $\tau_{Attestation}$ | Current timeout for Attestation      |
 | $\tau_{Reduction_1}$ | Current timeout for First Reduction  |
 | $\tau_{Reduction_2}$ | Current timeout for Second Reduction |
+| $\boldsymbol{PrevIterations}$ | Certificates of failed iterations |
 
 
 <!-- $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->
@@ -271,7 +272,9 @@ This procedure executes a sequence of *Attestation*, to generate a new candidate
 1. Run Attestation to generate *candidate* block $\mathsf{B}^c$
 2. Run first Reduction on $\mathsf{B}^c$
 3. Run second Reduction on $\mathsf{B}^c$
-4. If both Reduction votes are not $NIL$ 
+4. If any of the two Reductions failed
+   1. Create a certificate with the aggregated votes
+   2. Add the failed-iteration certificate to $\boldsymbol{PrevIterations}$
 5. and this node $\mathcal{N}$ is in the second Reduction committee:
    1. Create $\mathsf{Agreement}$ message $\mathsf{M}^A$ with both Reduction votes
    2. Broadcast message $\mathsf{M}^A$
@@ -282,10 +285,12 @@ $\textit{SAIteration}(Round, Iteration):$
 - $r2Step = Iteration\times 3 + 2$
 - $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
 1. $\mathsf{B}^c =$ [*Attestation*][atta]$(Round, Iteration)$
-2. $\mathsf{V}^1 =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
-3. $\mathsf{V}^2 =$ [*Reduction*][reda]$(Round, Iteration, 2, \mathsf{B}^c)$
-4. $\texttt{if } (\mathsf{V}^1 \ne NIL) \texttt{ and } (\mathsf{V}^2 \ne NIL)$
-5. $\texttt{and } (pk_\mathcal{N} \in C^{R2}):$
+2. $(v^1, \mathsf{V}^1) =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
+3. $(v^2, \mathsf{V}^2) =$ [*Reduction*][reda]$(Round, Iteration, 2, \mathsf{B}^c)$
+4. $\texttt{if } (v^1 = NIL) \texttt{ or } (v^1 = NIL)$
+   1. $\mathsf{C} = {\mathsf{V}^1, \mathsf{V}^2}$
+   2. $\boldsymbol{PrevIterations}[Iteration] = {\mathsf{C}}$
+5. $\texttt{else if} (pk_\mathcal{N} \in C^{R2}):$
     1. $\mathsf{M}^A =$ [*Msg*][msg]$(\mathsf{Agreement}, [\mathsf{V}^1,\mathsf{V}^2])$
         | Field       | Value                         | 
         |-------------|-------------------------------|

@@ -68,10 +68,10 @@ When the number of $NIL$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$ w
          5. If $v$ is $NIL$ and votes reached $NilQuorum$
          6. or $v$ is not $NIL$ and votes reached $Quorum$:
             1. Create $StepVotes$ $\mathsf{V}$ with aggregated $v$
-            2. Output $\mathsf{V}$
+            2. Output $v$ and $\mathsf{V}$
  5. If timeout expired:
     1. Increase Reduction timeout
-    2. Output $NIL$
+    2. Output $NIL$ vote and $NIL$ $StepVotes$
 
 ***Procedure***
 
@@ -113,11 +113,11 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
          5. $\texttt{if } (v=NIL \texttt{ and } $*countSetBits*$(\boldsymbol{bs}^v) \ge NilQuorum)$
          6. $\texttt{or } (v \ne NIL \texttt{ and }$*countSetBits*$(\boldsymbol{bs}^v) \ge Quorum):$
             1. $\mathsf{V} = (\sigma^v, \boldsymbol{bs}^v)$
-            2. $\texttt{output } \mathsf{V}$
+            2. $\texttt{output } (v, \mathsf{V})$
 
  5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Reduction_{rstep}}):$
     1. *IncreaseTimeout*$(\tau_{Reduction_{rstep}})$
-    2. $\texttt{output } NIL$
+    2. $\texttt{output } (NIL, NIL)$
 
 <!----------------------- FOOTNOTES ----------------------->
 
