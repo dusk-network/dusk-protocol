@@ -54,6 +54,10 @@ Given the above, at any moment, the local chain can be considered as made of two
 **Last Final Block**
 Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
 
+### Instant Finality
+
+### Rolling Finality
+
 ## Environment
 The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
 

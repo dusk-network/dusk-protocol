@@ -10,9 +10,9 @@ This section describes the formal definition of the block and transaction struct
 
 ## Block Structure
 
-| Field          | Type            | Size      | Description        |
-|----------------|-----------------|-----------|--------------------|
-| $Header$       | `BlockHeader`    | 112 bytes | Block header       |
+| Field          | Type              | Size      | Description        |
+|----------------|-------------------|-----------|--------------------|
+| $Header$       | `BlockHeader`     | 112 bytes | Block header       |
 | $Transactions$ | `Transaction` [ ] | variable  | Block transactions |
 <!-- TODO? | $Final$        | Boolean         | 1 bit    | Final state ($true$ if final, $false$ otherwise) | -->
 
