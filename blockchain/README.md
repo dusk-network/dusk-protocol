@@ -8,7 +8,6 @@ This section describes the formal definition of the Dusk chain, block, and trans
 - [`Transaction`](#transaction)
 
 ## Chain
-<!-- DOING -->
 <!-- TODO?: Define ChainBlock or LocalBlock structure (Block, label) -->
 The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][bf]):
 

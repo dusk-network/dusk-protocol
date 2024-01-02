@@ -201,15 +201,15 @@ $VerifyVotes$ checks the aggregated votes for a candidate are valid and reach th
 - $s$: step
 
 ***Algorithm***
-1. Compute subcommittee $C^{\boldsymbol{bs}}$ from bitset
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{V}.BitSet$
 2. If $b$ is a timeout vote ($NIL$)
    1. Set quorum target $q$ to $NilQuorum$
 3. Otherwise, set $q$ to $Quorum$
-4. If credits in subcommittee are less than $q$
-   1. Output false
-5. Aggregate public keys of subcommittee member
-6. Compute hash of candidate block, round, and step
-7. Verify aggregated signature over hash
+4. If credits in $C^{\boldsymbol{bs}}$ are less than $q$
+   1. Output $false$
+5. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
+6. Compute hash $\eta$ of round $r$, step $s$, and block $b$
+7. Verify aggregated signature over $\eta$
 
 ***Procedure***
 
