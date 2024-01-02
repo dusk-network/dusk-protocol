@@ -45,7 +45,7 @@ It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 ### Block Finality
-Due to the asynchronous nature of the network, it is possible that more than one block reaches consensus in one round (in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
+Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
 
 When a fork is detected, nodes automatically switch to the block that reached quorum at a lower iteration. Consequently, it is possible for a block to be reverted and replaced by another block (see [*Fallback*][fal]). At the same time, blocks reaching consensus at iteration 1 can't be replaced by lower-iteration ones. We then call such blocks *final*.
 
@@ -55,8 +55,10 @@ Given the above, at any moment, the local chain can be considered as made of two
 Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
 
 ### Instant Finality
+<!-- DOING -->
 
 ### Rolling Finality
+<!-- DOING -->
 
 ## Environment
 The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
@@ -531,23 +533,24 @@ $\textit{AcceptPoolBlocks}():$
 
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
-[env]: #environment
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#block-finality -->
+[env]:  #environment
+[ab]:   #acceptblock
+[apb]:  #acceptpoolblocks
+[bf]:   #block-finality
 [cert]: #certificate
-[ab]:  #acceptblock
-[apb]: #acceptpoolblocks
-[fal]: #fallback
-[hst]: #handlesynctimeout
-[pb]:  #processblock
-[syn]: #synchronization
-[sb]:  #syncblock
-[ss]:  #startsync
-[vb]:  #verifyblock
-[vc]:  #verifycertificate
-[vv]:  #verifyvotes
+[fal]:  #fallback
+[hst]:  #handlesynctimeout
+[pb]:   #processblock
+[syn]:  #synchronization
+[sb]:   #syncblock
+[ss]:   #startsync
+[vb]:   #verifyblock
+[vc]:   #verifycertificate
+[vv]:   #verifyvotes
 
 <!-- Blockchain -->
-[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
+[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 <!-- Consensus -->
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
@@ -559,6 +562,7 @@ $\textit{AcceptPoolBlocks}():$
 <!-- Messages -->
 [mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
 <!-- Sortition -->
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits

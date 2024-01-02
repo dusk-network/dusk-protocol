@@ -170,7 +170,7 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 [mx]: #message-exchange
 
 <!-- Blockchain -->
-[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
+[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 
 <!-- Reduction -->
 [sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
