@@ -5,7 +5,6 @@ This section describes the formal definition of the Dusk chain, block, and trans
 - [Chain](#chain)
 - [`Block`](#block)
 - [`BlockHeader`](#blockheader)
-  - [Block Notation](#block-notation)
 - [`Transaction`](#transaction)
 
 ## Chain
@@ -13,8 +12,7 @@ This section describes the formal definition of the Dusk chain, block, and trans
 <!-- TODO?: Define ChainBlock or LocalBlock structure (Block, label) -->
 The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][bf]):
 
-
-$$`Chain: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)]`,$$
+$$Chain: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
 
 where $\mathsf{B}_0 = Genesis$ and $Status_0 = Final$ (that is, the genesis block is final by definition).
 
@@ -52,7 +50,7 @@ We use $Chain[i]$ to indicate the $i$th element of the chain.
 The $BlockHeader$ structure has a variable total size of 522 to 28970 bytes (28.8 KB).
 This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Certificate$ is missing.
 
-### Block Notation
+**Notation**
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define a *block's hash* as:
