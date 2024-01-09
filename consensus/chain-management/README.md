@@ -32,7 +32,23 @@ At the same time, it is possible that a block is received from the network, whic
 
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
-## Certificate
+### Block Finality
+Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
+
+Forks are resolved by always choosing the block that reached quorum at the lowest iteration. Consequently, some blocks in the local chain of a node can be replaced by a lower-iteration block (see [*Fallback*][fal]). 
+Within the same round, blocks reaching consensus at iteration 1 can't be replaced by lower-iteration ones (they can, however, be replaced if a predecessor is reverted).
+
+Given the above, at any moment, the local chain can be considered as made of two parts: a final one, which is from the genesis to the last finalized block, and the non-final one, which includes all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+
+**Last Final Block**
+Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
+
+### Certificate
+<!-- DOING -->
+<!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
+A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
+In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
+
 The $\mathsf{Certificate}$ structure contains the [Reduction][rmsg] votes of the [quorum committee][sc] that reached consensus on a candidate block.
 It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
 
@@ -44,21 +60,26 @@ It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][
 
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
-### Block Finality
-Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
+### Consensus State
+To handle the possibility of forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
+In particular, Blocks in the [local chain][c] can be in three states:
 
-When a fork is detected, nodes automatically switch to the block that reached quorum at a lower iteration. Consequently, it is possible for a block to be reverted and replaced by another block (see [*Fallback*][fal]). At the same time, blocks reaching consensus at iteration 1 can't be replaced by lower-iteration ones. We then call such blocks *final*.
+  - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
 
-Given the above, at any moment, the local chain can be considered as made of two parts: a final one, which is from the genesis to the last finalized block, and the non-final one, which includes all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+  - *Attested*: the block has a Valid Quorum and all previous iterations have a NilQuorum Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  
+  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
 
-**Last Final Block**
-Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
 
 ### Instant Finality
 <!-- DOING -->
+When a block $\mathsf{B}$ is accepted to the local chain, it can be immediately marked as *Final* if:
+  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
+  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
 
 ### Rolling Finality
 <!-- DOING -->
+
 
 ## Environment
 The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
@@ -551,6 +572,8 @@ $\textit{AcceptPoolBlocks}():$
 
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
+[c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
+
 <!-- Consensus -->
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
