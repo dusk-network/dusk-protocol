@@ -175,5 +175,5 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 <!-- Reduction -->
 [sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 
-<!-- Ratification -->
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#certificate
+<!-- Chain Management -->
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#certificate

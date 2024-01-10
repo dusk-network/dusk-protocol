@@ -5,7 +5,7 @@ In particular, this section describes how new blocks are accepted to the local b
 
 ### ToC
 - [Overview](#overview)
-  - [Block Finality](#block-finality)
+- [Finality](#finality)
 - [Environment](#environment)
 - [Block Verification](#block-verification)
   - [*VerifyBlock*](#verifyblock)
@@ -23,25 +23,59 @@ In particular, this section describes how new blocks are accepted to the local b
   - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 ## Overview
-At node level, there are two ways for blocks to be added to the local chain. The first one is through the consensus protocol, that is, at the end of a successful round. In this case, the candidate block, for which a quorum has been reached in both Reduction phases, becomes a *winning block* and is therefore added to the chain as the new tip, updating the state accordingly (see [*AcceptBlock*][ab]).
-At the same time, it is possible that a block is received from the network, which has already reached consensus (proved by the *block certificate*). When the received block is not in the local chain, it can indicate two possible situations:
+At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Reduction][red] phases, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][cert]). 
+
+There are two main reasons a network block is not in the chain:
  
- - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height then the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the main chain. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
+ - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
 
- - *fork*: two or more blocks have reached consensus at the same height (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
 
-Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
-### Block Finality
-Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
+## Finality
+Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
 
-Forks are resolved by always choosing the block that reached quorum at the lowest iteration. Consequently, some blocks in the local chain of a node can be replaced by a lower-iteration block (see [*Fallback*][fal]). 
-Within the same round, blocks reaching consensus at iteration 1 can't be replaced by lower-iteration ones (they can, however, be replaced if a predecessor is reverted).
+When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
+However, when multiple same-height blocks are received, nodes always choose the lowest-iteration one. This mechanism allows to automatically resolve forks as soon as all conflicting blocks are received by all nodes.
 
-Given the above, at any moment, the local chain can be considered as made of two parts: a final one, which is from the genesis to the last finalized block, and the non-final one, which includes all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+As a consequence of the above, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus (see [*Fallback*][fal]). Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
+
+### Consensus State
+To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
+In particular, Blocks in the [local chain][c] can be in three states:
+
+  - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
+
+  - *Attested*: the block has a Valid Quorum and all previous iterations have a NilQuorum Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  
+  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
+
+**Final and Non-Final**
+At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
 
 **Last Final Block**
-Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
+Due to its relevance, we formally define the *last final block* as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
+
+### Instant Finality
+<!-- DOING -->
+When a block $\mathsf{B}$ is accepted to the local chain, it can be immediately marked as *Final* if:
+  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
+  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
+
+### Rolling Finality
+<!-- DOING -->
+
+
+
+
+
+
+
+
+
+
 
 ### Certificate
 <!-- DOING -->
@@ -60,25 +94,7 @@ It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][
 
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
-### Consensus State
-To handle the possibility of forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
-In particular, Blocks in the [local chain][c] can be in three states:
 
-  - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
-
-  - *Attested*: the block has a Valid Quorum and all previous iterations have a NilQuorum Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
-  
-  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
-
-
-### Instant Finality
-<!-- DOING -->
-When a block $\mathsf{B}$ is accepted to the local chain, it can be immediately marked as *Final* if:
-  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
-  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
-
-### Rolling Finality
-<!-- DOING -->
 
 
 ## Environment
@@ -554,11 +570,11 @@ $\textit{AcceptPoolBlocks}():$
 
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#block-finality -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
 [env]:  #environment
 [ab]:   #acceptblock
 [apb]:  #acceptpoolblocks
-[bf]:   #block-finality
+[bf]:   #finality
 [cert]: #certificate
 [fal]:  #fallback
 [hst]:  #handlesynctimeout
@@ -575,6 +591,7 @@ $\textit{AcceptPoolBlocks}():$
 [c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Consensus -->
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#protocol-overview
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader

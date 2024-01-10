@@ -331,12 +331,13 @@ red2: (Block.Iteration) \times 3 + 2
 [^5]: For the sake of simplicity, we assume the node handles a single provisioner identity.
 
 <!------------------------- LINKS ------------------------->
-
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
+[sa]:  #protocol-overview
 [cp]:  #consensus-parameters
 [sac]: #saconsensus
 [sar]: #saround
 [sai]: #saiteration
-[sal]:  #saloop
+[sal]: #saloop
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 
