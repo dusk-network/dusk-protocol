@@ -3,9 +3,9 @@
 <!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
 <!-- TODO: Define sth like Candidate "signature": block_hash, round, iteration -->
 # Succinct Attestation
-**Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
+**Succinct Attestation** (**SA**) is a permissionless, committee-based Proof-of-Stake consensus protocol. 
 
-The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating, validating, and finalizing new blocks.
+The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating and validating new blocks.
 
 Provisioners participate in turns to the production and validation of each new block of the ledger. Participation in each round is decided with a [*Deterministic Sortition*][ds] (*DS*) algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
 
@@ -16,13 +16,18 @@ Provisioners participate in turns to the production and validation of each new b
     - [Candidate Block](#candidate-block)
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
+  - [Certificates](#certificates)
+    - [Structures](#structures)
+      - [Certificate](#certificate)
+      - [StepVotes](#stepvotes)
   - [Consensus Parameters](#consensus-parameters)
   - [SA Algorithm](#sa-algorithm)
-    - [*SAConsensus*](#saconsensus)
-    - [*SALoop*](#saloop)
-    - [*SARound*](#saround)
-    - [*SAIteration*](#saiteration)
-    - [*IncreaseTimeout*](#increasetimeout)
+    - [SAConsensus](#saconsensus)
+    - [SALoop](#saloop)
+    - [SARound](#saround)
+    - [SAIteration](#saiteration)
+    - [IncreaseTimeout](#increasetimeout)
+
 
 ## Notation
 <!-- TODO: replace \mathsf for `` so structure names can be embedded in links -->
@@ -80,13 +85,13 @@ A maximum number of 71 iterations (213 steps) is allowed to agree on a new valid
 ### Candidate Block
 A candidate block is the block generated in the [Attestation][att] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
-Therefore, for each iteration, only one (valid) candidate block can be produced[^3]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
+Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
 Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
 
 A candidate block that reaches an agreement is called a *winning* block.
 
 ## Provisioners and Stakes
-A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][sc]).
+A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
 Formally, we define a *Provisioner* $\mathcal{P}$ as:
 
 $$\mathcal{P}=(pk_\mathcal{P},\boldsymbol{Stakes}_\mathcal{P}),$$
@@ -113,12 +118,48 @@ where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* 
 
 $$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
-where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^4]. Therefore the value of $M$ will vary depending on $Round_S$:
+where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^2]. Therefore the value of $M$ will vary depending on $Round_S$:
 
 $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
+
+## Certificates
+<!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
+A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
+In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
+
+### Structures
+#### Certificate
+The $\mathsf{Certificate}$ structure contains the aggregated votes of [sub-committees][sc] of the two [Reduction][rmsg] steps that reached quorum on a candidate block.
+It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
+
+
+| Field             | Type            | Size     | Description                          |
+|-------------------|-----------------|----------|--------------------------------------|
+| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
+| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
+
+The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
+
+#### StepVotes
+The $StepVotes$ structure is produced at the end of a [Reduction][red] step and contains a quorum of votes for a candidate block.
+Each vote is the signature of a provisioner for a triplet $(block_hash, round, step)$, corresponding to the candidate block.
+
+To specify the committee members whose vote is included, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
+
+The structure is defined as follows:
+
+| Field    | Type          | Size     | Description                                |
+|----------|---------------|----------|--------------------------------------------|
+| $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
+| $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
+
+The $StepVotes$ structure has a total size of 56 bytes.
+
+Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
+
 
 ## Consensus Parameters
 <!-- Rename to Environment -->
@@ -129,28 +170,30 @@ Parameters are divided into:
 - *chain state*: represent the current system state, as per result of the execution of all transactions in the blockchain;
 - *round state*: local variables used to handle the consensus state 
 
-Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^5] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
+Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^3] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
 
 **Global Parameters**
 <!-- TODO: check when MaxBlockTime is removed -->
 
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value          | Description                                         |
-|--------------------|----------------|-----------------------------------------------------|
-| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                        |
-| $Version$          | 0              | Protocol version number                             |
-| $CommitteeCredits$ | 64             | Total credits in a voting committee                 |
-| $Quorum$           | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
-| $NilQuorum$        | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
-| $MaxIterations$    | 71             | Maximum number of iterations for a single round     |
-| $InitTimeout$      | 5              | Initial step timeout (in seconds)                   |
-| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)      |
-| $MaxBlockTime$     | 360            | Maximum time to produce a block (in seconds)        |
-| $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)                  |
-| $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)          |
-| $Epoch$            | 2160           | Epoch duration in number of blocks                  |
-| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                        |
+| Name                    | Value          | Description                                         |
+|-------------------------|----------------|-----------------------------------------------------|
+| $GenesisBlock$          | $\mathsf{B_0}$ | Genesis block of the network                        |
+| $Version$               | 0              | Protocol version number                             |
+| $CommitteeCredits$      | 64             | Total credits in a voting committee                 |
+| $Quorum$                | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
+| $NilQuorum$             | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
+| $MaxIterations$         | 71             | Maximum number of iterations for a single round     |
+| $RollingFinalityBlocks$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
+| $InitTimeout$           | 5              | Initial step timeout (in seconds)                   |
+| $MaxTimeout$            | 60             | Maximum timeout for a single step (in seconds)      |
+| $MaxBlockTime$          | 360            | Maximum time to produce a block (in seconds)        |
+| $Dusk$                  | 1.000.000.000  | Value of one unit of Dusk (in lux)                  |
+| $MinStake$              | 1.000          | Minimum amount of a single stake (in Dusk)          |
+| $Epoch$                 | 2160           | Epoch duration in number of blocks                  |
+| $BlockGas$              | 5.000.000.000  | Gas limit for a single block                        |
+
 
 **Chain State**
 <!-- TODO: Add Type column -->
@@ -320,39 +363,41 @@ red2: (Block.Iteration) \times 3 + 2
 
 <!----------------------- FOOTNOTES ----------------------->
 
-[^1]: A type of Proof-of-Stake consensus mechanism that relies on a committee of validators, rather than all validators in the network, to reach consensus on the next block. Committee-based PoS mechanisms often have faster block times and lower overhead than their non-committee counterparts, but may also be more susceptible to censorship or centralization.
+[^1]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
 
-[^2]: A finality guarantee that is achieved through the accumulation of blocks over time, such that the probability of a block being reversed decreases exponentially as more blocks are added on top of it. This type of guarantee is in contrast to absolute finality, which is achieved when it is mathematically impossible for a block to be reversed.
+[^2]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
 
-[^3]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
-
-[^4]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
-
-[^5]: For the sake of simplicity, we assume the node handles a single provisioner identity.
+[^3]: For the sake of simplicity, we assume the node handles a single provisioner identity.
 
 <!------------------------- LINKS ------------------------->
-
-[cp]:  #consensus-parameters
-[sac]: #saconsensus
-[sar]: #saround
-[sai]: #saiteration
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
+[sa]:   #protocol-overview
+[cert]: #certificates
+[sv]:   #stepvotes
+[cp]:   #consensus-parameters
+[sac]:  #saconsensus
+[sar]:  #saround
+[sai]:  #saiteration
 [sal]:  #saloop
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 
+<!-- Consensus -->
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 <!-- Chain Management -->
 [ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
+[rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 <!-- Sortition -->
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 <!-- Attestation -->
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
 [atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm
 <!-- Reduction -->
 [red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
 [reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Ratification -->
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
 [rata]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#ratification-algorithm
@@ -365,4 +410,4 @@ red2: (Block.Iteration) \times 3 + 2
 [nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
 
 <!-- TODO: link to Stake Contract -->
-[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
+[c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake

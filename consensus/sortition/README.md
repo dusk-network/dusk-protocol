@@ -237,7 +237,7 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 
 [de]: #deterministic-extraction-de
 <!-- Blockchain -->
-[bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader-structure
+[bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader
 <!-- Consensus -->
 [cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/README.md#consensus-parameters
 <!-- Reduction -->

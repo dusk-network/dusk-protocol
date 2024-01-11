@@ -5,7 +5,7 @@ In particular, this section describes how new blocks are accepted to the local b
 
 ### ToC
 - [Overview](#overview)
-  - [Block Finality](#block-finality)
+- [Finality](#finality)
 - [Environment](#environment)
 - [Block Verification](#block-verification)
   - [*VerifyBlock*](#verifyblock)
@@ -23,39 +23,65 @@ In particular, this section describes how new blocks are accepted to the local b
   - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 ## Overview
-At node level, there are two ways for blocks to be added to the local chain. The first one is through the consensus protocol, that is, at the end of a successful round. In this case, the candidate block, for which a quorum has been reached in both Reduction phases, becomes a *winning block* and is therefore added to the chain as the new tip, updating the state accordingly (see [*AcceptBlock*][ab]).
-At the same time, it is possible that a block is received from the network, which has already reached consensus (proved by the *block certificate*). When the received block is not in the local chain, it can indicate two possible situations:
+<!-- TODO: Add intro to local chain and certificates? -->
+At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Reduction][red] phases, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][cert]). 
+
+There are two main reasons a network block is not in the chain:
  
- - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height then the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the main chain. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
+ - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
 
- - *fork*: two or more blocks have reached consensus at the same height (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
 
-Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which leverages the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
-## Certificate
-The $\mathsf{Certificate}$ structure contains the [Reduction][rmsg] votes of the [quorum committee][sc] that reached consensus on a candidate block.
-It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
+## Finality
+Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
+
+When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
+However, when multiple same-height blocks are received, nodes always choose the lowest-iteration one. This mechanism allows to automatically resolve forks as soon as all conflicting blocks are received by all nodes.
+
+As a consequence of the above, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus (see [*Fallback*][fal]). Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
+
+### Consensus State
+To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
+In particular, Blocks in the [local chain][c] can be in three states:
+
+  - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
+
+  - *Attested*: the block has a Valid Quorum and all previous iterations have a NilQuorum Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  
+  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
+
+**Final and Non-Final**
+At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to Final (see [Rolling Finality][rf]. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+
+Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
 
 
-| Field             | Type            | Size     | Description                          |
-|-------------------|-----------------|----------|--------------------------------------|
-| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
-| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
+### Rolling Finality
+*Rolling Finality* is the mechanism by which non-final blocks become final.
 
-The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
+The mechanism is based on the following observations:
+ - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
+ - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any certificate for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
+ - Since each committee is randomly extracted with [Deterministic Sortition][sort], it can be considered as a random sampling of the provisioner set.
+ - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
+ - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
+ - While all blocks succeeding $B^A$ include Certificates confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Certificates are enough to consider $B^A$ as Final.
 
-### Block Finality
-Due to the asynchronous nature of the network, it is possible that more than one block reaches consensus in one round (in different iterations). When this occurs, some nodes will have a different block for the same height, creating a *fork*. This is typically due to consensus messages being delayed or lost due to network congestion.
+Considering only Attested blocks allow minimizing the risk of accounting for "confirmations" that are then replaced by a fork.
 
-When a fork is detected, nodes automatically switch to the block that reached quorum at a lower iteration. Consequently, it is possible for a block to be reverted and replaced by another block (see [*Fallback*][fal]). At the same time, blocks reaching consensus at iteration 1 can't be replaced by lower-iteration ones. We then call such blocks *final*.
+Based on the above, nodes follow the following rule: 
+> Any accepted block $B^A$ in the local chain is marked as Final if 5 consecutive Attested blocks are accepted afterwards.
 
-Given the above, at any moment, the local chain can be considered as made of two parts: a final one, which is from the genesis to the last finalized block, and the non-final one, which includes all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+In other words, 5 consecutive Attested blocks finalize all previous Accepted blocks. In turn, the 5 Attested blocks also become Final (because the previous Accepted block is now Final), thus making the whole chain Final.
 
-**Last Final Block**
-Due to its relevance, we formally define the *last final block* as the highest block that has been marked as final, and denote it with $\mathsf{B}^f$.
+Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
+<!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
 
 ## Environment
-The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
+The environment for the block-processing procedures includes node-level parameters, conditioning the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
 
 **Parameters**
 
@@ -195,15 +221,15 @@ $VerifyVotes$ checks the aggregated votes for a candidate are valid and reach th
 - $s$: step
 
 ***Algorithm***
-1. Compute subcommittee $C^{\boldsymbol{bs}}$ from bitset
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{V}.BitSet$
 2. If $b$ is a timeout vote ($NIL$)
    1. Set quorum target $q$ to $NilQuorum$
 3. Otherwise, set $q$ to $Quorum$
-4. If credits in subcommittee are less than $q$
-   1. Output false
-5. Aggregate public keys of subcommittee member
-6. Compute hash of candidate block, round, and step
-7. Verify aggregated signature over hash
+4. If credits in $C^{\boldsymbol{bs}}$ are less than $q$
+   1. Output $false$
+5. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
+6. Compute hash $\eta$ of round $r$, step $s$, and block $b$
+7. Verify aggregated signature over $\eta$
 
 ***Procedure***
 
@@ -246,8 +272,7 @@ $MakeWinning(\mathsf{B}, \mathsf{C}):$
 
 
 ### AcceptBlock
-*AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable.
-If consensus was reached in the first iteration, the block is marked as *final*.
+*AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable. 
 
 ***Parameters***
 - $\mathsf{B}$: the block to accept as the new chain tip
@@ -255,9 +280,11 @@ If consensus was reached in the first iteration, the block is marked as *final*.
 ***Algorithm***
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
 2. Generate new state ($newState$) by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
-3. Update $Provisioners$ set
-4. If $Iteration$ is 1, make the block final
-5. Set $Tip$ to block $\mathsf{B}$
+3. Update the $Provisioners$ set
+4. Set $Tip$ to block $\mathsf{B}$
+5. Compute the consensus state $s$ of $\mathsf{B}$
+6. Add $(Tip, s)$ to the local chain
+7. Check Rolling Finality
 
 ***Procedure***
 
@@ -266,11 +293,63 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $\boldsymbol{txs} = \mathsf{B}.Transactions$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
+   - $h = \mathsf{H}_\mathsf{B}.Height$
 2. $newState =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
 3. $Provisioners = newState.Provisioners$
-4. $\texttt{if } (Iteration = 1):$ *MakeFinal*$(\mathsf{B})$
-5. $Tip = \mathsf{B}$
+4. $Tip = \mathsf{B}$
+5. $s =$ *GetBlockState*$(\mathsf{B})$
+6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
+7. *CheckRollingFinality*$()$
 
+### GetBlockState
+The block state is computed according to the [Finality][fin] rules.
+
+***Parameters***
+- $\mathsf{B}$: the block being accepted to the chain
+
+***Algorithm***
+1. If all failed iterations have a NilQuorum certificate:
+   1. Set $cstate$ to "Attested"
+   2. If $\mathsf{B}$'s parent is Final
+      1. Set $cstate$ to "Final"
+2. Otherwise, set $cstate$ to "Accepted"
+3. Output $cstate$
+
+***Procedure***
+
+$\textit{GetBlockState}(\mathsf{B}):$
+- $\texttt{set } h = \mathsf{H}_\mathsf{B}.Height$
+1. $\texttt{if } (|\mathsf{H}_\mathsf{B}.FailedIterations| = \mathsf{H}_\mathsf{B}.Iteration-1) :$
+   1. $\texttt{set } cstate = \text{"Attested"}$
+   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
+      1. $\texttt{set } cstate = \text{"Final"}$
+2. $\texttt{else } :$
+   1. $\texttt{set } cstate = \text{"Accepted"}$
+3. $\texttt{output } cstate$
+
+
+### CheckRollingFinality
+*CheckRollingFinality* checks if the last $RollingFinalityBlocks$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
+
+***Procedure***
+$\textit{CheckRollingFinality}():$
+1. $rf =$ *HasRollingFinality*$()$
+2. $\texttt{if } (rf = true) :$
+   1. *MakeChainFinal*$()$
+
+#### HasRollingFinality
+*HasRollingFinality* outputs true if the last $RollingFinalityBlocks$ are all Attested and false otherwise.
+
+***Procedure***
+$\textit{HasRollingFinality}():$
+- $\texttt{set } tip = \mathsf{H}_Tip.Height$
+1. $\texttt{for } i = tip \dots tip{-}RollingFinalityBlocks :$
+   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
+      1. $\texttt{output } false$
+2. $\texttt{output } true$ 
+
+#### MakeChainFinal
+*MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
 
 ### ProcessBlock
 The *ProcessBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
@@ -315,7 +394,6 @@ $\textit{ProcessBlock}(\mathsf{M}^{Block}):$
 5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
    1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
-<!-- TODO: Define *MakeFinal* -->
 
 ## Fallback
 The *Fallback* procedure reverts the local state to the last [finalized][fin] block. The procedure is triggered by [*ProcessBlock*][pb] when receiving a block at the same height as the $Tip$ but with lower $Iteration$. 
@@ -515,8 +593,7 @@ The *AcceptPoolBlocks* procedure accepts all successive blocks in $BlockPool$ fr
 
 $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$
-2. $n = \textit{len}(\boldsymbol{Successors}) - 1$ \
-   $\texttt{for } i = 0 \dots n :$
+2. $\texttt{for } i = 0 \dots |\boldsymbol{Successors}|{-}1 :$
    1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip)$
       1. $\texttt{if } (isValid = false): \texttt{stop}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
@@ -528,33 +605,38 @@ $\textit{AcceptPoolBlocks}():$
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
-[env]: #environment
-[cert]: #certificate
-[ab]:  #acceptblock
-[apb]: #acceptpoolblocks
-[fal]: #fallback
-[hst]: #handlesynctimeout
-[pb]:  #processblock
-[syn]: #synchronization
-[sb]:  #syncblock
-[ss]:  #startsync
-[vb]:  #verifyblock
-[vc]:  #verifycertificate
-[vv]:  #verifyvotes
+[env]:  #environment
+[ab]:   #acceptblock
+[apb]:  #acceptpoolblocks
+[cs]:   #consensus-state
+[fin]:  #finality
+[rf]:   #rolling-finality
+[fal]:  #fallback
+[hst]:  #handlesynctimeout
+[pb]:   #processblock
+[syn]:  #synchronization
+[sb]:   #syncblock
+[ss]:   #startsync
+[vb]:   #verifyblock
+[vc]:   #verifycertificate
+[vv]:   #verifyvotes
 
 <!-- Blockchain -->
-[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block-structure
+[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
+[c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
+
 <!-- Consensus -->
-[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
+[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#protocol-overview
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
 <!-- Reduction -->
 [red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
-[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Messages -->
 [mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
 <!-- Sortition -->
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
