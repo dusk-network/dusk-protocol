@@ -126,7 +126,6 @@ Having the Provisioner Set fixed during an epoch, along with the use of the matu
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
 ## Certificates
-<!-- DOING -->
 <!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
 A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
 In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
@@ -178,21 +177,23 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value          | Description                                         |
-|--------------------|----------------|-----------------------------------------------------|
-| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                        |
-| $Version$          | 0              | Protocol version number                             |
-| $CommitteeCredits$ | 64             | Total credits in a voting committee                 |
-| $Quorum$           | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
-| $NilQuorum$        | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
-| $MaxIterations$    | 71             | Maximum number of iterations for a single round     |
-| $InitTimeout$      | 5              | Initial step timeout (in seconds)                   |
-| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)      |
-| $MaxBlockTime$     | 360            | Maximum time to produce a block (in seconds)        |
-| $Dusk$             | 1.000.000.000  | Value of one unit of Dusk (in lux)                  |
-| $MinStake$         | 1.000          | Minimum amount of a single stake (in Dusk)          |
-| $Epoch$            | 2160           | Epoch duration in number of blocks                  |
-| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                        |
+| Name                    | Value          | Description                                         |
+|-------------------------|----------------|-----------------------------------------------------|
+| $GenesisBlock$          | $\mathsf{B_0}$ | Genesis block of the network                        |
+| $Version$               | 0              | Protocol version number                             |
+| $CommitteeCredits$      | 64             | Total credits in a voting committee                 |
+| $Quorum$                | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
+| $NilQuorum$             | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
+| $MaxIterations$         | 71             | Maximum number of iterations for a single round     |
+| $RollingFinalityBlocks$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
+| $InitTimeout$           | 5              | Initial step timeout (in seconds)                   |
+| $MaxTimeout$            | 60             | Maximum timeout for a single step (in seconds)      |
+| $MaxBlockTime$          | 360            | Maximum time to produce a block (in seconds)        |
+| $Dusk$                  | 1.000.000.000  | Value of one unit of Dusk (in lux)                  |
+| $MinStake$              | 1.000          | Minimum amount of a single stake (in Dusk)          |
+| $Epoch$                 | 2160           | Epoch duration in number of blocks                  |
+| $BlockGas$              | 5.000.000.000  | Gas limit for a single block                        |
+
 
 **Chain State**
 <!-- TODO: Add Type column -->
@@ -386,6 +387,7 @@ red2: (Block.Iteration) \times 3 + 2
 <!-- Chain Management -->
 [ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
+[rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 <!-- Sortition -->
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds

@@ -284,6 +284,7 @@ $MakeWinning(\mathsf{B}, \mathsf{C}):$
 4. Set $Tip$ to block $\mathsf{B}$
 5. Compute the consensus state $s$ of $\mathsf{B}$
 6. Add $(Tip, s)$ to the local chain
+7. Check Rolling Finality
 
 ***Procedure***
 
@@ -297,7 +298,8 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 3. $Provisioners = newState.Provisioners$
 4. $Tip = \mathsf{B}$
 5. $s =$ *GetBlockState*$(\mathsf{B})$
-6. $Chain[h]=(\mathsf{B}, s)$
+6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
+7. *CheckRollingFinality*$()$
 
 ### GetBlockState
 The block state is computed according to the [Finality][fin] rules.
@@ -319,13 +321,35 @@ $\textit{GetBlockState}(\mathsf{B}):$
 - $\texttt{set } h = \mathsf{H}_\mathsf{B}.Height$
 1. $\texttt{if } (|\mathsf{H}_\mathsf{B}.FailedIterations| = \mathsf{H}_\mathsf{B}.Iteration-1) :$
    1. $\texttt{set } cstate = \text{"Attested"}$
-   2. $\texttt{if } (Chain[h{-}1].State = \text{"Final"}) :$
+   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
       1. $\texttt{set } cstate = \text{"Final"}$
 2. $\texttt{else } :$
    1. $\texttt{set } cstate = \text{"Accepted"}$
 3. $\texttt{output } cstate$
 
 
+### CheckRollingFinality
+*CheckRollingFinality* checks if the last $RollingFinalityBlocks$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
+
+***Procedure***
+$\textit{CheckRollingFinality}():$
+1. $rf =$ *HasRollingFinality*$()$
+2. $\texttt{if } (rf = true) :$
+   1. *MakeChainFinal*$()$
+
+#### HasRollingFinality
+*HasRollingFinality* outputs true if the last $RollingFinalityBlocks$ are all Attested and false otherwise.
+
+***Procedure***
+$\textit{HasRollingFinality}():$
+- $\texttt{set } tip = \mathsf{H}_Tip.Height$
+1. $\texttt{for } i = tip \dots tip{-}RollingFinalityBlocks :$
+   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
+      1. $\texttt{output } false$
+2. $\texttt{output } true$ 
+
+#### MakeChainFinal
+*MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
 
 ### ProcessBlock
 The *ProcessBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
@@ -569,8 +593,7 @@ The *AcceptPoolBlocks* procedure accepts all successive blocks in $BlockPool$ fr
 
 $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$
-2. $n = \textit{len}(\boldsymbol{Successors}) - 1$ \
-   $\texttt{for } i = 0 \dots n :$
+2. $\texttt{for } i = 0 \dots |\boldsymbol{Successors}|{-}1 :$
    1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip)$
       1. $\texttt{if } (isValid = false): \texttt{stop}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
@@ -605,7 +628,6 @@ $\textit{AcceptPoolBlocks}():$
 <!-- Consensus -->
 [sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#protocol-overview
-[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate

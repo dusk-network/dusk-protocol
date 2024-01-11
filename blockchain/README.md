@@ -10,12 +10,12 @@ This section describes the formal definition of the Dusk chain, block, and trans
 ## Chain
 The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][fin]):
 
-$$Chain: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
+$$\textbf{Chain}: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
 
 where $\mathsf{B}_0 = Genesis$ and $Status_0 = \text{"Final"}$ (that is, the genesis block is final by definition).
 
 **Notation**
-We use $Chain[i]$ to indicate the $i$th element of the chain.
+We use $\textbf{Chain}[i]$ to indicate the $i$th element of the chain.
 
 <!-- TODO: define Genesis and Tip here; review use of Tip in procedures (we can use Chain instead) -->
 
