@@ -172,8 +172,6 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 
-<!-- Reduction -->
-[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
-
-<!-- Chain Management -->
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#certificate
+<!-- Consensus -->
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes

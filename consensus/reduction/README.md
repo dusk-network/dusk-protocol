@@ -3,7 +3,6 @@ In the Reduction phase, the *candidate* block produced in the [Attestation][att]
 
 ### ToC
 - [Overview](#overview)
-  - [`StepVotes`](#stepvotes)
 - [Reduction Algorithm](#reduction-algorithm)
 
 ## Overview
@@ -16,24 +15,6 @@ If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produce
 If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
 <!-- Currently, if the first step produces $NIL$, nodes still execute the second step.
 This behavior should be avoided. If the goal is to spend time, just wait timeout. -->
-
-### StepVotes
-<!-- TODO mv to a Structures file -->
-The $StepVotes$ structure is produced at the end of a Reduction step and contains a quorum of votes in favor or against a candidate block.
-
-To specify the committee members, whose vote is included in $Votes$, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
-
-The structure is defined as follows:
-
-| Field    | Type          | Size     | Description                                |
-|----------|---------------|----------|--------------------------------------------|
-| $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
-| $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
-
-Thus, the $StepVotes$ structure has a total size of 56 bytes.
-
-Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
-
 
 ## Reduction Algorithm
 <!-- TODO: Add description; Add #RunReduction? -->
@@ -125,7 +106,6 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md -->
-[sv]: #stepvotes
 
 <!-- Consensus -->
 [cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters

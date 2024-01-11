@@ -79,13 +79,13 @@ $VerifyAgreement(\mathsf{M})$
 [va]:  #verifyagreement
 
 <!-- Consensus -->
+[cert]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
+[sv]:      https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [cparams]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#parameters
 <!-- Reduction -->
 [red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md 
-[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Messages -->
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
 <!-- Chain Management -->
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#certificate
 [vc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifycertificate

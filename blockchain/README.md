@@ -73,12 +73,10 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 [c]:  #chain
 [tx]: #transaction
 
-<!-- Chain Management -->
-[bf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#certificate
 <!-- Consensus -->
 [cb]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#candidate-block
-<!-- TODO -->
-[cs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-status
-<!-- Reduction -->
-[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
+<!-- Chain Management -->
+[bf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
+[cs]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#consensus-state

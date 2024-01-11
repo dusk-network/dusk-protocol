@@ -16,13 +16,18 @@ Provisioners participate in turns to the production and validation of each new b
     - [Candidate Block](#candidate-block)
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
+  - [Certificates](#certificates)
+    - [Structures](#structures)
+      - [Certificate](#certificate)
+      - [StepVotes](#stepvotes)
   - [Consensus Parameters](#consensus-parameters)
   - [SA Algorithm](#sa-algorithm)
-    - [*SAConsensus*](#saconsensus)
-    - [*SALoop*](#saloop)
-    - [*SARound*](#saround)
-    - [*SAIteration*](#saiteration)
-    - [*IncreaseTimeout*](#increasetimeout)
+    - [SAConsensus](#saconsensus)
+    - [SALoop](#saloop)
+    - [SARound](#saround)
+    - [SAIteration](#saiteration)
+    - [IncreaseTimeout](#increasetimeout)
+
 
 ## Notation
 <!-- TODO: replace \mathsf for `` so structure names can be embedded in links -->
@@ -86,7 +91,7 @@ Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not 
 A candidate block that reaches an agreement is called a *winning* block.
 
 ## Provisioners and Stakes
-A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][sc]).
+A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
 Formally, we define a *Provisioner* $\mathcal{P}$ as:
 
 $$\mathcal{P}=(pk_\mathcal{P},\boldsymbol{Stakes}_\mathcal{P}),$$
@@ -119,6 +124,43 @@ $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
+
+## Certificates
+<!-- DOING -->
+<!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
+A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
+In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
+
+### Structures
+#### Certificate
+The $\mathsf{Certificate}$ structure contains the aggregated votes of [sub-committees][sc] of the two [Reduction][rmsg] steps that reached quorum on a candidate block.
+It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
+
+
+| Field             | Type            | Size     | Description                          |
+|-------------------|-----------------|----------|--------------------------------------|
+| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
+| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
+
+The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
+
+#### StepVotes
+The $StepVotes$ structure is produced at the end of a [Reduction][red] step and contains a quorum of votes for a candidate block.
+Each vote is the signature of a provisioner for a triplet $(block_hash, round, step)$, corresponding to the candidate block.
+
+To specify the committee members whose vote is included, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
+
+The structure is defined as follows:
+
+| Field    | Type          | Size     | Description                                |
+|----------|---------------|----------|--------------------------------------------|
+| $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
+| $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
+
+The $StepVotes$ structure has a total size of 56 bytes.
+
+Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
+
 
 ## Consensus Parameters
 <!-- Rename to Environment -->
@@ -332,28 +374,32 @@ red2: (Block.Iteration) \times 3 + 2
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
-[sa]:  #protocol-overview
-[cp]:  #consensus-parameters
-[sac]: #saconsensus
-[sar]: #saround
-[sai]: #saiteration
-[sal]: #saloop
+[sa]:   #protocol-overview
+[cert]: #certificates
+[sv]:   #stepvotes
+[cp]:   #consensus-parameters
+[sac]:  #saconsensus
+[sar]:  #saround
+[sai]:  #saiteration
+[sal]:  #saloop
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 
+<!-- Consensus -->
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 <!-- Chain Management -->
 [ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
 <!-- Sortition -->
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 <!-- Attestation -->
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
 [atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm
 <!-- Reduction -->
 [red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
 [reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Ratification -->
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
 [rata]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#ratification-algorithm
@@ -366,4 +412,4 @@ red2: (Block.Iteration) \times 3 + 2
 [nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
 
 <!-- TODO: link to Stake Contract -->
-[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
+[c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake

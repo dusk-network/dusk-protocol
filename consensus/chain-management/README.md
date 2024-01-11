@@ -23,6 +23,7 @@ In particular, this section describes how new blocks are accepted to the local b
   - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 ## Overview
+<!-- TODO: Add intro to local chain and certificates? -->
 At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Reduction][red] phases, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
 In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][cert]). 
 
@@ -53,49 +54,31 @@ In particular, Blocks in the [local chain][c] can be in three states:
   - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
 
 **Final and Non-Final**
-At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until a new final block is added. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to Final (see [Rolling Finality][rf]. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
 
-**Last Final Block**
-Due to its relevance, we formally define the *last final block* as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
+Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
 
-### Instant Finality
-<!-- DOING -->
-When a block $\mathsf{B}$ is accepted to the local chain, it can be immediately marked as *Final* if:
-  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
-  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
 
 ### Rolling Finality
-<!-- DOING -->
+*Rolling Finality* is the mechanism by which non-final blocks become final.
 
+The mechanism is based on the following observations:
+ - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
+ - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any certificate for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
+ - Since each committee is randomly extracted with [Deterministic Sortition][sort], it can be considered as a random sampling of the provisioner set.
+ - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
+ - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
+ - While all blocks succeeding $B^A$ include Certificates confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Certificates are enough to consider $B^A$ as Final.
 
+Considering only Attested blocks allow minimizing the risk of accounting for "confirmations" that are then replaced by a fork.
 
+Based on the above, nodes follow the following rule: 
+> Any accepted block $B^A$ in the local chain is marked as Final if 5 consecutive Attested blocks are accepted afterwards.
 
+In other words, 5 consecutive Attested blocks finalize all previous Accepted blocks. In turn, the 5 Attested blocks also become Final (because the previous Accepted block is now Final), thus making the whole chain Final.
 
-
-
-
-
-
-
-### Certificate
-<!-- DOING -->
-<!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
-A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
-In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
-
-The $\mathsf{Certificate}$ structure contains the [Reduction][rmsg] votes of the [quorum committee][sc] that reached consensus on a candidate block.
-It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
-
-
-| Field             | Type            | Size     | Description                          |
-|-------------------|-----------------|----------|--------------------------------------|
-| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
-| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
-
-The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
-
-
-
+Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
+<!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
 
 ## Environment
 The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
@@ -291,6 +274,16 @@ $MakeWinning(\mathsf{B}, \mathsf{C}):$
 ### AcceptBlock
 *AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable.
 If consensus was reached in the first iteration, the block is marked as *final*.
+
+<!-- TODO
+**Labeling Blocks**
+When a block $\mathsf{B}$ is accepted to the local chain, its state is set as follows:
+  - if $\mathsf{B}.PrevBlock$ is Final, and 
+
+ immediately marked as *Final* if:
+  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
+  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
+ -->
 
 ***Parameters***
 - $\mathsf{B}$: the block to accept as the new chain tip
@@ -574,8 +567,9 @@ $\textit{AcceptPoolBlocks}():$
 [env]:  #environment
 [ab]:   #acceptblock
 [apb]:  #acceptpoolblocks
+[cs]:   #consensus-state
 [bf]:   #finality
-[cert]: #certificate
+[rf]:   #rolling-finality
 [fal]:  #fallback
 [hst]:  #handlesynctimeout
 [pb]:   #processblock
@@ -591,6 +585,7 @@ $\textit{AcceptPoolBlocks}():$
 [c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Consensus -->
+[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#protocol-overview
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#finality
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
@@ -598,7 +593,6 @@ $\textit{AcceptPoolBlocks}():$
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
 <!-- Reduction -->
 [red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
-[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#stepvotes
 <!-- Messages -->
 [mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
