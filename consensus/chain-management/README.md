@@ -81,7 +81,7 @@ Note that this mechanism assumes that a block being finalized by the Rolling Fin
 <!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
 
 ## Environment
-The environment for the block-processing procedures include node-level parameters, influencing the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
+The environment for the block-processing procedures includes node-level parameters, conditioning the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
 
 **Parameters**
 
@@ -272,18 +272,7 @@ $MakeWinning(\mathsf{B}, \mathsf{C}):$
 
 
 ### AcceptBlock
-*AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable.
-If consensus was reached in the first iteration, the block is marked as *final*.
-
-<!-- TODO
-**Labeling Blocks**
-When a block $\mathsf{B}$ is accepted to the local chain, its state is set as follows:
-  - if $\mathsf{B}.PrevBlock$ is Final, and 
-
- immediately marked as *Final* if:
-  - $\mathsf{B}$'s parent is *Final* and $\mathsf{B}$'s iteration is 0; or
-  - $\mathsf{B}$'s parent is *Final* and all iterations lower than $\mathsf{B}$'s iteration have a NilQuorum certificate.
- -->
+*AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable. 
 
 ***Parameters***
 - $\mathsf{B}$: the block to accept as the new chain tip
@@ -291,9 +280,10 @@ When a block $\mathsf{B}$ is accepted to the local chain, its state is set as fo
 ***Algorithm***
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
 2. Generate new state ($newState$) by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
-3. Update $Provisioners$ set
-4. If $Iteration$ is 1, make the block final
-5. Set $Tip$ to block $\mathsf{B}$
+3. Update the $Provisioners$ set
+4. Set $Tip$ to block $\mathsf{B}$
+5. Compute the consensus state $s$ of $\mathsf{B}$
+6. Add $(Tip, s)$ to the local chain
 
 ***Procedure***
 
@@ -302,10 +292,39 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $\boldsymbol{txs} = \mathsf{B}.Transactions$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
+   - $h = \mathsf{H}_\mathsf{B}.Height$
 2. $newState =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
 3. $Provisioners = newState.Provisioners$
-4. $\texttt{if } (Iteration = 1):$ *MakeFinal*$(\mathsf{B})$
-5. $Tip = \mathsf{B}$
+4. $Tip = \mathsf{B}$
+5. $s =$ *GetBlockState*$(\mathsf{B})$
+6. $Chain[h]=(\mathsf{B}, s)$
+
+### GetBlockState
+The block state is computed according to the [Finality][fin] rules.
+
+***Parameters***
+- $\mathsf{B}$: the block being accepted to the chain
+
+***Algorithm***
+1. If all failed iterations have a NilQuorum certificate:
+   1. Set $cstate$ to "Attested"
+   2. If $\mathsf{B}$'s parent is Final
+      1. Set $cstate$ to "Final"
+2. Otherwise, set $cstate$ to "Accepted"
+3. Output $cstate$
+
+***Procedure***
+
+$\textit{GetBlockState}(\mathsf{B}):$
+- $\texttt{set } h = \mathsf{H}_\mathsf{B}.Height$
+1. $\texttt{if } (|\mathsf{H}_\mathsf{B}.FailedIterations| = \mathsf{H}_\mathsf{B}.Iteration-1) :$
+   1. $\texttt{set } cstate = \text{"Attested"}$
+   2. $\texttt{if } (Chain[h{-}1].State = \text{"Final"}) :$
+      1. $\texttt{set } cstate = \text{"Final"}$
+2. $\texttt{else } :$
+   1. $\texttt{set } cstate = \text{"Accepted"}$
+3. $\texttt{output } cstate$
+
 
 
 ### ProcessBlock
@@ -351,7 +370,6 @@ $\textit{ProcessBlock}(\mathsf{M}^{Block}):$
 5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
    1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
-<!-- TODO: Define *MakeFinal* -->
 
 ## Fallback
 The *Fallback* procedure reverts the local state to the last [finalized][fin] block. The procedure is triggered by [*ProcessBlock*][pb] when receiving a block at the same height as the $Tip$ but with lower $Iteration$. 
@@ -568,7 +586,7 @@ $\textit{AcceptPoolBlocks}():$
 [ab]:   #acceptblock
 [apb]:  #acceptpoolblocks
 [cs]:   #consensus-state
-[bf]:   #finality
+[fin]:  #finality
 [rf]:   #rolling-finality
 [fal]:  #fallback
 [hst]:  #handlesynctimeout

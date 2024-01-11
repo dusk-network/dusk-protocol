@@ -8,17 +8,16 @@ This section describes the formal definition of the Dusk chain, block, and trans
 - [`Transaction`](#transaction)
 
 ## Chain
-<!-- TODO?: Define ChainBlock or LocalBlock structure (Block, label) -->
-The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][bf]):
+The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][fin]):
 
 $$Chain: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
 
-where $\mathsf{B}_0 = Genesis$ and $Status_0 = Final$ (that is, the genesis block is final by definition).
+where $\mathsf{B}_0 = Genesis$ and $Status_0 = \text{"Final"}$ (that is, the genesis block is final by definition).
 
 **Notation**
 We use $Chain[i]$ to indicate the $i$th element of the chain.
 
-<!-- TODO: define Genesis and Tip here -->
+<!-- TODO: define Genesis and Tip here; review use of Tip in procedures (we can use Chain instead) -->
 
 ## Block
 
@@ -78,5 +77,5 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 <!-- Chain Management -->
-[bf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
+[fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 [cs]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#consensus-state

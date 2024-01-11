@@ -3,9 +3,9 @@
 <!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
 <!-- TODO: Define sth like Candidate "signature": block_hash, round, iteration -->
 # Succinct Attestation
-**Succinct Attestation** (**SA**) is a permissionless, committee-based[^1] Proof-of-Stake consensus protocol that provides statistical finality guarantees[^2]. 
+**Succinct Attestation** (**SA**) is a permissionless, committee-based Proof-of-Stake consensus protocol. 
 
-The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating, validating, and finalizing new blocks.
+The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating and validating new blocks.
 
 Provisioners participate in turns to the production and validation of each new block of the ledger. Participation in each round is decided with a [*Deterministic Sortition*][ds] (*DS*) algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
 
@@ -85,7 +85,7 @@ A maximum number of 71 iterations (213 steps) is allowed to agree on a new valid
 ### Candidate Block
 A candidate block is the block generated in the [Attestation][att] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
-Therefore, for each iteration, only one (valid) candidate block can be produced[^3]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
+Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
 Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
 
 A candidate block that reaches an agreement is called a *winning* block.
@@ -118,7 +118,7 @@ where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* 
 
 $$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
-where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^4]. Therefore the value of $M$ will vary depending on $Round_S$:
+where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^2]. Therefore the value of $M$ will vary depending on $Round_S$:
 
 $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
@@ -171,7 +171,7 @@ Parameters are divided into:
 - *chain state*: represent the current system state, as per result of the execution of all transactions in the blockchain;
 - *round state*: local variables used to handle the consensus state 
 
-Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^5] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
+Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^3] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
 
 **Global Parameters**
 <!-- TODO: check when MaxBlockTime is removed -->
@@ -362,15 +362,11 @@ red2: (Block.Iteration) \times 3 + 2
 
 <!----------------------- FOOTNOTES ----------------------->
 
-[^1]: A type of Proof-of-Stake consensus mechanism that relies on a committee of validators, rather than all validators in the network, to reach consensus on the next block. Committee-based PoS mechanisms often have faster block times and lower overhead than their non-committee counterparts, but may also be more susceptible to censorship or centralization.
+[^1]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
 
-[^2]: A finality guarantee that is achieved through the accumulation of blocks over time, such that the probability of a block being reversed decreases exponentially as more blocks are added on top of it. This type of guarantee is in contrast to absolute finality, which is achieved when it is mathematically impossible for a block to be reversed.
+[^2]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
 
-[^3]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Reduction phase, since provisioners will reach agreement on a specific block hash.
-
-[^4]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
-
-[^5]: For the sake of simplicity, we assume the node handles a single provisioner identity.
+[^3]: For the sake of simplicity, we assume the node handles a single provisioner identity.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
