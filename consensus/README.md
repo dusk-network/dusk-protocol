@@ -94,12 +94,12 @@ A candidate block that reaches an agreement is called a *winning* block.
 A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
 Formally, we define a *Provisioner* $\mathcal{P}$ as:
 
-$$\mathcal{P}=(pk_\mathcal{P},\boldsymbol{Stakes}_\mathcal{P}),$$
+$$\mathcal{P}=(pk_\mathcal{P}, S_\mathcal{P}),$$
 
-where $pk_\mathcal{P}$ is the BLS public key of the provisioner, and $\boldsymbol{Stakes}_\mathcal{P} = [S_0,\dots,S_n]$, where $S_i$ is a stake amount belonging to $\mathcal{P}$.
+where $pk_\mathcal{P}$ is the BLS public key of the provisioner and $S_\mathcal{P}$ is the stake belonging to $\mathcal{P}$.
 
-In turn, a *stake* is defined as:
-$$S^\mathcal{P}=(Amount, Height),$$
+In turn, a *Stake* is defined as:
+$$S_\mathcal{P}=(Amount, Height),$$
 where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cp] $MinStake$, and is currently equivalent to 1000 Dusk.
 
 The stake amount of each provisioner directly influences the probability of being extracted by the [Deterministic Sortition][dsa] algorithm: the higher the stake, the more the provisioner will be extracted on average.

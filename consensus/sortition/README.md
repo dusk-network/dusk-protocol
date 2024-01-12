@@ -108,8 +108,6 @@ Note that $Seed_0$ is a randomly-generated value contained in the genesis block 
 ## Algorithm
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, $DS$ uses the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
 
-In the following, we describe both $DS$ and $DE$ first as natural-language algorithm and then as formal procedure.
-
 ### Deterministic Sortition (DS)
 
 ***Parameters***
@@ -122,17 +120,17 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
 ***Algorithm***
 
 1. Start with empty committee
-2. Set each provisioner's weight equal to the sum of its (mature) stakes
-3. Set total weight to the sum of all provisioner's weights
+2. Set each provisioner's weight equal to the amount of its stake
+3. Set total weight $W$ to the sum of all provisioner's weights
 4. Assign credit $i$ as follows:
    1. Compute $Score$
    2. Order provisioners by ascending public key
-   3. Extract provisioner $P$ with [*DE*][de]
-   4. Add $P$ to committee, if necessary
-   5. Assign credit to $P$
-   6. Compute $d$ as the minimum between $1$ Dusk and $P$'s weight
-   7. Subtract $d$ from $P$'s weight
-   8. Subtract $d$ from total weight
+   3. Extract provisioner $\mathcal{P}$ with [*DE*][de]
+   4. Add $\mathcal{P}$ to committee, if necessary
+   5. Assign credit to $\mathcal{P}$
+   6. Compute $d$ as the minimum between $1$ Dusk and $\mathcal{P}$'s weight
+   7. Subtract $d$ from $\mathcal{P}$'s weight
+   8. Subtract $d$ from total weight $W$
    9. If total weight reaches 0, output the partial committee
 5. Output committee
 
@@ -140,19 +138,19 @@ In the following, we describe both $DS$ and $DE$ first as natural-language algor
 
 $DS(r, s, credits)$:
 1. $C = \emptyset$
-2. $\texttt{for } P \texttt{ in } \boldsymbol{P}_r :$
-   - $w_P = \sum_{i=0}^{|\boldsymbol{Stakes}_P|-1} \boldsymbol{Stakes}_P[i]$
-3. $`W = \sum_{i=0}^{|\boldsymbol{P}_r|-1} w_{P_i} : P_i \in \boldsymbol{P}_r`$
+2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_r :$
+   - $w_\mathcal{P} = S_\mathcal{P}.Amount$
+3. $`W = \sum_{i=0}^{|\boldsymbol{P}_r|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_r`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
    1. $Score_c^{r,s} = Int(Hash_{SHA3}( Seed_{r-1}||r||s||c)) \mod W$
    2. $\boldsymbol{P}_r' = SortByPK(\boldsymbol{P}_r)$
-   3. $P_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \boldsymbol{P}_r')$
-   4. $\texttt{if } P_c \notin C$ : 
-       - $m_{P_c}^C = (P_c,0)$ 
-       - $C = C \cup m_{P_c}^C$
-   5. $m_{P_c}^C.influence = m_{P_c}^C.influence+1$
+   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \boldsymbol{P}_r')$
+   4. $\texttt{if } \mathcal{P}_c \notin C$ : 
+       - $m_{\mathcal{P}_c}^C = (\mathcal{P}_c,0)$ 
+       - $C = C \cup m_{\mathcal{P}_c}^C$
+   5. $m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1$
    6. $d = min(w_{P},1)$
-   7. $w_{P_c} = w_{P_c} - d$
+   7. $w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d$
    8. $W = W - d$
    9.  $\texttt{if } W \le 0$
        - $\texttt{output } C$
@@ -164,23 +162,23 @@ $DS(r, s, credits)$:
 
 ***Parameters***
  - $Score$: score for current credit assignation
- - $\boldsymbol{P} = [P_0,\dots,P_n]$: array of provisioners ordered by public key
+ - $\boldsymbol{P} = [\mathcal{P}_0,\dots,\mathcal{P}_n]$: array of provisioners ordered by public key
 
 ***Algorithm***
-  1. For each provisioner $P$ in $\boldsymbol{P}$
-     1. if $P$'s weight is higher than $Score$, 
-        1. output $P$
+  1. For each provisioner $\mathcal{P}$ in $\boldsymbol{P}$
+     1. if $\mathcal{P}$'s weight is higher than $Score$, 
+        1. output $\mathcal{P}$
      2. otherwise, 
-        1. subtract $P$'s weight from $Score$
+        1. subtract $\mathcal{P}$'s weight from $Score$
 
 ***Procedure***
 
 $`DE(Score_i^{r,s}, \boldsymbol{P})`$:
-  1. $\texttt{for }  P = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
-     1. $\texttt{if } w_{P} \ge Score$
-        1. $\texttt{output } P$
+  1. $\texttt{for }  \mathcal{P} = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
+     1. $\texttt{if } w_\mathcal{P} \ge Score$
+        1. $\texttt{output } \mathcal{P}$
      2. $\texttt{\texttt{else}}:$
-        1. $Score = Score - w_{P}$
+        1. $Score = Score - w_\mathcal{P}$
 
 <!-- Note that the outer $loop$ means that if the $for$ loop ends (i.e. no provisioner was extracted), it starts over with $j=0$. -->
 
