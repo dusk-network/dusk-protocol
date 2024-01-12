@@ -146,7 +146,7 @@ It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 #### StepVotes
-The $StepVotes$ structure is produced at the end of a [Reduction][red] step and contains a quorum of votes for a candidate block.
+The $\mathsf{StepVotes}$ structure is produced at the end of a [Reduction][red] step and contains a quorum of votes for a candidate block.
 Each vote is the signature of a provisioner for a triplet $(block_hash, round, step)$, corresponding to the candidate block.
 
 To specify the committee members whose vote is included, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
@@ -158,7 +158,7 @@ The structure is defined as follows:
 | $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
 | $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
 
-The $StepVotes$ structure has a total size of 56 bytes.
+The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
 
 Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
 

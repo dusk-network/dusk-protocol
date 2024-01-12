@@ -8,9 +8,9 @@ In the Reduction phase, the *candidate* block produced in the [Attestation][att]
 ## Overview
 In each reduction step, selected committee members cast votes on the candidate block, if any. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Reduction}$ messages, and collected by other nodes, which accumulate them until a *quorum* is reached.
 
-When a quorum of votes is reached, a $StepVotes$ structure is produced, containing all (and only[^1]) the quorum votes aggregated, along with a bitset of the voters with respect to the [Voting Committee][vc].
+When a quorum of votes is reached, a $\mathsf{StepVotes}$ structure is produced, containing all (and only[^1]) the quorum votes aggregated, along with a bitset of the voters with respect to the [Voting Committee][vc].
 
-If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produced with the $StepVotes$ structures of both steps. This message is passed to the Agreement process, which is responsible for its propagation in the network.
+If a quorum is reached in both steps, an $\mathsf{Agreement}$ message is produced with the $\mathsf{StepVotes}$ structures of both steps. This message is passed to the Agreement process, which is responsible for its propagation in the network.
 
 If any of the two steps reaches a Nil quorum then a $NIL$ result is produced, the Reduction phase will fail and a new iteration will start (i.e., a new Attestation phase will commence).
 <!-- Currently, if the first step produces $NIL$, nodes still execute the second step.
@@ -48,11 +48,11 @@ When the number of $NIL$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$ w
          4. Add sender to corresponding voters bitset
          5. If $v$ is $NIL$ and votes reached $NilQuorum$
          6. or $v$ is not $NIL$ and votes reached $Quorum$:
-            1. Create $StepVotes$ $\mathsf{V}$ with aggregated $v$
+            1. Create $\mathsf{StepVotes}$ $\mathsf{V}$ with aggregated $v$
             2. Output $v$ and $\mathsf{V}$
  5. If timeout expired:
     1. Increase Reduction timeout
-    2. Output $NIL$ vote and $NIL$ $StepVotes$
+    2. Output $NIL$ vote and $NIL$ $\mathsf{StepVotes}$
 
 ***Procedure***
 
@@ -102,7 +102,7 @@ $Reduction( Round, Iteration, rstep, \mathsf{B}^c )$:
 
 <!----------------------- FOOTNOTES ----------------------->
 
-[^1]: This means that when creating a $StepVotes$ for vote $v$ only related votes are included.
+[^1]: This means that when creating a $\mathsf{StepVotes}$ for vote $v$ only related votes are included.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md -->
