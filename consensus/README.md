@@ -102,6 +102,8 @@ In turn, a *stake* is defined as:
 $$S^\mathcal{P}=(Amount, Height),$$
 where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cp] $MinStake$, and is currently equivalent to 1000 Dusk.
 
+The stake amount of each provisioner directly influences the probability of being extracted by the [Deterministic Sortition][dsa] algorithm: the higher the stake, the more the provisioner will be extracted on average.
+
 ### Epochs and Eligibility
 Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][cp] $Epoch$ (currently equal to 2160).
 <!-- TODO: why 2160 ? -->
@@ -389,9 +391,9 @@ red2: (Block.Iteration) \times 3 + 2
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
 [rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 <!-- Sortition -->
-[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
-[dsa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
+[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
+[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#algorithm
+[sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 <!-- Attestation -->
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
 [atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm
