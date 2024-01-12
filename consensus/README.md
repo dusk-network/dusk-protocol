@@ -204,18 +204,18 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Provisioners$       | Current set of (eligible) provisioners  |
 
 **Round State**
-| Name                 | Description                          |
-|----------------------|--------------------------------------|
-| $Round_{SA}$         | Round number                         |
-| $Iteration_{SA}$     | Iteration number                     |
-| $\mathsf{B}^c$       | Candidate block                      |
-| $\mathsf{B}^w$       | Winning block                        |
-| $\mathsf{V}^1$       | StepVotes of First Reduction         |
-| $\mathsf{V}^2$       | StepVotes of Second Reduction        |
-| $\tau_{Attestation}$ | Current timeout for Attestation      |
-| $\tau_{Reduction_1}$ | Current timeout for First Reduction  |
-| $\tau_{Reduction_2}$ | Current timeout for Second Reduction |
-| $\boldsymbol{PrevIterations}$ | Certificates of failed iterations |
+| Name                          | Description                          |
+|-------------------------------|--------------------------------------|
+| $Round_{SA}$                  | Round number                         |
+| $Iteration_{SA}$              | Iteration number                     |
+| $\mathsf{B}^c$                | Candidate block                      |
+| $\mathsf{B}^w$                | Winning block                        |
+| $\mathsf{V}^1$                | StepVotes of First Reduction         |
+| $\mathsf{V}^2$                | StepVotes of Second Reduction        |
+| $\tau_{Attestation}$          | Current timeout for Attestation      |
+| $\tau_{Reduction_1}$          | Current timeout for First Reduction  |
+| $\tau_{Reduction_2}$          | Current timeout for Second Reduction |
+| $\boldsymbol{PrevIterations}$ | Certificates of failed iterations    |
 
 
 <!-- $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->

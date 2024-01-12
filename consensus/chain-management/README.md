@@ -137,9 +137,11 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
 5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_\mathsf{B},\eta_{\mathsf{B}^p},r_{\mathsf{B}},s_{\mathsf{B}})$
 6. $\texttt{if } (isValid = false): \texttt{output } false$
-7. $\texttt{for } \mathsf{C}_i \texttt{ in } \mathsf{B}.FailedIterations$
-   1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i)$
-   2. $\texttt{if } (isValid = false): \texttt{output } false$
+7. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
+   - $\mathsf{C}_i = \mathsf{B}.FailedIterations[i]$
+   1. $\texttt{if } (\mathsf{C}_i \ne NIL) :$
+      - $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i)$
+      - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
 
 ### VerifyBlockHeader
@@ -327,6 +329,8 @@ $\textit{GetBlockState}(\mathsf{B}):$
    1. $\texttt{set } cstate = \text{"Accepted"}$
 3. $\texttt{output } cstate$
 
+  
+> :exclamation: Note: current implementation also includes partial (non-quorum) certificates in $FailedIterations$, so the number of NilQuorum certificates should be counted, instead of just the length of $FailedIterations$ 
 
 ### CheckRollingFinality
 *CheckRollingFinality* checks if the last $RollingFinalityBlocks$ blocks are all "Attested" and, if so, finalizes all non-final blocks.

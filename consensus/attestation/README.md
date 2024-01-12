@@ -99,20 +99,20 @@ $GenerateBlock()$
 4. $`i = \lfloor\frac{s}{3}\rfloor`$
 5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
 6. $`\mathsf{H}_{\mathsf{B}^c_{r,i}} = (v,r,\tau_{now},BlockGas,i,\eta_{\mathsf{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r,\boldsymbol{PrevIterations})`$
-    | Field           | Value                     | 
-    |-----------------|---------------------------|
-    | $Version$       | $V$                       |
-    | $Height$        | $r$                       |
-    | $Timestamp$     | $\tau_{now}$              |
-    | $GasLimit$      | $BlockGas$                |
-    | $Iteration$     | $i$                       |
-    | $PreviousBlock$ | $\eta_{\mathsf{B}_{r-1}}$ |
-    | $Seed$          | $Seed_r$                  |
-    | $Generator$     | $pk_\mathcal{N}$          |
-    | $TxRoot$        | $TxRoot_r$                |
-    | $State$         | $State_r$                 |
-    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$   | 
-    | $FailedIterations$ | $\boldsymbol{PrevIterations}$ |
+    | Field                  | Value                          | 
+    |------------------------|--------------------------------|
+    | $Version$              | $V$                            |
+    | $Height$               | $r$                            |
+    | $Timestamp$            | $\tau_{now}$                   |
+    | $GasLimit$             | $BlockGas$                     |
+    | $Iteration$            | $i$                            |
+    | $PreviousBlock$        | $\eta_{\mathsf{B}_{r-1}}$      |
+    | $Seed$                 | $Seed_r$                       |
+    | $Generator$            | $pk_\mathcal{N}$               |
+    | $TxRoot$               | $TxRoot_r$                     |
+    | $State$                | $State_r$                      |
+    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$ | 
+    | $FailedIterations$     | $\boldsymbol{PrevIterations}$  |
     <!-- | $Header Hash           | string | -->
     
 7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
