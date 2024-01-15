@@ -138,7 +138,19 @@ The message has the following structure:
 | $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
 | $Signature$ | BLS Signature         | 48 bytes  | Signature of $Header$ |
 
-The $\mathsf{Reduction}$ message has a total size of 185 bytes.
+The $\mathsf{Validation}$ message has a total size of 185 bytes.
+
+### Ratification Message
+The $\mathsf{Ratification}$ message is used by a member of a [Ratification][rat] committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if empty ($NIL$), the vote is against the candidate block of the $Round$ and $Iteration$ specified in the $Header$.
+
+
+The message has the following structure:
+| Field       | Type                  | Size      | Description           |
+|-------------|-----------------------|-----------|-----------------------|
+| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
+| $Signature$ | BLS Signature         | 48 bytes  | Signature of $Header$ |
+
+The $\mathsf{Ratification}$ message has a total size of 185 bytes.
 
 ### Agreement Message
 <!-- TODO: remove Signature -->
@@ -180,3 +192,6 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 
 <!-- Validation -->
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+
+<!-- Ratification -->
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
