@@ -146,10 +146,9 @@ It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 #### StepVotes
-The $\mathsf{StepVotes}$ structure is produced at the end of a [Reduction][red] step and contains a quorum of votes for a candidate block.
-Each vote is the signature of a provisioner for a triplet $(block_hash, round, step)$, corresponding to the candidate block.
-
-To specify the committee members whose vote is included, a bitset is used, with each bit corresponding to a committee member: if the bit is set to $1$, the corresponding member's vote is in $Votes$, otherwise it's not.
+The $\mathsf{StepVotes}$ structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
+Votes are aggregated BLS signatures from members of a Voting Committee. Each vote is a signature for a triplet $(vote, round, step)$.
+To specify which committee members' votes are included, a [sub-committee bitset][bs] is used.
 
 The structure is defined as follows:
 
@@ -160,7 +159,22 @@ The structure is defined as follows:
 
 The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
 
-Note that the 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
+### Procedures
+#### *AggregateVote*
+*AggregateVote* adds a vote to a [StepVotes][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
+
+**Parameters**
+- $\mathsf{SV}$: the $\mathsf{StepVotes}$ structure with the aggregated votes
+- $\mathsf{C}$: the Voting Committee of $\mathsf{SV}$
+- $\sigma$: the BLS signature to aggregate
+- $pk$: the signer public key
+
+**Procedure**
+
+$\textit{AggregateVote}( \mathsf{SV}, \mathsf{C}, \sigma, pk ) :$
+1. $\mathsf{SV}.Votes =$ *BLS_Aggregate*$(\mathsf{SV}.Votes, \sigma)$
+2. $\mathsf{SV}.Voters = $ *SetBit*$(pk)$
+3. $\texttt{output } \mathsf{SV}$
 
 
 ## Consensus Parameters
@@ -384,8 +398,6 @@ red2: (Block.Iteration) \times 3 + 2
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 
-<!-- Consensus -->
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 <!-- Chain Management -->
 [ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
