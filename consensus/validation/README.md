@@ -1,31 +1,46 @@
-<!-- TODO: change Validation votes to "Valid", "Invalid", "Timeout" -->
 # Validation
 
-In the Validation phase, the *candidate* block produced in the [Proposal][prop] phase is validated by a committee of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. Each extracted member verifies the candidate's header and state transition, and then casts its vote via a [Validation][vmsg] message.
+In the Validation phase, the *candidate* block produced in the [Proposal][prop] phase is validated by a [Voting Committee][vc] of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. 
+
+Members of the extracted committee verify the candidate's validity and then cast their vote. At the same time, all provisioners collect votes until the step timeout expires, and then output the result of the received votes: "Quorum", "InvalidQuorum", "NilQuorum". <!-- TODO: change votes to "Valid", "Invalid", "Timeout" -->
+
 
 ### ToC
-- [Overview](#overview)
-- [Validation Step](#validation-step)
+  - [Overview](#overview)
+  - [Validation Step](#validation-step)
+    - [Procedures](#procedures)
+      - [*ValidationStep*](#validationstep)
+
+
 
 ## Overview
-In each Validation step, members of a [Voting Committee][vc] cast votes on the candidate block, if known. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Validation}$ messages and collected by other nodes, which accumulate them until a *quorum* is reached or the step timeout expires.
+The Validation step is run after the [Proposal][prop] step to validate the generated candidate block. 
 
-Votes are signatures of either the candidate's hash or the empty hash ($NIL$). When votes for a specific hash reach a quorum, a $\mathsf{StepVotes}$ structure is output, with the aggregated votes of the [quorum committee][sc].
+Members of the [Voting Committee][vc] for the step cast votes on the candidate block. Each committee member votes on the output of the [Proposal][prop] step: if it received no candidate within the timeout, it votes "Timeout" (empty hash); otherwise, it verifies the received candidate and, if valid, it votes "Valid" by signing the candidate's hash; if the candidate is invalid, it votes "Invalid" by signing the empty hash.
+
+Therefore, a vote can be either the candidate's hash, to vote in favor, or $NIL$ (empty hash) to vote against. Votes are propagated through the network via $\mathsf{Validation}$ messages and collected by other nodes, which accumulate them until a *quorum* is reached or the step timeout expires.
+
+At the end of the step, if a vote reached the $Quorum$ threshold, a $\mathsf{StepVotes}$ is output with the corresponding aggregated votes.
+If no quorum was reached within the timeout, the step outputs a "Timeout" result along with a $\mathsf{StepVotes}$ with the aggregated $NIL$ votes.
 
 
 ## Validation Step
-The Validation step takes as input the candidate block output from the [Proposal][prop] step and executes two actions: 
-1. first, if the node's provisioner has been selected in the Validation committee, it votes on the candidate:
-   - if a candidate has been received, it is validated against the local $Tip$ and, if valid, a $\text{"Valid"}$ vote is cast by signing the triplet $(round, step, candidate_hash)$; 
+The Validation step takes as input the output from the [Proposal][prop] step and executes two actions: 
+1. if the node's provisioner has been selected in the Validation committee, it votes on the candidate:
+   - if a candidate has been received, it is validated against the local $Tip$ and, if valid, a $\text{"Valid"}$ vote is cast by signing the triplet $(round, step, candidate\_hash)$; 
    <!-- TODO: if the validation fails, an $Invalid$ vote is cast. vote definition must be changed to support this -->
-   - if no candidate has been received during the Proposal step, a $\text{"Timeout"}$ vote is cast, by signing the triplet $(round, step, empty_hash)$.
-2. then, the node collects Validation votes from the other members of the committee until a quorum is reached or the step timeout expires:
+   - if no candidate has been received, a $\text{"Timeout"}$ vote is cast, by signing the triplet $(round, step, empty\_hash)$.
+2. the node collects Validation votes from committee members, and:
    - if $\text{"Valid"}$ votes reach the $Quorum$ threshold, the step outputs $\text{"Quorum"}$;
-   - if $\text{"Timeout"}$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$, it is considered as a "non-quorum" (since it's not possible to reach the $Quorum$ value with the other votes) and a $\text{"NilQuorum"}$ is output;
-   - if the timeout expires before receiving enough votes, the step output $\text{"Timeout"}$.
+   - if $\text{"Timeout"}$ or $\text{"Invalid"}$ votes exceeds $CommitteeCredits-Quorum$, the step outputs $\text{"NilQuorum"}$, since other votes can't reach the $Quorum$;
+   - if the timeout expires before receiving enough votes, the step outputs $\text{"Timeout"}$.
 
-For each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), a [`StepVotes`][sv] structure $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used to aggregate collected votes. 
+Votes are collected in aggregated form using [`StepVotes`][sv] structures. In particular, for each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), an $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used to collect votes. 
 
+### Procedures
+
+#### *ValidationStep*
+*ValidationStep* executes a Validation step.
 
 ***Parameters***
 - $R$: round number
@@ -63,7 +78,7 @@ For each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), a [`
 
 ***Procedure***
 
-$Validation( R, I, \mathsf{B}^c ) :$
+$ValidationStep( R, I, \mathsf{B}^c ) :$
 - $\texttt{set}:$ 
   - $s = I \times 3 + 1$
 1. $\mathsf{C}$ = [*DS*][dsa]$(R,s,CommitteeCredits)$
