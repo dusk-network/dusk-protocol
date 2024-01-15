@@ -30,6 +30,7 @@ In the following, we describe both the header and signature in detail.
 
 ### Message Header
 <!-- TODO: Maybe we should define an SA Header (round,step,blockhash) as a separate structure, so we can add other fields to the message header, like the signer and the sender -->
+<!-- TODO: rename BlockHash to Candidate -->
 All consensus messages share a common $MessageHeader$ structure, defined as follows:
 
 | Field       | Type    | Size      | Description                      |
@@ -37,7 +38,7 @@ All consensus messages share a common $MessageHeader$ structure, defined as foll
 | $Signer$    | BLS Key | 96 bytes  | Public Key of the message signer |
 | $Round$     | Integer | 64 bits   | Consensus round                  |
 | $Step$      | Integer | 8 bits    | Consensus step                   |
-| $BlockHash$ | Sha3    | 32 bytes  | Candidate block hash             |
+| $BlockHash$ | Sha3    | 32 bytes  | Candidate block hash             | 
 
 $Signer$ is the public BLS key of the provisioner who creates and signs the message. Therefore, in a $NewBlock$ message, this field identifies the block generator, while, in a $\mathsf{Reduction}$ message, it identifies the committee member who casted the vote.
 
@@ -91,8 +92,8 @@ Note that, for the sake of readability, broadcasted messages are also received b
 
 ***Receive***
 <!-- TODO: define Receive for round r and iteration i -->
-We use the *Receive* function to process incoming messages. Specifically, we define the *Receive*$(Type,r,s)$ function, which returns a message $\mathsf{M}$ of type $Type$ if it was received from the network and it has $Round_\mathsf{M}=r$ and $Step_\mathsf{M}=s$. If no new message has been received, it returns $NIL$.
-When not relevant (e.g. with $\mathsf{Block}$ messages) $r$ and $s$ are ignored.
+We use the *Receive* function to process incoming messages. Specifically, we define the *Receive*$(\mathsf{T},R,I)$ function, which returns a message $\mathsf{M}$ of type $\mathsf{T}$ ($\mathsf{M}^{\mathsf{T}}$) if it was received from the network and it has $Round_\mathsf{M}=R$ and $Iteration_\mathsf{M}=I$. If no new message has been received, it returns $NIL$.
+When not relevant (e.g. with $\mathsf{Block}$ messages) $R$ and $I$ are ignored.
 
 Messages received before calling the *Receive* function are stored in a queue and are returned by the function in the order they were received.
 
@@ -113,6 +114,7 @@ For the sake of simplicity, we omit this field from the structure definition.
 ## Message Structures
 
 ### NewBlock Message
+<!-- TODO: PrevHash is useless -->
 The $\mathsf{NewBlock}$ message is used by a block generator to broadcast a candidate block.
 
 The message has the following structure:
@@ -126,8 +128,8 @@ The message has the following structure:
 
 The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block size.
 
-### Reduction Message
-The $\mathsf{Reduction}$ message is used by a member of a Reduction committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if containing a $NIL$, the vote is against the candidate block of the $Round$ and $Step$ specified in the $Header$.
+### Validation Message
+The $\mathsf{Validation}$ message is used by a member of a [Validation][val] committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if empty ($NIL$), the vote is against the candidate block of the $Round$ and $Iteration$ specified in the $Header$.
 
 
 The message has the following structure:
@@ -175,3 +177,6 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 <!-- Consensus -->
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
+
+<!-- Validation -->
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md

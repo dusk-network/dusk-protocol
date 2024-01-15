@@ -147,7 +147,7 @@ The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
 #### StepVotes
 The $\mathsf{StepVotes}$ structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
-Votes are aggregated BLS signatures from members of a Voting Committee. Each vote is a signature for a triplet $(vote, round, step)$.
+Votes are aggregated BLS signatures from members of a Voting Committee. Each vote is a signature for a triplet $(round, step, vote)$.
 To specify which committee members' votes are included, a [sub-committee bitset][bs] is used.
 
 The structure is defined as follows:
@@ -173,9 +173,8 @@ The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
 
 $\textit{AggregateVote}( \mathsf{SV}, \mathsf{C}, \sigma, pk ) :$
 1. $\mathsf{SV}.Votes =$ *BLS_Aggregate*$(\mathsf{SV}.Votes, \sigma)$
-2. $\mathsf{SV}.Voters = $ *SetBit*$(pk)$
+2. $\mathsf{SV}.Voters = $ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathsf{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
-
 
 ## Consensus Parameters
 <!-- Rename to Environment -->
@@ -390,11 +389,13 @@ red2: (Block.Iteration) \times 3 + 2
 [sa]:   #protocol-overview
 [cert]: #certificates
 [sv]:   #stepvotes
+[av]:   #aggregatevote
 [cp]:   #consensus-parameters
 [sac]:  #saconsensus
 [sar]:  #saround
 [sai]:  #saiteration
 [sal]:  #saloop
+[it]:   #increasetimeout
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 
@@ -406,6 +407,7 @@ red2: (Block.Iteration) \times 3 + 2
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#algorithm
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
+[sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#setbit
 <!-- Attestation -->
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
 [atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm

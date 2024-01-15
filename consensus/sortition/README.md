@@ -75,32 +75,47 @@ In particular, if the $i$th bit is set (i.e., $i=1$), then the $i$th member of $
 
 Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
 
+### Procedures
+
 #### *BitSet*
 *BitSet* takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
 
 $BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
 
-<!-- TODO: CountSetBits -->
+#### *SetBit*
+*SetBit* sets a committee member's bit in a subcommittee bitset.
+
 <!-- TODO: SetBit
   $\boldsymbol{bs}^{v}[i_m^C] = 1$
  -->
 
-### SubCommittee
+ $\textit{SetBit}(\boldsymbol{bs}, \mathsf{C}, pk)$
+
+#### *CountSetBits*
+*CountSetBits* returns the amount of set bits in a bitset.
+
+$\textit{CountSetBits}(\boldsymbol{bs}) \rightarrow setbits$
+
+#### *SubCommittee*
 $SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
 
 $SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
 
-### CountCredits
-<!-- TODO: fix \sum rendering -->
-$CountCredits$ takes a voting committee $C$ and a list of members $\boldsymbol{P}$ and returns the cumulative amount of credits belonging to such members with respect to $C$.
+#### *CountCredits*
+*CountCredits* takes a committee $\mathsf{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathsf{C}$.
+
+**Parameters**
+- $\mathsf{C}$: a voting committee
+- $\boldsymbol{bs}$: a subcommittee bitset 
 
 ***Procedure***
 
-$CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
-1. $`credits = \sum_{i=0}^{n} m_{pk_i}^{C}.influence`$
+$\textit{CountCredits}(\mathsf{C}, \boldsymbol{bs}) \rightarrow credits$:
+1. $\texttt{for } i=0 \dots CommitteeCredits{-}1 :$
+   1. $\texttt{if } (\boldsymbol{bs}[i]=1):$
+   2. $credits = credits + \mathsf{C}[i].influence$
 2. $\texttt{output } credits$
 
-<!-- TODO: AggregatePKs ? -->
 
 ## Algorithm Overview
 The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning credits to [eligible](consensus/README.md#provisioners-and-stakes) provisioners.
@@ -245,6 +260,7 @@ $`DE(Score_i^{r,s}, \boldsymbol{P})`$:
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md  -->
 [cc]: #countcredits
 [sc]: #subcommittee
+[cb]: #countsetbits
 [dsa]: #algorithm
 [bs]:  #bitset
 

@@ -145,6 +145,7 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 8.  $\texttt{output } true$
 
 ### VerifyBlockHeader
+<!-- TODO: rename to VerifyCandidate ? -->
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
 ***Parameters***
@@ -242,7 +243,7 @@ $VerifyVotes(\mathsf{V}, b, r, s)$:
 2. $\texttt{if } (b = NIL):$
    1. $\texttt{set } q = NilQuorum$
 3. $\texttt{else}: \texttt{set } q = Quorum$
-4. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, C^{\boldsymbol{bs}}) \lt q):$
+4. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, \boldsymbol{bs}) \lt q):$
    1. $\texttt{output } false$
 5. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 6. $\eta = Hash_{Blake2B}(r||s||hash)$
