@@ -1,10 +1,11 @@
+<!-- TODO: change Validation votes to "Valid", "Invalid", "Timeout" -->
 # Validation
 
-In the Validation phase, the *candidate* block produced in the [Proposal][prop] phase is validated by a committee of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. Each extracted member verifies the candidate's header and state transition, and then casts its vote via a [Validation][rmsg] message.
+In the Validation phase, the *candidate* block produced in the [Proposal][prop] phase is validated by a committee of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. Each extracted member verifies the candidate's header and state transition, and then casts its vote via a [Validation][vmsg] message.
 
 ### ToC
 - [Overview](#overview)
-- [Validation Algorithm](#validation-step)
+- [Validation Step](#validation-step)
 
 ## Overview
 In each Validation step, members of a [Voting Committee][vc] cast votes on the candidate block, if known. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Validation}$ messages and collected by other nodes, which accumulate them until a *quorum* is reached or the step timeout expires.
@@ -127,4 +128,4 @@ $Validation( R, I, \mathsf{B}^c ) :$
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
-[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
+[vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
