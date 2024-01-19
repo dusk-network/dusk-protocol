@@ -14,35 +14,33 @@ Members of the extracted committee verify the candidate's validity and then cast
 In the Validation step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.
 
 If the node is part of the committee, it validates the output from the [Proposal][prop] step. If the output was $NIL$, it votes $NoCandidate$. Otherwise, it verifies the candidate block's validity with respect to the previous block (i.e., the node's local $Tip$). If the candidate is valid, the node votes $Valid$, otherwise, it votes $Invalid$.
-The vote is broadcast using a $\mathsf{Validation}$ message (see [`Validation`][vmsg]) and technically consists in the signature of the message itself[^1].
-<!-- TODO: better describe how the vote is a signature; signature of what; and why we use signatures -->
+The vote is broadcast using a $\mathsf{Validation}$ message (see [`Validation`][vmsg]).
 
-In the same step, all nodes, including the committee members, collect votes from the network until a *quorum* of $\frac{2}{3}$ of the committee credits[^2] is reached, a *negative quorum* ($\frac{1}{3}{+}1$) of non-valid votes is reached[^3], or the step timeout expires. 
+In the same step, all nodes, including the committee members, collect votes from the network until a *quorum* of $\frac{2}{3}$ of the committee credits[^1] is reached, a *negative quorum* ($\frac{1}{3}{+}1$) of non-valid votes is reached[^2], or the step timeout expires. 
 
-If a quorum of $Valid$ votes is received, the step outputs $ValidQuorum$. If a quorum of $Invalid$ votes is received, the step outputs $InvalidQuorum$. If the step timeout expires and a negative quorum of $NoCandidate$ and $Invalid$ votes are received, the step outputs $Fail$. If collected votes are insufficient, the step outputs $NoQuorum$.
+If a quorum of $Valid$ votes is received, the step outputs $ValidQuorum$. If a quorum of $Invalid$ votes is received, the step outputs $InvalidQuorum$. If the step timeout expires and a negative quorum of $NoCandidate$ and $Invalid$ votes are received, the step outputs $Fail$, which represents the negative result where no $ValidQuorum$ can be reached. 
+If collected votes are insufficient, the step outputs $NoQuorum$, which represents an unknown result (i.e., it is possible that casted votes reach a quorum or a negative quorum but the node has not seen it).
 
 In all cases except $NoQuorum$, the output also includes the aggregated votes of the quorum, or negative quorum, in a $\mathsf{StepVotes}$ structure, which contains the aggregated signatures of the votes and a bitset to identify the voters.
 
 The step output will then be passed on as input to the [Ratification][rat] step.
 
-
-## Validation Step
-The Validation step takes as input the output from the [Proposal][prop] step and executes two actions: 
-1. if the node's provisioner has been selected in the Validation committee, it votes on the candidate:
-   - if a candidate has been received, it is validated against the local $Tip$ and, if valid, a $\text{"Valid"}$ vote is cast by signing the triplet $(round, step, candidate\_hash)$; 
-   <!-- TODO: if the validation fails, an $Invalid$ vote is cast. vote definition must be changed to support this -->
-   - if no candidate has been received, a $\text{"Timeout"}$ vote is cast, by signing the triplet $(round, step, empty\_hash)$.
-2. the node collects Validation votes from committee members, and:
-   - if $\text{"Valid"}$ votes reach the $Quorum$ threshold, the step outputs $\text{"Quorum"}$;
-   - if $\text{"Timeout"}$ or $\text{"Invalid"}$ votes exceeds $CommitteeCredits-Quorum$, the step outputs $\text{"NilQuorum"}$, since other votes can't reach the $Quorum$;
-   - if the timeout expires before receiving enough votes, the step outputs $\text{"Timeout"}$.
-
-Votes are collected in aggregated form using [`StepVotes`][sv] structures. In particular, for each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), an $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used to collect votes. 
-
 ### Procedures
 
 #### *ValidationStep*
-*ValidationStep* executes a Validation step.
+*ValidationStep* takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ output by [*ProposalStep*][ps] and outputs the result of the collected Validation votes ($ValidQuorum$, $InvalidQuorum$, $Fail$, $NoQuorum$) plus the aggregated votes $\mathsf{SV}$ that produced the result.
+
+In the procedure, the node performs two main tasks: 
+
+1. if selected in the Validation committee $\mathsf{C}$, it checks the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+
+1. it collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
+   - if $Valid$ votes reach $Quorum$, the step outputs $ValidQuorum$;
+   - if $Invalid$ votes reach $Quorum$, the step outputs $InvalidQuorum$;
+   - if $NoCandidate$ and $Invalid$ votes combined reach $NegativeQuorum$, the step outputs $Fail$;
+   - if the timeout $\tau_{Validation}$ expires, the step outputs $NoQuorum$.
+
+Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
 
 ***Parameters***
 - $R$: round number
@@ -122,9 +120,8 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!----------------------- FOOTNOTES ----------------------->
-[^1]: Using BLS signatures allows votes from multiple provisioners to be aggregated and verified together.
-[^2]: remember that the quorum is calculated over the weight of the voters, not their number.
-[^3]: We use the term *negative-quorum* to indicate the threshold of $\frac{1}{3}+1$ of non-valid votes, which mathematically determines the impossibility of a *quorum* ($\frac{2}{3}$) to be reached. Negative quorums are useful for *attesting* failed iterations (see [rolling finality][rf]).
+[^1]: remember that the quorum is calculated over the weight of the voters, not their number.
+[^2]: We use the term *negative-quorum* to indicate the threshold of $\frac{1}{3}+1$ of non-valid votes, which mathematically determines the impossibility of a *quorum* ($\frac{2}{3}$) to be reached. Negative quorums are useful for *attesting* failed iterations (see [rolling finality][rf]).
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md -->
@@ -140,6 +137,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
+[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
 <!-- Ratification -->
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification
 <!-- Sortition -->
