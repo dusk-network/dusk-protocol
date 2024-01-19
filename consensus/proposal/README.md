@@ -1,5 +1,5 @@
  # Proposal
-*Proposal* is the first step in an [*SA iteration*][sai]. In this phase, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, all other provisioners wait a certain time to receive this block.
+*Proposal* is the first step in an [*SA iteration*][sai]. In this step, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, other provisioners wait for the candidate block produced by the generator.
 
 #### ToC
 - [Overview](#overview)
@@ -10,21 +10,19 @@
 
 
 ## Overview
-Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a [Candidate][cmsg] message.
-Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*][red] phase, where it will vote on the block validity. All other blocks are discarded.
-
-If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
+In the Proposal step, each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to extract the *block generator*. If the node is selected, it creates a new *candidate block*, and broadcasts it using a $\mathsf{Candidate}$ message (see [`Candidate`][cmsg]).
+In this step, all other nodes wait to receive the candidate block until the step timeout expires. 
+If it was generated or received from the network, the step returns the candidate block; otherwise, it returns $NIL$. The step output will then be passed on as input to the [*Validation*][val] step, where a committee of provisioners will verify its validity and vote accordingly.
 
 <p><br></p>
 
 ## Procedures
 
 ### *ProposalStep*
-*ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs a *candidate block*, if it was generated or received, or $NIL$ otherwise.
-It is the first step called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val] for its validation.
+*ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
+It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
-In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsa] and checks if it's the node's provisioner.
-If extracted, it generates and broadcasts a new candidate block. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network.
+In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsa]. If the node's extracted, it generates the candidate $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network. If the block is received, it outputs it, otherwise, it outputs $NIL$.
 
 ***Parameters*** 
 - [Consensus Parameters][cp]
@@ -158,8 +156,8 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-<!-- Reduction -->
-[red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
+<!-- Validation -->
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 
 <!-- TODO: Add ExecuteTransactions -->
 [xt]: https://github.com/dusk-network/dusk-protocol/tree/main/
