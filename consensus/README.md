@@ -127,6 +127,18 @@ $$`Epoch \lt M \le 2{\times}Epoch.`$$
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
+### Votes
+<!-- DOING -->
+In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
+
+Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
+
+In particular, each vote is the digital signature of the hash of the following fields: 
+  - the previous block's hash, which identifies both the round and the branch to which the candidate is for;
+  - the iteration number, to distinguish between votes for different candidates of the same round;
+  - the candidate block's hash, to ensure which candidate the vote is for;
+  - the step number, to distinguish Validation and Ratification votes.
+
 ## Certificates
 <!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
 A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
@@ -198,7 +210,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Version$               | 0              | Protocol version number                             |
 | $CommitteeCredits$      | 64             | Total credits in a voting committee                 |
 | $Quorum$                | $CommitteeCredits \times \frac{2}{3}$ (43) | Quorum threshold        |
-| $NilQuorum$             | $CommitteeCredits - Quorum +1$ (22) | Quorum threshold for NIL votes |
+| $NegativeQuorum$        | $CommitteeCredits-Quorum+1$ (22) | Quorum threshold for NIL votes |
 | $MaxIterations$         | 71             | Maximum number of iterations for a single round     |
 | $RollingFinalityBlocks$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 | $InitTimeout$           | 5              | Initial step timeout (in seconds)                   |
