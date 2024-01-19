@@ -1,9 +1,7 @@
 # Validation
+*Validation* is the second step in an [*SA iteration*][sai]. In this step, the *candidate* block, produced or received in the [Proposal][prop] step, is validated by a committee of randomly chosen provisioners.
 
-In the Validation phase, the *candidate* block produced in the [Proposal][prop] phase is validated by a [Voting Committee][vc] of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. 
-
-Members of the extracted committee verify the candidate's validity and then cast their vote. At the same time, all provisioners collect votes until the step timeout expires, and then output the result of the received votes: "Quorum", "InvalidQuorum", "NilQuorum". <!-- TODO: change votes to "Valid", "Invalid", "Timeout" -->
-
+Members of the extracted committee verify the candidate's validity and then cast their vote accordingly. At the same time, all provisioners, including committee members, collect Validation votes from the network.
 
 ### ToC
   - [Overview](#overview)
@@ -12,16 +10,20 @@ Members of the extracted committee verify the candidate's validity and then cast
       - [*ValidationStep*](#validationstep)
 
 
-
 ## Overview
-The Validation step is run after the [Proposal][prop] step to validate the generated candidate block. 
+In the Validation step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.
 
-Members of the [Voting Committee][vc] for the step cast votes on the candidate block. Each committee member votes on the output of the [Proposal][prop] step: if it received no candidate within the timeout, it votes "Timeout" (empty hash); otherwise, it verifies the received candidate and, if valid, it votes "Valid" by signing the candidate's hash; if the candidate is invalid, it votes "Invalid" by signing the empty hash.
+If the node is part of the committee, it validates the output from the [Proposal][prop] step. If the output was $NIL$, it votes $NoCandidate$. Otherwise, it verifies the candidate block's validity with respect to the previous block (i.e., the node's local $Tip$). If the candidate is valid, the node votes $Valid$, otherwise, it votes $Invalid$.
+The vote is broadcast using a $\mathsf{Validation}$ message (see [`Validation`][vmsg]) and technically consists in the signature of the message itself[^1].
+<!-- TODO: better describe how the vote is a signature; signature of what; and why we use signatures -->
 
-Therefore, a vote can be either the candidate's hash, to vote in favor, or $NIL$ (empty hash) to vote against. Votes are propagated through the network via $\mathsf{Validation}$ messages and collected by other nodes, which accumulate them until a *quorum* is reached or the step timeout expires.
+In the same step, all nodes, including the committee members, collect votes from the network until a *quorum* of $\frac{2}{3}$ of the committee credits[^2] is reached, a *negative quorum* ($\frac{1}{3}{+}1$) of non-valid votes is reached[^3], or the step timeout expires. 
 
-At the end of the step, if a vote reached the $Quorum$ threshold, a $\mathsf{StepVotes}$ is output with the corresponding aggregated votes.
-If no quorum was reached within the timeout, the step outputs a "Timeout" result along with a $\mathsf{StepVotes}$ with the aggregated $NIL$ votes.
+If a quorum of $Valid$ votes is received, the step outputs $ValidQuorum$. If a quorum of $Invalid$ votes is received, the step outputs $InvalidQuorum$. If the step timeout expires and a negative quorum of $NoCandidate$ and $Invalid$ votes are received, the step outputs $Fail$. If collected votes are insufficient, the step outputs $NoQuorum$.
+
+In all cases except $NoQuorum$, the output also includes the aggregated votes of the quorum, or negative quorum, in a $\mathsf{StepVotes}$ structure, which contains the aggregated signatures of the votes and a bitset to identify the voters.
+
+The step output will then be passed on as input to the [Ratification][rat] step.
 
 
 ## Validation Step
@@ -119,6 +121,11 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
     2. $\texttt{output } (\text{"NoQuorum"}, \mathsf{SV}_{NIL})$
 
 
+<!----------------------- FOOTNOTES ----------------------->
+[^1]: Using BLS signatures allows votes from multiple provisioners to be aggregated and verified together.
+[^2]: remember that the quorum is calculated over the weight of the voters, not their number.
+[^3]: We use the term *negative-quorum* to indicate the threshold of $\frac{1}{3}+1$ of non-valid votes, which mathematically determines the impossibility of a *quorum* ($\frac{2}{3}$) to be reached. Negative quorums are useful for *attesting* failed iterations (see [rolling finality][rf]).
+
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md -->
 [val]: #validation-step
@@ -130,8 +137,11 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
+[sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
+<!-- Ratification -->
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
@@ -140,6 +150,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countsetbits
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
+[rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
