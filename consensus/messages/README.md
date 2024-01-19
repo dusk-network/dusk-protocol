@@ -9,14 +9,14 @@ This section describes the network messages exchanged by nodes to participate in
   - [Message Creation](#message-creation)
   - [Message Exchange](#message-exchange)
 - [Message Structures](#message-structures)
-  - [`NewBlock` Message](#newblock-message)
+  - [`Candidate` Message](#candidate-message)
   - [`Reduction` Message](#reduction-message)
   - [`Agreement` Message](#agreement-message)
   - [`Block` Message](#block-message)
 
 ## Consensus Messages
 To run the SA protocol, participating nodes exchange consensus messages. There are four types of messages:
-- $\mathsf{NewBlock}$: this message stores a candidate block for a certain round and iteration. It is used during the [Attestation][att] phase;
+- $\mathsf{Candidate}$: this message stores a candidate block for a certain round and iteration. It is used during the [Proposal][prop] phase;
 - $\mathsf{Reduction}$: this message contains the vote of a provisioner, selected as a member of the voting committee, on the validity of a candidate block. It is used during the [Reduction][red] phase;
 - $\mathsf{Agreement}$: this message contains the aggregated votes of a Reduction phase. It is used at the end of a Reduction phase, if a quorum is reached;
 
@@ -40,7 +40,7 @@ All consensus messages share a common $MessageHeader$ structure, defined as foll
 | $Step$      | Integer | 8 bits    | Consensus step                   |
 | $BlockHash$ | Sha3    | 32 bytes  | Candidate block hash             | 
 
-$Signer$ is the public BLS key of the provisioner who creates and signs the message. Therefore, in a $NewBlock$ message, this field identifies the block generator, while, in a $\mathsf{Reduction}$ message, it identifies the committee member who casted the vote.
+$Signer$ is the public BLS key of the provisioner who creates and signs the message. Therefore, in a $Candidate$ message, this field identifies the block generator, while, in a $\mathsf{Reduction}$ message, it identifies the committee member who casted the vote.
 
 The $MessageHeader$ structure has a total size of 137 bytes.
 
@@ -78,7 +78,7 @@ $Msg(\mathsf{Type}, f_1,\dots,f_2):$
 
 The function uses the local (to the node) consensus parameters and secret key to generate the message header and signature and then build the message with the other specific fields.
 
-$\mathsf{Type}$ indicates the actual message ($\mathsf{NewBlock}$, $\mathsf{Reduction}$, or $\mathsf{Agreement}$).
+$\mathsf{Type}$ indicates the actual message ($\mathsf{Candidate}$, $\mathsf{Reduction}$, or $\mathsf{Agreement}$).
 In case of $\mathsf{Reduction}$, the parameter $f_1$, i.e. the vote $v$, is assigned to $BlockHash$ in the header.
 
 
@@ -113,9 +113,9 @@ For the sake of simplicity, we omit this field from the structure definition.
 
 ## Message Structures
 
-### NewBlock Message
+### Candidate Message
 <!-- TODO: PrevHash is useless -->
-The $\mathsf{NewBlock}$ message is used by a block generator to broadcast a candidate block.
+The $\mathsf{Candidate}$ message is used by a block generator to broadcast a candidate block.
 
 The message has the following structure:
 
@@ -126,7 +126,7 @@ The message has the following structure:
 | $Candidate$ | [*Block*][b]          |           | Candidate block       |
 | $Signature$ | BLS Signature         | 48 bytes  | Message signature     |
 
-The $\mathsf{NewBlock}$ message has a variable size of 217 bytes plus the block size.
+The $\mathsf{Candidate}$ message has a variable size of 217 bytes plus the block size.
 
 ### Validation Message
 The $\mathsf{Validation}$ message is used by a member of a [Validation][val] committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if empty ($NIL$), the vote is against the candidate block of the $Round$ and $Iteration$ specified in the $Header$.

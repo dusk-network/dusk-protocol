@@ -116,7 +116,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
  5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
     1. [*IncreaseTimeout*][it]$(\tau_{Validation})$
-    2. $\texttt{output } (\text{"Timeout"}, \mathsf{SV}_{NIL})$
+    2. $\texttt{output } (\text{"NoQuorum"}, \mathsf{SV}_{NIL})$
 
 
 <!------------------------- LINKS ------------------------->

@@ -1,138 +1,153 @@
- # Attestation Phase
-*Attestation* is the first phase in an [*SA iteration*][sai].
-In this phase, a selected provisioner is appointed to generate a new block. All other provisioners in this phase will wait a certain time to receive this block. 
+ # Proposal
+*Proposal* is the first step in an [*SA iteration*][sai]. In this phase, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, all other provisioners wait a certain time to receive this block.
 
 #### ToC
 - [Overview](#overview)
-- [Attestation Algorithm](#attestation-algorithm)
+- [Procedures](#procedures)
+  - [*ProposalStep*](#proposalstep)
   - [*GenerateBlock*](#generateblock)
   - [*SelectTransactions*](#selecttransactions)
 
+
 ## Overview
-Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a [NewBlock][nbmsg] message.
+Each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to check who's selected as the *block generator*. If the node itself is selected, it creates a new *candidate block*, and broadcasts it to the network via a [Candidate][cmsg] message.
 Otherwise, the node waits a certain timeout to receive the candidate block from the network. If such a block is received and it is signed by the extracted block generator, it propagates the message and moves to the [*Reduction*][red] phase, where it will vote on the block validity. All other blocks are discarded.
 
 If the timeout expires, it moves to Reduction with an empty candidate block ($NIL$).
 
+<p><br></p>
 
-## Attestation Algorithm
+## Procedures
+
+### *ProposalStep*
+*ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs a *candidate block*, if it was generated or received, or $NIL$ otherwise.
+It is the first step called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val] for its validation.
+
+In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsa] and checks if it's the node's provisioner.
+If extracted, it generates and broadcasts a new candidate block. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network.
+
 ***Parameters*** 
 - [Consensus Parameters][cp]
-- $Round$: round number
-- $Iteration$: iteration number
+- $R$: round number
+- $I$: iteration number
 
 ***Algorithm***
 1. Extract the block generator ($\mathcal{G}$) [*DS*][dsa]$(R,S,1)$
 2. If this node's provisioner is the block generator:
    1. Generate candidate block $\mathsf{B}^c$
-   2. Create $\mathsf{NewBlock}$ message $\mathsf{M}^B$ containing $\mathsf{B}^c$
-   3. Broadcast $\mathsf{M}^B$
-   4. Output candidate block
+   2. Create $\mathsf{Candidate}$ message $\mathsf{M}$ containing $\mathsf{B}^c$
+   3. Broadcast $\mathsf{M}$
+   4. Output $\mathsf{B}^c$
 3. Otherwise:
-   1. Start Attestation timeout
-   2. While timeout is not expired:
-      1. If a $\mathsf{NewBlock}$ message $\mathsf{M}^B$ is received for this round and step:
-         1. If $\mathsf{M}^B$'s signature is valid
-         2. and $\mathsf{M}^B$'s signer is $\mathcal{G}$
-         3. and $\mathsf{M}^B$'s $BlockHash$ corresponds to $Candidate$
-            1. Propagate $\mathsf{M}^B$
-            2. Output $\mathsf{M}^B$'s block ($\mathsf{B}^\mathsf{M}$)
+   1. Start Proposal timeout $\tau_{Proposal}$
+   2. While timeout has not expired:
+      1. If a $\mathsf{Candidate}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
+         1. If $\mathsf{M}$'s signature is valid
+         2. and $\mathsf{M}$'s signer is $\mathcal{G}$
+         3. and $\mathsf{M}$'s $BlockHash$ is $Candidate$'s hash
+            1. Propagate $\mathsf{M}$
+            2. Output $\mathsf{M}$'s block ($\mathsf{B}^c_\mathsf{M}$)
    3. If timeout expired
-      1. Increase Attestation timeout
+      1. Increase Proposal timeout
       2. Output $NIL$
 
 ***Procedure***
 
-$Attestation(Round, Iteration)$:
+$Proposal(R, I)$:
 1. $\texttt{set}$:
-   - $r = Round$
-   - $s = (Iteration) \times 3$
-2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(r,s,1)$
-3. $\texttt{if } (pk_\mathcal{N} == pk_{\mathcal{G}}):$
-   1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$()$
-   2. $\mathsf{M}^B =$ [*Msg*][msg]$(\mathsf{NewBlock}, \eta_{\mathsf{B}_{r-1}}, \mathsf{B}^c)$
+   - $s = I \times 3$
+2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(R,s,1)$
+3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
+   1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
+   2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \eta_{\mathsf{B}_{R-1}}, \mathsf{B}^c)$
       | Field       | Value                     | 
       |-------------|---------------------------|
       | $Header$    | $\mathsf{H}_\mathsf{M}$   |
-      | $PrevHash$  | $\eta_{\mathsf{B}_{r-1}}$ |
+      | $PrevHash$  | $\eta_{\mathsf{B}_{R-1}}$ |
       | $Candidate$ | $\mathsf{B}^c$            |
       | $Signature$ | $\sigma_\mathsf{M}$       |
-   3. [*Broadcast*][mx]$(\mathsf{M}^B)$
+   3. [*Broadcast*][mx]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
-   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Attestation}):$
-      1. $\texttt{if } (\mathsf{M} {=}$ [*Receive*][mx]$(\mathsf{NewBlock},r,s) \ne NIL)$:
-         - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}^\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
-         - $`\eta_{\mathsf{B}^\mathsf{M}} = Hash_{SHA3}(\mathsf{H}^{\mathsf{B}^\mathsf{M}})`$
-         - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{B}^\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
-         1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) == true \text{ })`$
-         2. $`\texttt{and }(\text{ } pk_\mathsf{M} == pk_{\mathcal{G}} \text{ })`$
-         3. $`\texttt{and } (\text{ }\eta_\mathsf{B}^\mathsf{M} == \eta_{\mathsf{B}^\mathsf{M}} \text{ }):`$
+   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
+      1. $\mathsf{M} = $ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
+         $\texttt{if } (\mathsf{M} \ne NIL):$
+         - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}_\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
+         - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
+         1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) = true \text{ })`$
+         2. $`\texttt{and }(\text{ } pk_\mathsf{M} = pk_{\mathcal{G}} \text{ })`$
+         3. $`\texttt{and } (\text{ }\eta_\mathsf{M} = \eta_{\mathsf{B}_\mathsf{M}} \text{ }):`$
             1. [*Propagate*][mx]$(\mathsf{M})$
-            2. $\texttt{output } \mathsf{B}^\mathsf{M}$
-   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Attestation}):$
-      1. [*IncreaseTimeout*][it]$(\tau_{Attestation})$
+            2. $\texttt{output } \mathsf{B}_\mathsf{M}$
+   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Proposal}):$
+      1. [*IncreaseTimeout*][it]$(\tau_{Proposal})$
       2. $\texttt{output } NIL$
 
 <p><br></p>
 
-### GenerateBlock
-<!-- TODO: Add description -->
+### *GenerateBlock*
+*GenerateBlock* creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
+It is called by [*ProposalStep*][ps], which will broadcast the returned block in a $\mathsf{Candidate}$ message.
+
+***Parameters***
+- [Consensus Parameters][cp]
+- $R$: round number
+- $I$: iteration number
 
 ***Algorithm***
-1. Fetch transactions from Mempool
-2. Execute transactions and get new state hash
-3. Compute transaction tree root
-4. Compute iteration number
-5. Set new $Seed$ by signing the previous one
-6. Create header
-7. Create candidate block
-8. Output candidate block
+1. Fetch transactions $\boldsymbol{txs}$ from Mempool
+2. Execute $\boldsymbol{txs}$ and get new state $State_R$
+3. Compute transaction Merkle tree root $TxRoot_R$
+4. Set new $Seed_R$ by signing the previous one $Seed_{R-1}$
+5. Create block header $\mathsf{H}_{\mathsf{B}^c_{R,I}}$
+6. Create candidate block $\mathsf{B}^c$
+7. Output $\mathsf{B}^c$
 
 ***Procedure***
 
-$GenerateBlock()$
+$GenerateBlock(R,I)$
 1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
-2. $State_r =$ [*ExecuteTransactions*][xt]$`(\boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
-3. $`TxRoot_r = MerkleTree(\boldsymbol{txs}).Root`$
-4. $`i = \lfloor\frac{s}{3}\rfloor`$
-5. $`Seed_r = Sign_{BLS}(sk_\mathcal{N}, Seed_{r-1})`$
-6. $`\mathsf{H}_{\mathsf{B}^c_{r,i}} = (v,r,\tau_{now},BlockGas,i,\eta_{\mathsf{B}_{r-1}},Seed_r,pk_\mathcal{N},TxRoot_r,State_r,\boldsymbol{PrevIterations})`$
+2. $State_R =$ [*ExecuteStateTransition*][xt]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
+4. $`Seed_R = Sign_{BLS}(sk_\mathcal{N}, Seed_{R-1})`$
+5. $`\mathsf{H}_{\mathsf{B}^c_{R,I}} = (V,R,\tau_{now},BlockGas,I,\eta_{\mathsf{B}_{R-1}},Seed_R,pk_\mathcal{N},$
+   $TxRoot_R,State_R,\mathsf{B}_{r-1}.Certificate, \boldsymbol{PrevIterations})`$
     | Field                  | Value                          | 
     |------------------------|--------------------------------|
     | $Version$              | $V$                            |
-    | $Height$               | $r$                            |
+    | $Height$               | $R$                            |
     | $Timestamp$            | $\tau_{now}$                   |
     | $GasLimit$             | $BlockGas$                     |
-    | $Iteration$            | $i$                            |
-    | $PreviousBlock$        | $\eta_{\mathsf{B}_{r-1}}$      |
-    | $Seed$                 | $Seed_r$                       |
+    | $Iteration$            | $I$                            |
+    | $PreviousBlock$        | $\eta_{\mathsf{B}_{R-1}}$      |
+    | $Seed$                 | $Seed_R$                       |
     | $Generator$            | $pk_\mathcal{N}$               |
-    | $TxRoot$               | $TxRoot_r$                     |
-    | $State$                | $State_r$                      |
+    | $TxRoot$               | $TxRoot_R$                     |
+    | $State$                | $State_R$                      |
     | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$ | 
     | $FailedIterations$     | $\boldsymbol{PrevIterations}$  |
-    <!-- | $Header Hash           | string | -->
     
-7. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
+6. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 
     |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
-    | $Transactions$ | $\boldsymbol{tx}$           |
-8. $\texttt{output } \mathsf{B}^c_{r,i}$
+    | $Transactions$ | $\boldsymbol{txs}$           |
+7. $\texttt{output } \mathsf{B}^c_{r,i}$
 
 <p><br></p>
 
-### SelectTransactions
-$`SelectTransactions`$ selects a set of transactions from the Mempool to be included in a new block.
-The criteria used for the selection is arbitrary and is left to the Block Generator.
+### *SelectTransactions*
+*SelectTransactions* selects a set of transactions from the Mempool to be included in a new block.
 
+The criteria used for the selection is arbitrary and is left to the Block Generator.
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md -->
+[prop]: #proposal
+[ps]: #proposalstep
 [gb]: #generateblock
 [st]: #selecttransactions
 
@@ -152,4 +167,4 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
-[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message

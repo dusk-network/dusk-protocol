@@ -46,7 +46,7 @@ Moreover, we will conventionally use the following symbols:
 - $pk$ and $sk$ are used to denote public and secret keys, respectively
 - $\sigma$ characters are used for signatures (e.g. a message signature $\sigma_{M}$)
 - $\eta$ characters are used for hash digests (e.g. a block hash $\eta_B$)
-- $\tau$ characters are used for time variables (e.g. the Attestation timeout $\tau_{Attestation}$)
+- $\tau$ characters are used for time variables (e.g. the Proposal timeout $\tau_{Proposal}$)
 - $\mathcal{G}$ is used to the block generator
 - $\mathsf{B}^c$ is used for the candidate block
 - $\mathsf{B}^w$ is used for the winning block
@@ -71,19 +71,19 @@ Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ 
 The SA protocol is executed in ***rounds***, with each round adding a new block to the chain.
 
 Each round is composed of three phases:
-  1. ***Attestation***: in this phase, a *generator*, extracted via [*DS*][ds], creates a new candidate block and broadcasts it to the network using a [NewBlock][nbmsg] message;
+  1. ***Proposal***: in this phase, a *generator*, extracted via [*DS*][ds], creates a new candidate block and broadcasts it to the network using a [Candidate][cmsg] message;
   
-  2. ***Reduction***: in this phase, two separate committees of provisioners, extracted via [*DS*][ds], vote on the validity of the candidate block and broadcast their vote with a [Reduction][rmsg] message. If positive votes reach a quorum of $\frac{2}{3}$ (67% of the votes) in each committee, an $\mathsf{Agreement}$ message is broadcast, which contains the aggregated votes of both committees. Conversely, the reduction fails and the protocol starts over (from *Attestation*) with a new generator and new voting committees (that is, a new candidate block is produced and voted upon);
+  2. ***Reduction***: in this phase, two separate committees of provisioners, extracted via [*DS*][ds], vote on the validity of the candidate block and broadcast their vote with a [Reduction][rmsg] message. If positive votes reach a quorum of $\frac{2}{3}$ (67% of the votes) in each committee, an $\mathsf{Agreement}$ message is broadcast, which contains the aggregated votes of both committees. Conversely, the reduction fails and the protocol starts over (from *Proposal*) with a new generator and new voting committees (that is, a new candidate block is produced and voted upon);
 
   3. ***Ratification***: in this phase, all generated $\mathsf{Agreement}$ messages are collected; if messages for a specific candidate block reach a quorum (according to the second-reduction committee vote allocation), the candidate block is added to the chain along with a *certificate* containing the quorum votes from the $\mathsf{Agreement}$ message. This effectively ends the current round.
 
-As both the *Attestation* and *Reduction* phases can fail, the *Attestation*/*Reduction* sequence can be executed multiple times within a single round (using different provisioners). We call each repetition of such sequence an ***iteration***, and each phase in the repetition a ***step***.
-Note that since the *Reduction* phase has two consecutive votes, it is composed of two steps. Therefore, a single iteration is composed of three steps: (1) Attestation, (2) first Reduction, and (3) second Reduction.
+As both the *Proposal* and *Reduction* phases can fail, the *Proposal*/*Reduction* sequence can be executed multiple times within a single round (using different provisioners). We call each repetition of such sequence an ***iteration***, and each phase in the repetition a ***step***.
+Note that since the *Reduction* phase has two consecutive votes, it is composed of two steps. Therefore, a single iteration is composed of three steps: (1) Proposal, (2) first Reduction, and (3) second Reduction.
 
 A maximum number of 71 iterations (213 steps) is allowed to agree on a new valid block to add to the chain. If this number is exceeded, the network is considered unsafe and the consensus process is halted. Both step and iteration count starts from 1. 
 
 ### Candidate Block
-A candidate block is the block generated in the [Attestation][att] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
 Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
 Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
@@ -227,13 +227,13 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $\mathsf{B}^w$                | Winning block                        |
 | $\mathsf{V}^1$                | StepVotes of First Reduction         |
 | $\mathsf{V}^2$                | StepVotes of Second Reduction        |
-| $\tau_{Attestation}$          | Current timeout for Attestation      |
+| $\tau_{Proposal}$          | Current timeout for Proposal      |
 | $\tau_{Reduction_1}$          | Current timeout for First Reduction  |
 | $\tau_{Reduction_2}$          | Current timeout for Second Reduction |
 | $\boldsymbol{PrevIterations}$ | Certificates of failed iterations    |
 
 
-<!-- $\tau_{Attestation}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->
+<!-- $\tau_{Proposal}$, $\tau_{Reduction_1}$, and $\tau_{Reduction_2}$ are all initially set to $InitTimeout$, but might increase in case the timeout expires during an iteration (see [*IncreaseTimeout*](#increasetimeout)). -->
 
 ## SA Algorithm
 The SA consensus algorithm is defined by the [*SAConsensus*][sac] procedure, which executes an SA round ([*SARound*][sar]) for each new block to generate. In turn, the *SARound* procedure runs a loop of [*SAIteration*][sai]s in parallel with the *Ratification* procedure. As soon as a winning block ($\mathsf{B}^w$) for the round is produced, the state is updated ([*AcceptBlock*][ab]), the $Tip$ is set to the winning block, and a new round begins.
@@ -295,7 +295,7 @@ The *SARound* procedure handles the execution of a consensus round: first, it in
 ***Algorithm***
 
 1. Set variables:
-   - Initialize Attestation and Reduction timeouts
+   - Initialize Proposal and Reduction timeouts
    - Set candidate and winning block to $NIL$
    - Set iteration to 0
 2. Start Ratification process
@@ -310,7 +310,7 @@ The *SARound* procedure handles the execution of a consensus round: first, it in
 
 $\textit{SARound}(Round_{SA}):$
 1. $\texttt{set }$:
-   - $\tau_{Attestation}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
+   - $\tau_{Proposal}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration_{SA} = 0$
 2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
@@ -323,11 +323,11 @@ $\textit{SARound}(Round_{SA}):$
 
 
 ### SAIteration
-This procedure executes a sequence of *Attestation*, to generate a new candidate block ($\mathsf{B}^c$) for the current round and iteration, and two *Reduction* steps, to vote on the candidate block (if any). Quorum votes of first and second Reduction (if any) are stored in $\mathsf{V}^1$ and $\mathsf{V}^2$, respectively. If the votes of both committees reach a quorum, an [Agreement][amsg] message broadcasted, containing all quorum votes.
+This procedure executes a sequence of *Proposal*, to generate a new candidate block ($\mathsf{B}^c$) for the current round and iteration, and two *Reduction* steps, to vote on the candidate block (if any). Quorum votes of first and second Reduction (if any) are stored in $\mathsf{V}^1$ and $\mathsf{V}^2$, respectively. If the votes of both committees reach a quorum, an [Agreement][amsg] message broadcasted, containing all quorum votes.
 
 
 ***Algorithm***
-1. Run Attestation to generate *candidate* block $\mathsf{B}^c$
+1. Run Proposal to generate *candidate* block $\mathsf{B}^c$
 2. Run first Reduction on $\mathsf{B}^c$
 3. Run second Reduction on $\mathsf{B}^c$
 4. If any of the two Reductions failed
@@ -342,7 +342,7 @@ This procedure executes a sequence of *Attestation*, to generate a new candidate
 $\textit{SAIteration}(Round, Iteration):$
 - $r2Step = Iteration\times 3 + 2$
 - $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
-1. $\mathsf{B}^c =$ [*Attestation*][atta]$(Round, Iteration)$
+1. $\mathsf{B}^c =$ [*Proposal*][ps]$(Round, Iteration)$
 2. $(v^1, \mathsf{V}^1) =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
 3. $(v^2, \mathsf{V}^2) =$ [*Reduction*][reda]$(Round, Iteration, 2, \mathsf{B}^c)$
 4. $\texttt{if } (v^1 = NIL) \texttt{ or } (v^1 = NIL)$
@@ -363,7 +363,7 @@ $\textit{SAIteration}(Round, Iteration):$
 *IncreaseTimeout* doubles a step timeout up to $MaxTimeout$.
 
 ***Parameters***
-- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Attestation$, $Reduction1$, or $Reduction2$)
+- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Proposal$, $Reduction1$, or $Reduction2$)
 
 ***Procedure***
 
@@ -371,7 +371,7 @@ $\textit{IncreaseTimeout}(\tau_{Step}):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} \times 2, MaxTimeout)$
 
 <!-- TODO: Define $GetStepNumber$ 
-attestation: (Block.Iteration) \times 3 + 1
+Proposal: (Block.Iteration) \times 3 + 1
 red1: (Block.Iteration) \times 3 + 1
 red2: (Block.Iteration) \times 3 + 2
 -->
@@ -408,9 +408,9 @@ red2: (Block.Iteration) \times 3 + 2
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#algorithm
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#setbit
-<!-- Attestation -->
-[att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/
-[atta]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/attestation/README.md#attestation-algorithm
+<!-- Proposal -->
+[prop]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/
+[ps]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
 <!-- Reduction -->
 [red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
 [reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm
@@ -423,7 +423,7 @@ red2: (Block.Iteration) \times 3 + 2
 [mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
 [amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
-[nbmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#newblock-message
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message
 
 <!-- TODO: link to Stake Contract -->
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
