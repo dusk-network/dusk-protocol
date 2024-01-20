@@ -1,0 +1,30 @@
+name: Economic Protocol
+on:
+  pull_request:
+    paths:
+      - economic-protocol/**
+  push:
+    branches:
+      - main
+    paths:
+      - economic-protocol/**
+
+jobs:
+  build_pdf:
+    name: Generate PDF
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile PDF file
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: economic-protocol.tex
+          working_directory: ./economic-protocol
+
+      - name: Upload PDF file
+        uses: actions/upload-artifact@v4
+        with:
+          name: dusk-economic-protocol
+          path: economic-protocol/economic-protocol.pdf
