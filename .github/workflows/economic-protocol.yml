@@ -10,7 +10,7 @@ on:
       - economic-protocol/**
 
 jobs:
-  build_pdf:
+  generate_pdf:
     name: Generate PDF
     runs-on: ubuntu-latest
     steps:
@@ -26,5 +26,36 @@ jobs:
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
-          name: dusk-economic-protocol
+          name: dusk-economic-protocol-${{ github.sha }}
           path: economic-protocol/economic-protocol.pdf
+
+  publish_pages:
+    name: Publish to GitHub Pages
+    needs: generate_pdf
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download PDF file
+        uses: actions/download-artifact@v4
+        with:
+          name: dusk-economic-protocol-${{ github.sha }}
+
+      - name: Upload as GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages-${{ github.sha }}
+          path: .
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.sha }}
