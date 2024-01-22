@@ -1,5 +1,126 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
+\documentclass[twocolumn, nofootinbib]{revtex4-2}
+
+\usepackage{array}
+
 \begin{document}
-    This page is intentionally left blank
+    \title{Dusk Economic Model}
+    \author{Emanuele Francioni}
+    \email{emanuele@dusk.network}
+    \author{Matteo Ferretti}
+    \email{matteo@dusk.network}
+    \affiliation{Dusk Network}
+%    \date{\today}
+
+    \begin{abstract}
+        The Economic Model encompasses the mechanisms enabling Smart Contract
+        owners to create economic value through the services they offer.
+        It consists of levying service fees, offsetting gas costs for users,
+        and optimizing gas payments for improved profitability. Essentially, the
+        Economic Model allows service providers to be productized and profit.
+    \end{abstract}
+
+    \maketitle
+
+    \section{Terminology}\label{sec:terminology}
+    \begin{itemize}
+        \item \textbf{contract}: The smart contract method activated by the user
+              through a transaction.
+        \item \textbf{user}: The party initiating the \textbf{contract} transaction.
+        \item \textbf{gas}: A unit measure of computational resource.
+              In this scope, \textbf{gas limit} indicates the maximum amount of
+              resources allocated by a user or a contract to perform a
+              computation, \textbf{gas consumed} measures incurred costs of
+              computation executed, \textbf{gas unspent} is the difference
+              between \textbf{gas limit} and \textbf{gas consumed}.
+              If a computation requires more resources than those allocated,
+              then we incur in an \textbf{insufficient gas} error.
+        \item \textbf{gas price}: This is the amount of DUSK that a sender is
+              willing to spend per unit of gas (unit of gas are specified in
+              Lux, where 1 Lux equals 10\textsuperscript{-9} DUSK). The higher
+              the \textbf{gas price}, the more incentive Block Generators have
+              in including the transaction in the next block, so transactions
+              with high gas prices are generally confirmed more quickly.
+              Because of this, \textbf{gas price} generally determines the
+              transaction priority.
+        \item \textbf{ICC\footnote{ICCs cannot be called directly. As such, the
+              contract methods should be tagged as C2C (contract-to-contract) or
+              direct. The former can only be called only by another contract,
+              while the latter can only be called by a user (through a
+              transaction).}} (Inter-Contract Call): Interaction between
+              multiple contracts.
+              It is also used interchangeably for those contract methods that
+              can only be called by other contract.
+        \item \textbf{fee}: The fee applied by the smart contract to the user, when the
+              former requires payment for its services.
+              The \textbf{fee} is known by the Transfer Contract (changeable
+              through a transaction), but needs to be communicated to the user,
+              who approves/signes it.
+              This way the possibility of fee malleability is removed, thus
+              preventing a bait-and-switch attack where a contract could change
+              the fee with a high priority transaction and drain the user's
+              funds.
+        \item \textbf{contract account}: In the scenario where the contract pays
+              for gas on behalf of the user, the \textbf{contract account} is
+              where fees are accrued and gas is paid
+        \item \textbf{provider}: An intermediary service entity between a
+              \textbf{user} and a \textbf{contract}.
+    \end{itemize}
+
+    \section{Specifications}\label{sec:specifications}
+    \begin{table*}[t]
+    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|m{0.45\linewidth}|m{0.3\linewidth}|}
+        \hline
+        \textbf{Scenario} & \textbf{Contract Fee} &
+        \textbf{Normal Flow} & \textbf{Insufficient Gas} \\
+        \hline
+        \hline
+        User pays gas & No &
+        \begin{itemize}
+            \item 70\% \textbf{gas unspent} returned to user
+            \item 30\% \textbf{gas unspent} paid to executed contracts depending
+                  on the \textbf{gas limit} allocated across ICC
+            \item 100\% \textbf{gas consumed} paid to the Block Generator
+        \end{itemize} &
+        \begin{itemize}
+            \item 100\% \textbf{gas consumed} paid to the Block Generator
+        \end{itemize} \\
+        \hline
+        User pays gas; contract applies fee & Yes &
+        \begin{itemize}
+            \item Like Scenario 1
+            \item \textbf{fee} paid to the charging contract
+        \end{itemize} &
+        \begin{itemize}
+            \item 100\% \textbf{gas consumed} paid to the Block Generator
+            \item \textbf{fee} returned to \textbf{user}
+        \end{itemize} \\
+        \hline
+        Contract pays gas; contract applies fee & Yes &
+        \begin{itemize}
+            \item \textbf{gas consumed} charged entirely to \textbf{contract}
+            \item 30\% \textbf{gas unspent} paid to executed contracts depending
+                  on the \textbf{gas limit} allocated across ICC
+            \item 70\% \textbf{gas unspent} returned to contract
+            \item 100\% \textbf{gas consumed} paid to the Block Generator.
+            \item \textbf{fee} paid to the charging contract
+        \end{itemize} &
+        \begin{itemize}
+            \item 100\% \textbf{gas consumed} locked for a number of epochs
+            \item \textbf{fee} gets refunded to the \textbf{user}
+        \end{itemize} \\
+        \hline
+        Obfuscated transactions & Variable, \% of an obfuscated amount & As in
+        Scenario 3, \textbf{fee} calculated as \% of transacted amount &
+        Additional considerations needed \\
+        \hline
+        Autocontracts & No & TBD & TBD \\
+        \hline
+    \end{tabular}
+    \end{table*}
+
+    \subsection{Scenario 1: User pays gas}\label{subsec:scenario-1}
+    \subsection{Scenario 2: User pays gas, contract applies fee}\label{subsec:scenario-2}
+    \subsection{Scenario 3: Contract pays gas, contract applies fee}\label{subsec:scenario-3}
+    \subsection{Scenario 4: Contract charges a percentage of an obfuscated amount}\label{subsec:scenario-4}
+    \subsection{Scenario 5: Autocontracts}\label{subsec:scenario-5}
 \end{document}
