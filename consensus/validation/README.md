@@ -32,13 +32,13 @@ The step output will be used as the input for the [Ratification][rat] step.
 ### Procedures
 
 #### *ValidationStep*
-*ValidationStep* takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][ps]) and outputs the result of the collected Validation votes ($Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$) plus the aggregated votes $\mathsf{SV}$ that produced the result.
+*ValidationStep* takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][ps]) and outputs the Validation result $(v^V, \mathsf{SV}_{v^V})$, where $v^V$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^V}$ is the aggregated vote of the quorum committee.
 
-The procedure performs two main tasks: 
+The procedure performs two tasks: 
 
-1. if the node is selected in the Validation committee $\mathsf{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+1. If the node is part of the Validation committee $\mathsf{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
 
-2. it then collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
+2. It collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Quorum$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
@@ -58,24 +58,24 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
    1. If candidate $\mathsf{B}^c$ is empty:
       1. Set vote $v$ to $NoCandidate$
    2. Otherwise:
-      1. Verify $\mathsf{B}^c$
+      1. Verify $\mathsf{B}^c$ against $Tip$
       2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
       3. Otherwise, set $v$ to $Invalid$
-   3. Create $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
+   3. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
    4. Broadcast $\mathsf{M}$
 
 4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
    1. Initialize $\mathsf{SV}_v$
 
-5. While timeout $$\tau_{Validation}$ has not expired:
+5. While timeout $\tau_{Validation}$ has not expired:
    1. If a $\mathsf{Validation}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M}$'s signature is valid
       2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
          1. Propagate $\mathsf{M}$
-         2. Collect $\mathsf{M}$'s vote $v$ into the aggregated $\mathsf{SV}_v$
-         3. Set target $Target$ to $Quorum$ if $v$ is $Valid$ or $Majority$ if $v$ is $Invalid$ or $NoCandidate$
-         4. If votes in $\mathsf{SV}_v$ reach $Target$
-            1. Output $(v, \mathsf{SV}_v)$
+         2. Collect $\mathsf{M}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
+         3. Set the target quorum $Q$ to $Quorum$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
+         4. If votes in $\mathsf{SV}_{v^V}$ reach $Q$
+            1. Output $(v^V, \mathsf{SV}_{v^V})$
 
  6. If timeout $\tau_{Validation}$ expired:
     1. Increase Validation timeout
@@ -111,16 +111,17 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}):$
    1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
+      - $\texttt{set: } \sigma_\mathsf{M} = \mathsf{M}.Signature$
       1. $\texttt{if } (pk_{\mathsf{M}} \in \mathsf{C})$
-      2. $\texttt{and }($*VerifySignature*$(\mathsf{M}) = true):$
+      2. $\texttt{and }($*VerifySignature*$(\sigma_\mathsf{M}, pk_\mathsf{M}) = true):$
          1. [*Propagate*][mx]$(\mathsf{M})$
-         2. $v = \mathsf{M}.Vote$
-         3. $\mathsf{SV}_v = $[*AggregateVote*][av]$( \mathsf{SV}_v, \mathsf{C}, \mathsf{M}.Signature, pk_{\mathsf{M}} )$
+         2. $v^V = \mathsf{M}.Vote$
+         3. $\mathsf{SV}_{v^V} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^V}, \mathsf{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )$
          4. $\texttt{set}:$
-            - $\texttt{if } (v = Valid): Target = Quorum$
-            - $\texttt{else}: Target = Majority$
-         5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_v) \ge Target):$
-            1. $\texttt{output } (v, \mathsf{SV}_v)$
+            - $\texttt{if } (v^V = Valid): Q = Quorum$
+            - $\texttt{else}: Q = Majority$
+         5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
+            1. $\texttt{output } (v^V, \mathsf{SV}_{v^V})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
     1. [*IncreaseTimeout*][it]$(\tau_{Validation})$
@@ -131,8 +132,8 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [^1]: remember that the quorum is calculated over the weight of the voters, not their number.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md -->
-[val]: #validation-step
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[vals]: #validation-step
 
 
 <!-- Consensus -->
