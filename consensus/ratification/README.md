@@ -1,34 +1,54 @@
 # Ratification
+*Ratification* is the third step in an [*SA iteration*][sai]. In this step, the result of the [Validation][val] step is agreed upon by another committee of randomly chosen provisioners.
 
-In the Ratification phase, the output of the [Validation][val] step is ratified by a committee of [provisioners][p], randomly chosen using [*Deterministic Sortition*][ds]. 
-Extracted members cast a vote with the output of their Validation step ("Quorum", "NilQuorum", "InvalidQuorum") using a [Ratification][rmsg]. 
-At the same time, all provisioners wait for votes from committee members until a timeout expires.
+Members of the extracted committee cast a vote with the output of the[Validation][step] as resulting from the $\mathsf{Validation}$ messages received. At the same time, all provisioners, including committee members, collect Ratification votes from the network until a target quorum is reached or the step timeout expires.
 
+If a quorum is reached for any result, a $mathsf{Quorum}$ [`Quorum`][qmsg] is generated with the aggregated signatures of both Validation and Ratification steps.
 
+The main purpose of the Ratification step is to ensure provisioners are "aligned" with respect to the Validation result: if Validation result was $Valid$, it ensures a supermajority of provisioners saw such a result and hence accepted the block. Similarly, in case of non-$Valid$ result, it ensures a majority of provisioners will certify this iteration as failed, which, in turn, is used in determining if a winning candidate will be Attested or not (see [Finality][fin]).
 
 ### ToC
 - [Overview](#overview)
 - [Ratification Step](#ratification-step)
+  - [Procedures](#procedures)
+    - [*RatificationStep*](#ratificationstep)
+
 
 ## Overview
-In each Ratification step, members of a [Voting Committee][vc] cast votes on the candidate block, if known. A vote can be either the candidate's hash, to vote in favor, or $NIL$ to vote against. Votes are propagated through the network via $\mathsf{Ratification}$ messages and collected by other nodes, which accumulate them until a *quorum* is reached or the step timeout expires.
+In the Ratification step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.
 
-Votes are signatures of either the candidate's hash or the empty hash ($NIL$). When votes for a specific hash reach a quorum, a $\mathsf{StepVotes}$ structure is output, with the aggregated votes of the [quorum committee][sc].
+If the node is part of the committee, it casts a vote with the winning [Validation][val] vote ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$). 
+The vote is broadcast using a $\mathsf{Ratification}$ message (see [`Ratification`][rmsg]), which includes the $\mathsf{StepVotes}$ of the aggregated Validation votes.
+
+Then, all nodes, including the committee members, collect votes from the network until a *supermajority*  ($\frac{2}{3}$ of the committee credits) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of non-$Valid$ votes is reached, or the step timeout expires. 
+Ratification votes (except for $NoQuorum$) are only considered valid if accompanied by a $\mathsf{StepVotes}$ with a quorum of matching Validation votes.
+
+Note that, since Ratification votes require a quorum of Validation votes (except for $NoQuorum$) to be valid, only one vote between $Valid$, $Invalid$, and $NoCandidate$ can be received, plus $NoQuorum$. In other words, $Valid$, $Invalid$, and $NoCandidate$ are mutually exclusive in Ratification. In fact, it's impossible to receive a valid $NoCandidate$ vote (which requires a majority) and $Valid$ vote in the same Ratification step, unless a provisioner casts a double vote[^1].
+
+If any quorum is reached, the step outputs the winning vote ($Valid$, $Invalid$, $NoCandidate$). Otherwise, if the step timeout expires, the step outputs $NoQuorum$.
+In all cases, except $NoQuorum$, the output of the step includes a $\mathsf{StepVotes}$ structure (see [`StepVotes`][sv]) with the aggregated votes that determined the result.
+
+The output, together with the Validation output, will be used to determine the outcome of the iteration.
 
 
-## Ratification Step
-The Ratification step takes as input the candidate block output from the [Proposal][prop] step and executes two actions: 
-1. first, if the node's provisioner has been selected in the Ratification committee, it votes on the candidate:
-   - if a candidate has been received, it is validated against the local $Tip$ and, if valid, a $\text{"Valid"}$ vote is cast by signing the triplet $(round, step, candidate_hash)$; 
-   <!-- TODO: if the validation fails, an $Invalid$ vote is cast. vote definition must be changed to support this -->
-   - if no candidate has been received during the Proposal step, a $\text{"Timeout"}$ vote is cast, by signing the triplet $(round, step, empty_hash)$.
-2. then, the node collects Ratification votes from the other members of the committee until a quorum is reached or the step timeout expires:
-   - if $\text{"Valid"}$ votes reach the $Quorum$ threshold, the step outputs $\text{"Quorum"}$;
-   - if $\text{"Timeout"}$ votes exceeds $\frac{1}{3}$ of the $CommitteeCredits$, it is considered as a "non-quorum" (since it's not possible to reach the $Quorum$ value with the other votes) and a $\text{"NilQuorum"}$ is output;
-   - if the timeout expires before receiving enough votes, the step output $\text{"Timeout"}$.
+### Procedures
+<!-- DOING -->
 
-For each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), a [`StepVotes`][sv] structure $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used to aggregate collected votes. 
 
+#### *RatificationStep*
+*RatificationStep* takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][ps]) and outputs the result of the collected Validation votes ($Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$) plus the aggregated votes $\mathsf{SV}$ that produced the result.
+
+The procedure performs two main tasks: 
+
+1. if the node is selected in the Validation committee $\mathsf{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+
+2. it then collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
+   - if $Valid$ votes reach $Quorum$, the step outputs $Valid$;
+   - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
+   - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
+   - if the timeout $\tau_{Validation}$ expires, the step outputs $NoQuorum$.
+
+Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
 
 ***Parameters***
 - $R$: round number
@@ -36,80 +56,89 @@ For each vote $v$ ($\text{"Valid"}$/$\text{"Invalid"}$/$\text{"Timeout"}$), a [`
 - $\mathsf{B}^c$: candidate block
 
 ***Algorithm***
-1. Extract voting committee for the step
-2. Start step timeout
-3. If the node $\mathcal{N}$ is part of the committee:
+1. Extract committee $\mathsf{C}$ for the step
+2. Start step timeout $\tau_{Validation}$
+3. If the node $\mathcal{N}$ is part of $\mathsf{C}$:
    1. If candidate $\mathsf{B}^c$ is empty:
-      1. Set vote $v$ to $NIL$ ($\text{"Timeout"}$)
+      1. Set vote $v$ to $NoCandidate$
    2. Otherwise:
       1. Verify $\mathsf{B}^c$
-      2. If $\mathsf{B}^c$ is valid, set vote $v$ to $\mathsf{B}^c$'s hash $\eta_\mathsf{B}^c$
-      3. Otherwise, set $v$ to $NIL$ ($\text{"Invalid"}$)
-   3. Create $\mathsf{Ratification}$ message $\mathsf{M}$ with vote $v$
+      2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
+      3. Otherwise, set $v$ to $Invalid$
+   3. Create $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
    4. Broadcast $\mathsf{M}$
 
-4. While timeout has not expired:
-   1. If a $\mathsf{Ratification}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
-      1. If $\mathsf{M}$'s signer is in the committee
-      2. and the signature is valid
+4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
+   1. Initialize $\mathsf{SV}_v$
+
+5. While timeout $$\tau_{Validation}$ has not expired:
+   1. If a $\mathsf{Validation}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
+      1. If $\mathsf{M}$'s signature is valid
+      2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
          1. Propagate $\mathsf{M}$
-         2. Set vote $v$ to $\mathsf{M}$'s $BlockHash$
-         3. Add $\mathsf{M}.Signature$ $\mathsf{SV}_v$
-         4. If $v$ is a candidate hash and votes in $\mathsf{SV}_v$ reach $Quorum$
-            1. Output $\text{"Quorum"}$ and $\mathsf{SV}_v$
-         5. If $v$ is $NIL$ and votes in $\mathsf{SV}_v$ reach $NilQuorum$:
-            1. Output $\text{"NilQuorum"}$ and $\mathsf{SV}_v$
- 5. If timeout expired:
-    1. Increase Ratification timeout
-    2. Output $\text{"Timeout"}$ vote and $\mathsf{SV}_{NIL}$
-    <!-- TODO: why do we output SV_NIL? what if we have all Valid votes but less than Quorum? -->
+         2. Collect $\mathsf{M}$'s vote $v$ into the aggregated $\mathsf{SV}_v$
+         3. Set target $Target$ to $Quorum$ if $v$ is $Valid$ or $Majority$ if $v$ is $Invalid$ or $NoCandidate$
+         4. If votes in $\mathsf{SV}_v$ reach $Target$
+            1. Output $(v, \mathsf{SV}_v)$
+
+ 6. If timeout $\tau_{Validation}$ expired:
+    1. Increase Validation timeout
+    2. Output $(NoQuorum, NIL)$
 
 ***Procedure***
 
-$Ratification( R, I, \mathsf{B}^c ) :$
+$RatificationStep( R, I, \mathsf{B}^c ) :$
 - $\texttt{set}:$ 
   - $s = I \times 3 + 1$
 1. $\mathsf{C}$ = [*DS*][dsa]$(R,s,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathsf{C}):$
    1. $\texttt{if } (\mathsf{B}^c = NIL):$
-      1. $v = NIL$
+      1. $v = NoCandidate$
    2. $\texttt{else}:$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
-      2. $\texttt{if } (isValid = true) : v = \eta_{\mathsf{B}^c}$
-      3. $\texttt{else}: v = NIL$
-   3. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v)$
+      2. $\texttt{if } (isValid = true) : v = Valid$
+      3. $\texttt{else}: v = Invalid$
+   3. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, v)$
+      <!-- TODO: update when updating Consensus Message definition
       | Field       | Value                     | 
       |-------------|---------------------------|
       | $Header$    | $\mathsf{H}_{\mathsf{M}}$ |
-      | $Signature$ | $\sigma_{\mathsf{M}}$     |
+      | $Signature$ | $\sigma_{\mathsf{M}}$     | 
+      -->
 
    4. [*Broadcast*][mx]$(\mathsf{M})$
 
-- $\texttt{set}:$
-   - $\mathsf{SV}_c = (\sigma_{\mathsf{B}^c}, \boldsymbol{bs}_{\mathsf{B}^c})$
-   - $\mathsf{SV}_{NIL} = (\sigma_{NIL}, \boldsymbol{bs}_{NIL})$
+4. $\texttt{set}:$
+   - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
+     - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
-4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Ratification}):$
-   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
+5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}):$
+   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
       1. $\texttt{if } (pk_{\mathsf{M}} \in \mathsf{C})$
       2. $\texttt{and }($*VerifySignature*$(\mathsf{M}) = true):$
          1. [*Propagate*][mx]$(\mathsf{M})$
-         2. $v = \mathsf{H}_{\mathsf{M}}.BlockHash$
-         3. $\mathsf{SV}_v = $[*AggregateVote*][av]$( \mathsf{SV}_v, \mathsf{C}, \sigma_{\mathsf{M}}, pk_{\mathsf{M}} )$
-         4. $\texttt{if } (v \ne NIL \texttt{ and }$[*countSetBits*][cb]$(\boldsymbol{bs}_v) \ge Quorum):$
-            1. $\texttt{output } (\text{"ValidQuorum"},, \mathsf{SV}_v)$
-         5. $\texttt{if } (v=NIL \texttt{ and } $[*countSetBits*][cb]$(\boldsymbol{bs}_v) \ge NilQuorum):$
-            1. $\texttt{output } (\text{"NilQuorum"}, \mathsf{SV}_v)$
+         2. $v = \mathsf{M}.Vote$
+         3. $\mathsf{SV}_v = $[*AggregateVote*][av]$( \mathsf{SV}_v, \mathsf{C}, \mathsf{M}.Signature, pk_{\mathsf{M}} )$
+         4. $\texttt{set}:$
+            - $\texttt{if } (v = Valid): Target = Quorum$
+            - $\texttt{else}: Target = Majority$
+         5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_v) \ge Target):$
+            1. $\texttt{output } (v, \mathsf{SV}_v)$
 
- 5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Ratification}):$
-    1. [*IncreaseTimeout*][it]$(\tau_{Ratification})$
-    2. $\texttt{output } (\text{"Timeout"}, \mathsf{SV}_{NIL})$
+ 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
+    1. [*IncreaseTimeout*][it]$(\tau_{Validation})$
+    2. $\texttt{output } (NoQuorum, NIL)$
 
+
+<!----------------------- FOOTNOTES ----------------------->
+[^1]: We currently assume no double-votes are casted. In a future version of the protocol, double votes will be punished with slashing.
+
+<!-- [^2]: We use the term *negative-quorum* to indicate the threshold of $\frac{1}{3}+1$ of non-valid votes, which mathematically determines the impossibility of a *quorum* ($\frac{2}{3}$) to be reached. Negative quorums are useful for *attesting* failed iterations (see [rolling finality][rf]). -->
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md -->
-[val]: #validation-step
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md -->
+[rat]: #ratification-step
 
 
 <!-- Consensus -->
@@ -118,8 +147,12 @@ $Ratification( R, I, \mathsf{B}^c ) :$
 [sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
+[sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
+[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
+<!-- Validation -->
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
@@ -128,7 +161,8 @@ $Ratification( R, I, \mathsf{B}^c ) :$
 [cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countsetbits
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
+[rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
-[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification-message
+[vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
