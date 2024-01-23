@@ -73,7 +73,7 @@ $Proposal(R, I)$:
          $\texttt{if } (\mathsf{M} \ne NIL):$
          - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}_\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
          - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
-         1. $`\texttt{if }(\text{ } VerifySignature(\mathsf{M}) = true \text{ })`$
+         1. $`\texttt{if }(\text{ } *VerifySignature*(\sigma_\mathsf{M}, pk_\mathsf{M}) = true \text{ })`$
          2. $`\texttt{and }(\text{ } pk_\mathsf{M} = pk_{\mathcal{G}} \text{ })`$
          3. $`\texttt{and } (\text{ }\eta_\mathsf{M} = \eta_{\mathsf{B}_\mathsf{M}} \text{ }):`$
             1. [*Propagate*][mx]$(\mathsf{M})$
