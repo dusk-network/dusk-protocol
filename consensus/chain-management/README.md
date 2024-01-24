@@ -262,7 +262,7 @@ We here define block-management procedures:
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
-- [Consensus Parameters][cparams]
+- [SA Environment][cparams]
 - $R$: round number
 
 ***Algorithm***

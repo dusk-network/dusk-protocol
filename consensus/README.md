@@ -1,5 +1,4 @@
 <!-- TODO: mention ProcessBlock -->
-<!-- TODO rename Consensus Parameters to Environment -->
 <!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
 <!-- TODO: Define sth like Candidate "signature": block_hash, round, iteration -->
 # Succinct Attestation
@@ -12,7 +11,7 @@ Before continue reading, please make sure you are familiar with the system [Basi
 
 ### ToC
 - [Overview](#overview)
-- [Consensus Parameters](#consensus-parameters)
+- [SA Environment](#environment)
 - [SA Algorithm](#sa-algorithm)
   - [SAConsensus](#saconsensus)
   - [SALoop](#saloop)
@@ -245,8 +244,8 @@ red2: (Block.Iteration) \times 3 + 2
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
-[sa]:   #protocol-overview
-[cp]:   #consensus-parameters
+[sa]:   #overview
+[env]:  #environment
 [sac]:  #saconsensus
 [sar]:  #saround
 [sai]:  #saiteration
@@ -267,8 +266,8 @@ red2: (Block.Iteration) \times 3 + 2
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#setbit
 <!-- Proposal -->
-[prop]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/
-[ps]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/
+[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
 <!-- Reduction -->
 [red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
 [reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm

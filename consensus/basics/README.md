@@ -24,12 +24,12 @@ where $pk_\mathcal{P}$ is the BLS public key of the provisioner and $S_\mathcal{
 
 In turn, a *Stake* is defined as:
 $$S_\mathcal{P}=(Amount, Height),$$
-where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cp] $MinStake$, and is currently equivalent to 1000 Dusk.
+where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][env] $MinStake$, and is currently equivalent to 1000 Dusk.
 
 The stake amount of each provisioner directly influences the probability of being extracted by the [Deterministic Sortition][dsa] algorithm: the higher the stake, the more the provisioner will be extracted on average.
 
 ### Epochs and Eligibility
-Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][cp] $Epoch$ (currently equal to 2160).
+Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][env] $Epoch$ (currently equal to 2160).
 <!-- TODO: why 2160 ? -->
 
 The *Provisioners Set* during an epoch is fixed: all `stake` and `unstake` operations take effect at the beginning of an epoch. We refer to this property as *epoch stability*.
@@ -44,7 +44,7 @@ where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* 
 
 $$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
-where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
+where $Epoch$ is a [global parameter][env]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
 
 $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
@@ -78,7 +78,7 @@ For the sake of readability, in the rest of this documentation, we will use the 
   - $P \in C \text{ }if\text{ } \exists \text{ } m^C :   pk_{m^C}=pk_P$
 
 ### Reduction Committees
-Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][cp] $CommitteeCredits$, currently set to $64$.
+Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][env] $CommitteeCredits$, currently set to $64$.
 
 During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
@@ -106,7 +106,7 @@ Given a committee $\mathsf{C}$, a bitset indicates whether a member of $\mathsf{
 
 In particular, if the $i$th bit is set (i.e., $i=1$), then the $i$th member of $\mathsf{C}$ is part of the subcommittee.
 
-Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
+Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][env]).
 
 ### Procedures
 
@@ -238,6 +238,8 @@ A candidate block that reaches an agreement is called a *winning* block.
 [cert]: #certificates
 [sv]:   #stepvotes
 [av]:   #aggregatevote
+
+[pro]: #provisioners-and-stakes
 
 [cc]: #countcredits
 [sc]: #subcommittee

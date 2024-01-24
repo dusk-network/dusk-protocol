@@ -1,7 +1,7 @@
 <!-- TODO: Define BlockGenerator() and Committee() procedures -->
 
 # Deterministic Sortition
-*Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation](consensus/README.md) protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
+*Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation][sa] protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
 ### ToC
 - [Overview](#overview)
@@ -14,7 +14,7 @@
 
 
 ## Overview
-The *Deterministic Sortition* ($DS$) algorithm generates a [voting committee][com] by assigning credits to [eligible](consensus/README.md#provisioners-and-stakes) provisioners.
+The *Deterministic Sortition* ($DS$) algorithm generates a [voting committee][com] by assigning credits to [eligible][pro] provisioners.
 
 The algorithm takes as inputs the round number $R$ and step number $S$, and outputs the corresponding committee.
 It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{R-1}$, and the number of credits to assign $credits$.
@@ -160,9 +160,11 @@ $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
 <!-- Blockchain -->
 [bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader
 <!-- Consensus -->
-[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/README.md#consensus-parameters
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md
+[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
+[pro]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md##provisioners-and-stakes
 [com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees

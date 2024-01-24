@@ -25,7 +25,7 @@ It is called by [*SAIteration*][sai], which will pass the result to [*Validation
 In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsa]. If the node's extracted, it generates the candidate $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network. If the block is received, it outputs it, otherwise, it outputs $NIL$.
 
 ***Parameters*** 
-- [Consensus Parameters][cp]
+- [SA Environment][env]
 - $R$: round number
 - $I$: iteration number
 
@@ -89,7 +89,7 @@ $Proposal(R, I)$:
 It is called by [*ProposalStep*][ps], which will broadcast the returned block in a $\mathsf{Candidate}$ message.
 
 ***Parameters***
-- [Consensus Parameters][cp]
+- [SA Environment][env]
 - $R$: round number
 - $I$: iteration number
 
@@ -150,7 +150,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [st]: #selecttransactions
 
 <!-- Consensus -->
-[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
+[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 <!-- Sortition -->

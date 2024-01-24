@@ -137,7 +137,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!-- Consensus -->
-[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#consensus-parameters
+[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
 [sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
