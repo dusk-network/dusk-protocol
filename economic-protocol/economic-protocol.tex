@@ -293,8 +293,8 @@
     asset price movements.
 
     In order to be useful, autocontracts should be able to do everything
-    \quote{normal} contracts do, including having a state and calling other
-    contracts in the \quote{normal contract} space.
+    ``normal'' contracts do, including having a state and calling other
+    contracts in the ``normal contract'' space.
 
     \subsubsection{Pending questions}\label{subsubsec:pending-questions}
     \textbf{Which subscriber contract executes first? Is it a simple "contract
@@ -302,7 +302,7 @@
 
     This is an interesting question and way more profound than you probably
     perceive right now.
-    For the simple reason that in all \quote{normal} transactions, the block
+    For the simple reason that in all ``normal'' transactions, the block
     generator is not bound to order by fees (although we expect him to).
     However, the block generator has (should have) no power to stop an
     autocontract and therefore any heuristics we follow is protocollar by
@@ -319,7 +319,7 @@
     might prevent some other transactions to be executed (this might also be an
     attack BTW). If we do stuff at the end of a batch, though, this would
     complicate things quite substantially since a limit order might be
-    \quote{gamed} by some other executed transaction.
+    ``gamed'' by some other executed transaction.
     In other words, after-batch autocontract execution would be very vulnerable
     to sandwich bots.
 
