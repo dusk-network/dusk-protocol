@@ -51,7 +51,104 @@ $$`Epoch \lt M \le 2{\times}Epoch.`$$
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
+
 ## Voting Committees
+A *Voting Committee* is an array of provisioners entitled to cast votes on the validity of a candidate block in a specific Reduction step. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
+
+Formally, a voting committee is defined as:
+
+$`$ C_{r}^{s} = [m_0^C,\dots,m_n^C],$`$
+
+where $r$ and $s$ are the consensus round and step, respectively, $n$ is the number of members in the committee, and each member $m_i^C$ is defined as:
+
+$$ m_i^C = (pk_i, influence), $$ 
+
+where $pk_i$ is the public key of the $i\text{th}$ provisioner to be added to the committee by the $DS$ algorithm, and $influence$ is the number of credits it is assigned.
+
+Note that members are ordered by insertion (a provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have index $0$, and the last one will have index $n$.
+
+For the sake of readability, in the rest of this documentation, we will use the following notation:
+- $C[i]$ denotes the $i\text{th}$ member of committee $C$. Formally:
+  - $C[i] = m_i^C$
+- $i_m^C$ denotes the index $i$ of member $m$ in committee $C$. Formally:
+  - $i_m^C = i : m_i^C = m$
+- $m_{pk}^C$ denotes the member of $C$ with publick key $pk$.
+  - $m_{pk}^C = m : m \in C \wedge pk_m = pk$
+- We say a provisioner $P$ is in a committee $C$ if such committee contains a member with $P$'s public key. Formally:
+  - $P \in C \text{ }if\text{ } \exists \text{ } m^C :   pk_{m^C}=pk_P$
+
+### Reduction Committees
+Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][cp] $CommitteeCredits$, currently set to $64$.
+
+During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
+
+Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the Reduction voting process.
+
+### Block Generator Extraction
+To extract a block generator, a one-member committee is created, using the $Deterministic Sortition$ procedure with $credits = 1$, that is, by assigning a single credit. The provisioner being assigned such credit becomes the block generator for the iteration.
+
+Formally, the block generator for round $r$ and step $s$ is defined as:
+
+$$ G_r^i = DS(r,s,1).$$
+
+<p><br></p>
+
+## Subcommittees
+When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
+
+To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
+
+For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
+
+### Bitsets
+We make use of *bitsets* (array of bits) to indicate which members are part of a given subcommittee. 
+Given a committee $\mathsf{C}$, a bitset indicates whether a member of $\mathsf{C}$ belongs to a subcommittee or not. 
+
+In particular, if the $i$th bit is set (i.e., $i=1$), then the $i$th member of $\mathsf{C}$ is part of the subcommittee.
+
+Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cp]).
+
+### Procedures
+
+#### *BitSet*
+*BitSet* takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
+
+$BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
+
+#### *SetBit*
+*SetBit* sets a committee member's bit in a subcommittee bitset.
+
+<!-- TODO: SetBit
+  $\boldsymbol{bs}^{v}[i_m^C] = 1$
+ -->
+
+ $\textit{SetBit}(\boldsymbol{bs}, \mathsf{C}, pk)$
+
+#### *CountSetBits*
+*CountSetBits* returns the amount of set bits in a bitset.
+
+$\textit{CountSetBits}(\boldsymbol{bs}) \rightarrow setbits$
+
+#### *SubCommittee*
+$SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
+
+$SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
+
+#### *CountCredits*
+*CountCredits* takes a committee $\mathsf{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathsf{C}$.
+
+**Parameters**
+- $\mathsf{C}$: a voting committee
+- $\boldsymbol{bs}$: a subcommittee bitset 
+
+***Procedure***
+
+$\textit{CountCredits}(\mathsf{C}, \boldsymbol{bs}) \rightarrow credits$:
+1. $\texttt{for } i=0 \dots CommitteeCredits{-}1 :$
+   1. $\texttt{if } (\boldsymbol{bs}[i]=1):$
+   2. $credits = credits + \mathsf{C}[i].influence$
+2. $\texttt{output } credits$
+
 
 ### Votes
 <!-- TODO: move to Sortition/Voting Committees ? -->
@@ -141,6 +238,12 @@ A candidate block that reaches an agreement is called a *winning* block.
 [cert]: #certificates
 [sv]:   #stepvotes
 [av]:   #aggregatevote
+
+[cc]: #countcredits
+[sc]: #subcommittee
+[cb]: #countsetbits
+[bs]:  #bitset
+
 
 <!-- TODO: link to Stake Contract -->
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
