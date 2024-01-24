@@ -1,4 +1,18 @@
 # Basics of SA Consensus
+In this section, we describe the building blocks of the SA consensus protocol, such as *provisioners*, *voting committees*, *certificates*, and *blocks*.
+
+### ToC
+- [Provisioners and Stakes](#provisioners-and-stakes)
+  - [Epochs and Eligibility](#epochs-and-eligibility)
+  - [Candidate Block](#candidate-block)
+  - [Votes](#votes)
+- [Certificates](#certificates)
+  - [Structures](#structures)
+    - [Certificate](#certificate)
+    - [StepVotes](#stepvotes)
+  - [Procedures](#procedures)
+    - [*AggregateVote*](#aggregatevote)
+
 
 ## Provisioners and Stakes
 A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
@@ -30,21 +44,14 @@ where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* 
 
 $$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
-where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^2]. Therefore the value of $M$ will vary depending on $Round_S$:
+where $Epoch$ is a [global parameter][cp]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
 
 $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
-### Candidate Block
-A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
-
-Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
-Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
-
-A candidate block that reaches an agreement is called a *winning* block.
-
+## Voting Committees
 
 ### Votes
 <!-- TODO: move to Sortition/Voting Committees ? -->
@@ -107,3 +114,33 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathsf{C}, \sigma, pk ) :$
 1. $\mathsf{SV}.Votes =$ *BLS_Aggregate*$(\mathsf{SV}.Votes, \sigma)$
 2. $\mathsf{SV}.Voters = $ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathsf{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
+
+<!-- TODO: Blockchain: Block/Transaction structures here ? -->
+
+### Candidate Block
+A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+
+Therefore, for each iteration, only one (valid) candidate block can be produced[^2]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{r,i}$, where $r$ is the consensus round, and $i$ is the consensus iteration. 
+Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
+
+A candidate block that reaches an agreement is called a *winning* block.
+
+<!-- TODO ## Timeouts -->
+
+<!----------------------- FOOTNOTES ----------------------->
+
+[^1]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
+
+[^2]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Validation step, since provisioners will reach agreement on a specific block hash.
+
+
+
+<!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md -->
+
+[cert]: #certificates
+[sv]:   #stepvotes
+[av]:   #aggregatevote
+
+<!-- TODO: link to Stake Contract -->
+[c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake

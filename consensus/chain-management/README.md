@@ -252,12 +252,50 @@ $VerifyVotes(\mathsf{V}, b, r, s)$:
 
 ## Block Management
 We here define block-management procedures: 
-  - $MakeWinning$: sets a candidate block as the winning block of the round
-  - $AcceptBlock$: accept a block as the new tip
-  - $ProcessBlock$: process a block from the network
+  - *ProcessQuorum*: process a $\mathsf{Quorum}$ message from the network
+  - *MakeWinning*: sets a candidate block as the winning block of the round
+  - *AcceptBlock*: accept a block as the new tip
+  - *ProcessBlock*: process a block from the network
 
-### MakeWinning
-*MakeWinning* adds a certificate to a candidate block and set the winning block variable $\mathsf{B}^w$.
+### *ProcessQuorum*
+*ProcessQuorum* manages $\mathsf{Quorum}$ messages for the current round. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
+The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
+
+***Parameters***
+- [Consensus Parameters][cparams]
+- $R$: round number
+
+***Algorithm***
+1. Loop:
+   1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
+      1. Verify $\mathsf{M}^Q.Certificate$ ($\mathsf{C}$) is valid ([*VerifyQuorum*][va])
+      2. If valid:
+         1. Propagate $\mathsf{M}^Q$
+         2. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
+         3. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
+         4. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Certificate$
+
+***Procedure***
+
+$ProcessQuorum( R ) :$
+1. $\texttt{loop}$:   
+   1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R)):$
+       -  $\texttt{set}:$
+          - $`\mathsf{H_M}, \sigma_{\mathsf{M}}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
+          - $`\_, r_{\mathsf{M}}, s_{\mathsf{M}}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{H_M}`$
+
+       1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}})$
+       2. $\texttt{if } (isValid = true) :$
+          1. [*Propagate*][mx]$(\mathsf{M}^Q)$
+          <!-- TODO: define candidate pool/db and functions -->
+          2. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
+          3. $\texttt{if } (\mathsf{B}^c = NIL) :$
+            - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
+          4. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+
+
+### *MakeWinning*
+*MakeWinning* adds a certificate to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
 ***Parameters***
 - $\mathsf{B}$: candidate block
@@ -610,21 +648,24 @@ $\textit{AcceptPoolBlocks}():$
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
-[env]:  #environment
-[ab]:   #acceptblock
-[apb]:  #acceptpoolblocks
-[cs]:   #consensus-state
-[fin]:  #finality
-[rf]:   #rolling-finality
-[fal]:  #fallback
-[hst]:  #handlesynctimeout
-[pb]:   #processblock
-[syn]:  #synchronization
-[sb]:   #syncblock
-[ss]:   #startsync
-[vb]:   #verifyblock
-[vc]:   #verifycertificate
-[vv]:   #verifyvotes
+[env]: #environment
+[ab]:  #acceptblock
+[apb]: #acceptpoolblocks
+[cs]:  #consensus-state
+[fin]: #finality
+[rf]:  #rolling-finality
+[fal]: #fallback
+[hst]: #handlesynctimeout
+[pb]:  #processblock
+[syn]: #synchronization
+[sb]:  #syncblock
+[ss]:  #startsync
+[vb]:  #verifyblock
+[vc]:  #verifycertificate
+[vv]:  #verifyvotes
+[qh]:  #ProcessQuorum
+[mw]:  #makewinning
+[va]:  #VerifyQuorum
 
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
@@ -642,6 +683,7 @@ $\textit{AcceptPoolBlocks}():$
 [mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
+[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate-message
 <!-- Sortition -->
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
