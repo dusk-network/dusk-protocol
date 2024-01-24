@@ -4,20 +4,22 @@
 *Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation](consensus/README.md) protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
 ### ToC
-- [Algorithm Overview](#algorithm-overview)
+- [Overview](#overview)
   - [Score](#score)
   - [Seed](#seed)
-- [Algorithm](#algorithm)
-  - [*Deterministic Sortition* (DS)](#deterministic-sortition-ds)
-  - [*Deterministic Extraction* (DE)](#deterministic-extraction-de)
+- [Procedures](#procedures)
+  - [Deterministic Sortition (*DS*)](#deterministic-sortition-ds)
+  - [Deterministic Extraction (*DE*)](#deterministic-extraction-de)
+- [References](#references)
+
 
 ## Overview
 The *Deterministic Sortition* ($DS$) algorithm generates a [voting committee][com] by assigning credits to [eligible](consensus/README.md#provisioners-and-stakes) provisioners.
 
-The algorithm takes as inputs the round number $r$ and step number $s$, and outputs the corresponding committee.
-It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{r-1}$, and the number of credits to assign $credits$.
+The algorithm takes as inputs the round number $R$ and step number $S$, and outputs the corresponding committee.
+It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{R-1}$, and the number of credits to assign $credits$.
 
-The algorithm assigns one credit at a time to a randomly-selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*Score*](#score), described below.
+The algorithm assigns one credit at a time to a randomly selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*Score*](#score), described below.
 
 Each provisioner can be assigned one or more credits, depending on their *stakes*. Specifically, the extraction algorithm follows a weighted distribution that favors provisioners with higher stakes. In other words, the higher the stake, the higher the probability of being assigned a credit.
 
@@ -32,9 +34,9 @@ The extraction procedure assigns credits based on a pseudo-random number called 
 
 Formally:
 
-$$ Score_{r}^{s} = Int( Hash_{SHA3}( Seed_{r-1}||r||s||c ) ) \mod W,$$
+$$ Score_{R}^{S} = Int( Hash_{SHA3}( Seed_{R-1}||R||S||c ) ) \mod W,$$
 
-where $r$ and $s$ are the consensus round and step, $Seed_{r-1}$ is the $Seed$ of block $\mathsf{B}_{r-1}$, $c$ is the number of the credit being assigned (e.g., $c=3$ represents the third credit to assign), and $W$ is the total *stake weight* of provisioners when assigning credit $c$ during $DS$. $Int()$ denotes the integer interpretation of the hash value.
+where $R$ and $S$ are the consensus round and step, $Seed_{R-1}$ is the $Seed$ of block $\mathsf{B}_{R-1}$, $c$ is the number of the credit being assigned (e.g., $c=3$ represents the third credit to assign), and $W$ is the total *stake weight* of provisioners when assigning credit $c$ during $DS$. $Int()$ denotes the integer interpretation of the hash value.
 
 The use of a hash value based on the above parameters allows to generate a unique score value for each single credit being assigned, ensuring the randomness of the extraction process.
 The use of the modulo operation guarantees a provisioner is extracted within a single iteration over the provisioner set (see the $DE$ algorithm).
@@ -56,17 +58,17 @@ Note that $Seed_0$ is a randomly-generated value contained in the genesis block 
 
 <p><br></p>
 
-## Algorithm
+## Procedures
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, $DS$ uses the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
 
-### Deterministic Sortition (DS)
+### Deterministic Sortition (*DS*)
 
 ***Parameters***
 
- - $r$: consensus round
- - $s$: consensus step
- - $credits$: number of credits to assign
- - $\boldsymbol{P}_r = [P_0,\dots,P_n]$: provisioner set for round $r$
+ - $R$: consensus round
+ - $S$: consensus step
+ - $Credits$: number of credits to assign
+ - $\boldsymbol{P}_R = [P_0,\dots,P_n]$: provisioner set for round $R$
 
 ***Algorithm***
 
@@ -87,15 +89,15 @@ We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, 
 
 ***Procedure***
 
-$DS(r, s, credits)$:
+$DS(R, S, Credits, \boldsymbol{P}_R)$:
 1. $C = \emptyset$
-2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_r :$
+2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_R :$
    - $w_\mathcal{P} = S_\mathcal{P}.Amount$
-3. $`W = \sum_{i=0}^{|\boldsymbol{P}_r|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_r`$
+3. $`W = \sum_{i=0}^{|\boldsymbol{P}_R|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_R`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
-   1. $Score_c^{r,s} = Int(Hash_{SHA3}( Seed_{r-1}||r||s||c)) \mod W$
-   2. $\boldsymbol{P}_r' = SortByPK(\boldsymbol{P}_r)$
-   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \boldsymbol{P}_r')$
+   1. $Score_c^{R,S} = Int(Hash_{SHA3}( Seed_{R-1}||R||S||c)) \mod W$
+   2. $\boldsymbol{P}_R' = SortByPK(\boldsymbol{P}_R)$
+   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{R,S}, \boldsymbol{P}_R')$
    4. $\texttt{if } \mathcal{P}_c \notin C$ : 
        - $m_{\mathcal{P}_c}^C = (\mathcal{P}_c,0)$ 
        - $C = C \cup m_{\mathcal{P}_c}^C$
@@ -109,7 +111,7 @@ $DS(r, s, credits)$:
 
 <p><br></p>
 
-### Deterministic Extraction (DE)
+### Deterministic Extraction (*DE*)
 
 ***Parameters***
  - $Score$: score for current credit assignation
@@ -124,7 +126,7 @@ $DS(r, s, credits)$:
 
 ***Procedure***
 
-$`DE(Score_i^{r,s}, \boldsymbol{P})`$:
+$`DE(Score_i^{R,S}, \boldsymbol{P})`$:
   1. $\texttt{for }  \mathcal{P} = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
      1. $\texttt{if } w_\mathcal{P} \ge Score$
         1. $\texttt{output } \mathcal{P}$
