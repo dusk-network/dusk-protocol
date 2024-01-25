@@ -69,7 +69,7 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 <!------------------------- LINKS ------------------------->
 [b]:  #block
 [bh]: #blockheader
-[c]:  #chain
+[lc]:  #chain
 [tx]: #transaction
 
 <!-- Consensus -->

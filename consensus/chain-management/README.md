@@ -15,25 +15,27 @@ In particular, this section describes how new blocks are accepted to the local b
     - [*VerifyCertificate*](#verifycertificate)
     - [*VerifyVotes*](#verifyvotes)
   - [Block Management](#block-management)
-    - [*ProcessQuorum*](#processquorum)
+    - [*HandleQuorum*](#HandleQuorum)
     - [*MakeWinning*](#makewinning)
     - [AcceptBlock](#acceptblock)
     - [GetBlockState](#getblockstate)
     - [CheckRollingFinality](#checkrollingfinality)
       - [HasRollingFinality](#hasrollingfinality)
       - [MakeChainFinal](#makechainfinal)
-    - [ProcessBlock](#processblock)
+    - [HandleBlock](#HandleBlock)
   - [Fallback](#fallback)
     - [Fallback Procedure](#fallback-procedure)
   - [Synchronization](#synchronization)
-    - [SyncBlock](#syncblock)
-    - [StartSync](#startsync)
-    - [HandleSyncTimeout](#handlesynctimeout)
-    - [AcceptPoolBlocks](#acceptpoolblocks)
+    - [Procedures](#procedures)
+      - [*SyncBlock*](#syncblock)
+      - [*StartSync*](#startsync)
+      - [*HandleSyncTimeout*](#handlesynctimeout)
+      - [*AcceptPoolBlocks*](#acceptpoolblocks)
+
 
 
 ## Overview
-At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
 In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][certs]). 
 
 There are two main reasons a network block is not in the chain:
@@ -42,7 +44,7 @@ There are two main reasons a network block is not in the chain:
 
  - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
 
-Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
 <!-- TODO: mv to Basics ? -->
@@ -55,7 +57,7 @@ As a consequence of the above, blocks from iterations greater than 0 could poten
 
 ### Consensus State
 To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
-In particular, Blocks in the [local chain][c] can be in three states:
+In particular, Blocks in the [local chain][lc] can be in three states:
 
   - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
 
@@ -261,12 +263,12 @@ $VerifyVotes(\mathsf{SV}, \eta, Q)$:
 
 ## Block Management
 We here define block-management procedures: 
-  - *ProcessQuorum*: process a $\mathsf{Quorum}$ message from the network
+  - *HandleQuorum*: process a $\mathsf{Quorum}$ message from the network
   - *MakeWinning*: sets a candidate block as the winning block of the round
   - *AcceptBlock*: accept a block as the new tip
-  - *ProcessBlock*: process a block from the network
+  - *HandleBlock*: process a block from the network
 
-### *ProcessQuorum*
+### *HandleQuorum*
 <!-- TODO: check if this is explained somewhere
 # Quorum Handler
 When the [Validation][val] and [Ratification][rat] steps reach a quorum, a [Quorum][qmsg] message is produced, which contains a [Certificate][cert] with the aggregated votes of the two quorum committees.
@@ -281,7 +283,8 @@ If the $\mathsf{Quorum}$ message was received from the network, the aggregated v
 
 The winning block will then be accepted as the new tip of the local chain.
  -->
-*ProcessQuorum* manages $\mathsf{Quorum}$ messages for the current round. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
+
+*HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
@@ -300,9 +303,9 @@ The corresponding candidate block is then marked as the winning block of the rou
 
 ***Procedure***
 
-$ProcessQuorum( R ) :$
+$\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R)):$
+   1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
           - $`\mathsf{H_M}, \sigma_{\mathsf{M}}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
           - $`\_, r_{\mathsf{M}}, s_{\mathsf{M}}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{H_M}`$
@@ -408,7 +411,7 @@ $\textit{CheckRollingFinality}():$
 
 ***Procedure***
 $\textit{HasRollingFinality}():$
-- $\texttt{set } tip = \mathsf{H}_Tip.Height$
+- $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
 1. $\texttt{for } i = tip \dots tip{-}RollingFinalityBlocks :$
    1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
       1. $\texttt{output } false$
@@ -417,52 +420,56 @@ $\textit{HasRollingFinality}():$
 #### MakeChainFinal
 *MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
 
-### ProcessBlock
-The *ProcessBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
+### HandleBlock
+The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
 The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
 
 ***Parameters*** 
 - $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
 
 ***Algorithm***
-- Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
-1. Check block hash $\mathsf{H}_\mathsf{B}$
-2. Check if block is blacklisted
-3. If block height is same as $Tip$
-   1. Check block's validity as successor of the $Tip$'s predecessor
-   2. If the block is valid
-   3. And block's iteration is lower than $Tip$
-   4. And block is not $Tip$
-      1. Start *fallback* procedure ([*Fallback*][fal])
-4. If block height is lower than $Tip$
-   1. Discard block 
-5. If block height is higher than $Tip$
-   1. Start *synchronization* ([*SyncBlock*][sb])
+1. Loop:
+   1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
+      - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
+      1. Check block hash $\mathsf{H}_\mathsf{B}$
+      2. Check if block is blacklisted
+      3. If block height is same as $Tip$
+         1. Check block's validity as successor of the $Tip$'s predecessor
+         2. If the block is valid
+         3. And block's iteration is lower than $Tip$
+         4. And block is not $Tip$
+            1. Start *fallback* procedure ([*Fallback*][fal])
+      4. If block height is lower than $Tip$
+         1. Discard block 
+      5. If block height is higher than $Tip$
+         1. Start *synchronization* ([*SyncBlock*][sb])
 
 ***Procedure***
 
-$\textit{ProcessBlock}(\mathsf{M}^{Block}):$
-- $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
-1. $isValidHash = (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$ \
-   $\texttt{if } (isValidHash = false) : \texttt{stop}$
-2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
-   <!-- B.Height = Tip.Height -->
-3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
-   1. $isValid = $[*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{Tip.Height-1})$
-   2. $\texttt{if } (isValid = true)$
-   3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
-   4. $\texttt{and } (\mathsf{B} \ne Tip) :$
-      1. [*Fallback*][fal]$()$
-   <!-- B.Height < Tip.Height -->
-4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
-   1. $\texttt{stop}$
-   <!-- B.Height > Tip.Height -->
-5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
-   1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
+$\textit{HandleBlock}():$
+1. $\texttt{loop}$:   
+   1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
+       - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
+       1. $isValidHash = (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$ \
+          $\texttt{if } (isValidHash = false) : \texttt{stop}$
+       2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
+          <!-- B.Height = Tip.Height -->
+       3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
+          1. $isValid = $[*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{Tip.Height-1})$
+          2. $\texttt{if } (isValid = true)$
+          3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
+          4. $\texttt{and } (\mathsf{B} \ne Tip) :$
+             1. [*Fallback*][fal]$()$
+          <!-- B.Height < Tip.Height -->
+       4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
+          1. $\texttt{stop}$
+          <!-- B.Height > Tip.Height -->
+       5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
+          1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
 
 ## Fallback
-The *Fallback* procedure reverts the local state to the last [finalized][fin] block. The procedure is triggered by [*ProcessBlock*][pb] when receiving a block at the same height as the $Tip$ but with lower $Iteration$. 
+The *Fallback* procedure reverts the local state to the last [finalized][fin] block. The procedure is triggered by [*HandleBlock*][hb] when receiving a block at the same height as the $Tip$ but with lower $Iteration$. 
 
 In fact, this event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
@@ -516,8 +523,9 @@ During the protocol, if the sync peer sends a valid $Tip$'s successor, the node 
 
 Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the protocol is ended (see [*HandleSyncTimeout*][hst]) and consensus restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided by the syncpeer.
 
+### Procedures
 
-### SyncBlock
+#### *SyncBlock*
 The *SyncBlock* procedure handles potential successors of the local $Tip$. The procedure accepts valid $Tip$'s successors and is responsible for initiating ([*StartSync*][ss]) and handling synchronization protocols run with nodes peers. Only one synchronization protocol can be run at a time, and only with a single peer (the *sync peer*).
 
 When receiving blocks with higher height than the $Tip$'s successor, they are stored in the $BlockPool$. If receiving a valid $Tip$'s successor, this is accepted along with all valid successors in the $BlockPool$.
@@ -600,7 +608,7 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
 
 <!-- TODO: in outSync, the condition (Tip.Height = syncFrom) could be removed: we stop SALoop only if active, and we stop syncing if S provides any invalid block at height tip+1 -->
 
-### StartSync
+#### *StartSync*
 The *StartSync* procedure initiates the synchronization protocol with a sync peer ($\mathcal{S}$) on the base of a block $\mathsf{B}$ received from such peer.
 
 ***Parameters***
@@ -627,7 +635,7 @@ $\textit{StartSync}(\mathsf{B}, \mathcal{S}):$
 6. [*HandleSyncTimeout*][hst]$()$
 7. $inSync = false$
 
-### HandleSyncTimeout
+#### *HandleSyncTimeout*
 The *HandleSyncTimeout* procedure is executed when the node is running a synchronization protocol with a peer and the corresponding sync timeout expires. When this occurs, the sync protocol is ended and the SA loop restarted, if needed.
 
 ***Procedure***
@@ -641,7 +649,7 @@ $\textit{HandleSyncTimeout}():$
 2. $\texttt{else}: \texttt{stop}$
 
 
-### AcceptPoolBlocks
+#### *AcceptPoolBlocks*
 The *AcceptPoolBlocks* procedure accepts all successive blocks in $BlockPool$ from height $Tip.Height+1$ until no successor is available. It is called after receiving a valid block at height $Tip.Height+1$ (which updates the $Tip$) to accept previously-collected blocks.
 
 ***Algorithm***
@@ -679,7 +687,7 @@ $\textit{AcceptPoolBlocks}():$
 [rf]:  #rolling-finality
 [fal]: #fallback
 [hst]: #handlesynctimeout
-[pb]:  #processblock
+[hb]:  #HandleBlock
 [syn]: #synchronization
 [sb]:  #syncblock
 [ss]:  #startsync
@@ -687,13 +695,13 @@ $\textit{AcceptPoolBlocks}():$
 [vbh]: #verifyblockheader
 [vc]:  #verifycertificate
 [vv]:  #verifyvotes
-[qh]:  #ProcessQuorum
+[hq]:  #HandleQuorum
 [mw]:  #makewinning
 [va]:  #VerifyQuorum
 
 <!-- Blockchain -->
-[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
-[c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
+[b]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
+[lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Consensus -->
 [saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment

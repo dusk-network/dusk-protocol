@@ -110,21 +110,21 @@ $GenerateBlock(R,I)$
 3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`Seed_R = Sign_{BLS}(sk_\mathcal{N}, Seed_{R-1})`$
 5. $`\mathsf{H}_{\mathsf{B}^c_{R,I}} = (V,R,\tau_{now},BlockGas,I,\eta_{\mathsf{B}_{R-1}},Seed_R,pk_\mathcal{N},$
-   $TxRoot_R,State_R,\mathsf{B}_{r-1}.Certificate, \boldsymbol{PrevIterations})`$
-    | Field                  | Value                          | 
-    |------------------------|--------------------------------|
-    | $Version$              | $V$                            |
-    | $Height$               | $R$                            |
-    | $Timestamp$            | $\tau_{now}$                   |
-    | $GasLimit$             | $BlockGas$                     |
-    | $Iteration$            | $I$                            |
-    | $PreviousBlock$        | $\eta_{\mathsf{B}_{R-1}}$      |
-    | $Seed$                 | $Seed_R$                       |
-    | $Generator$            | $pk_\mathcal{N}$               |
-    | $TxRoot$               | $TxRoot_R$                     |
-    | $State$                | $State_R$                      |
-    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$ | 
-    | $FailedIterations$     | $\boldsymbol{PrevIterations}$  |
+   $TxRoot_R,State_R,\mathsf{B}_{R-1}.Certificate, \boldsymbol{FailedCertificates})`$
+    | Field                  | Value                              | 
+    |------------------------|------------------------------------|
+    | $Version$              | $V$                                |
+    | $Height$               | $R$                                |
+    | $Timestamp$            | $\tau_{now}$                       |
+    | $GasLimit$             | $BlockGas$                         |
+    | $Iteration$            | $I$                                |
+    | $PreviousBlock$        | $\eta_{\mathsf{B}_{R-1}}$          |
+    | $Seed$                 | $Seed_R$                           |
+    | $Generator$            | $pk_\mathcal{N}$                   |
+    | $TxRoot$               | $TxRoot_R$                         |
+    | $State$                | $State_R$                          |
+    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$     | 
+    | $FailedIterations$     | $\boldsymbol{FailedCertificates}$  |
     
 6. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 

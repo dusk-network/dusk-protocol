@@ -2,16 +2,27 @@
 In this section, we describe the building blocks of the SA consensus protocol, such as *provisioners*, *voting committees*, *certificates*, and *blocks*.
 
 ### ToC
-- [Provisioners and Stakes](#provisioners-and-stakes)
-  - [Epochs and Eligibility](#epochs-and-eligibility)
-  - [Candidate Block](#candidate-block)
-  - [Votes](#votes)
-- [Certificates](#certificates)
-  - [Structures](#structures)
-    - [Certificate](#certificate)
-    - [StepVotes](#stepvotes)
-  - [Procedures](#procedures)
-    - [*AggregateVote*](#aggregatevote)
+  - [Provisioners and Stakes](#provisioners-and-stakes)
+    - [Epochs and Eligibility](#epochs-and-eligibility)
+  - [Voting Committees](#voting-committees)
+    - [Step Committees](#step-committees)
+    - [Block Generator Extraction](#block-generator-extraction)
+  - [Subcommittees](#subcommittees)
+    - [Bitsets](#bitsets)
+    - [Procedures](#procedures)
+      - [*BitSet*](#bitset)
+      - [*SetBit*](#setbit)
+      - [*CountSetBits*](#countsetbits)
+      - [*SubCommittee*](#subcommittee)
+      - [*CountCredits*](#countcredits)
+    - [Votes](#votes)
+  - [Certificates](#certificates)
+    - [Structures](#structures)
+      - [Certificate](#certificate)
+      - [StepVotes](#stepvotes)
+    - [Procedures](#procedures-1)
+      - [*AggregateVote*](#aggregatevote)
+    - [Candidate Block](#candidate-block)
 
 
 ## Provisioners and Stakes
@@ -24,12 +35,12 @@ where $pk_\mathcal{P}$ is the BLS public key of the provisioner and $S_\mathcal{
 
 In turn, a *Stake* is defined as:
 $$S_\mathcal{P}=(Amount, Height),$$
-where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][env] $MinStake$, and is currently equivalent to 1000 Dusk.
+where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][saenv] $MinStake$, and is currently equivalent to 1000 Dusk.
 
 The stake amount of each provisioner directly influences the probability of being extracted by the [Deterministic Sortition][dsa] algorithm: the higher the stake, the more the provisioner will be extracted on average.
 
 ### Epochs and Eligibility
-Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][env] $Epoch$ (currently equal to 2160).
+Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][saenv] $Epoch$ (currently equal to 2160).
 <!-- TODO: why 2160 ? -->
 
 The *Provisioners Set* during an epoch is fixed: all `stake` and `unstake` operations take effect at the beginning of an epoch. We refer to this property as *epoch stability*.
@@ -44,7 +55,7 @@ where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* 
 
 $$`M = 2{\times}Epoch - (Round_S \mod Epoch)),`$$
 
-where $Epoch$ is a [global parameter][env]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
+where $Epoch$ is a [global parameter][saenv]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
 
 $$`Epoch \lt M \le 2{\times}Epoch.`$$
 
@@ -77,8 +88,8 @@ For the sake of readability, in the rest of this documentation, we will use the 
 - We say a provisioner $P$ is in a committee $C$ if such committee contains a member with $P$'s public key. Formally:
   - $P \in C \text{ }if\text{ } \exists \text{ } m^C :   pk_{m^C}=pk_P$
 
-### Reduction Committees
-Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][env] $CommitteeCredits$, currently set to $64$.
+### Step Committees
+Voting Committees in the [Validation][val] and [Ratification][rat] steps have a fixed number of credits that is defined by the global [consensus parameter][saenv] $CommitteeCredits$, currently set to $64$.
 
 During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
@@ -106,7 +117,7 @@ Given a committee $\mathsf{C}$, a bitset indicates whether a member of $\mathsf{
 
 In particular, if the $i$th bit is set (i.e., $i=1$), then the $i$th member of $\mathsf{C}$ is part of the subcommittee.
 
-Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][env]).
+Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][saenv]).
 
 ### Procedures
 
@@ -137,7 +148,7 @@ $SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]
 #### *CountCredits*
 *CountCredits* takes a committee $\mathsf{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathsf{C}$.
 
-**Parameters**
+***Parameters***
 - $\mathsf{C}$: a voting committee
 - $\boldsymbol{bs}$: a subcommittee bitset 
 
@@ -170,14 +181,13 @@ In particular, Quorum Certificates are used to prove a candidate block reached c
 
 ### Structures
 #### Certificate
-The $\mathsf{Certificate}$ structure contains the aggregated votes of [sub-committees][sc] of the two [Reduction][rmsg] steps that reached quorum on a candidate block.
-It is composed of two $\mathsf{StepVotes}$ structures, one for each [Reduction][red] step.
+The $\mathsf{Certificate}$ structure contains the aggregated votes of the [quorum-committees][sc] of the [Validation][val] and [Ratification][rat] steps. Each vote set is contained in a $\mathsf{StepVotes}$ structure.
 
 
-| Field             | Type            | Size     | Description                          |
-|-------------------|-----------------|----------|--------------------------------------|
-| $FirstReduction$  | [StepVotes][sv] | 56 bytes | Aggregated votes of first reduction  |
-| $SecondReduction$ | [StepVotes][sv] | 56 bytes | Aggregated votes of second reduction |
+| Field          | Type            | Size     | Description                               |
+|----------------|-----------------|----------|-------------------------------------------|
+| $Validation$   | [StepVotes][sv] | 56 bytes | Aggregated votes of the Validation step   |
+| $Ratification$ | [StepVotes][sv] | 56 bytes | Aggregated votes of the Ratification step |
 
 The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
 
@@ -194,6 +204,18 @@ The structure is defined as follows:
 | $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
 
 The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
+
+#### StepResult
+The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Result$ and the $\mathsf{StepVotes}$ with the aggregated votes producing $Result$.
+
+The structure is defined as follows:
+
+| Field         | Type            | Size     | Description           |
+|---------------|-----------------|----------|-----------------------|
+| $Result$      | Integer         | 8 bits   | The step result       |
+| $SV$ | [StepVotes][sv] | 56 bytes | Aggregated signatures |
+
+$Result$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 ### Procedures
 #### *AggregateVote*
@@ -235,16 +257,20 @@ A candidate block that reaches an agreement is called a *winning* block.
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md -->
 [certs]: #certificates
-[cert]: #certificate
-[sv]:   #stepvotes
-[av]:   #aggregatevote
+[cert]:  #certificate
+[sv]:    #stepvotes
+[sr]:    #stepresult
+[av]:    #aggregatevote
+[pro]:   #provisioners-and-stakes
+[cc]:    #countcredits
+[sc]:    #subcommittee
+[cb]:    #countsetbits
+[bs]:    #bitset
 
-[pro]: #provisioners-and-stakes
-
-[cc]: #countcredits
-[sc]: #subcommittee
-[cb]: #countsetbits
-[bs]:  #bitset
+<!-- Consensus -->
+[saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
 
 <!-- TODO: link to Stake Contract -->

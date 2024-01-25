@@ -32,11 +32,9 @@ The output, together with the Validation output, will be used to determine the o
 
 
 ### Procedures
-<!-- DOING -->
-
 
 #### *RatificationStep*
-*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $(v^V, \mathsf{SV}_{v^V})$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $(v^R, \mathsf{SV}_{v^R})$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
+*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $\mathsf{SR}^R=(v^R, \mathsf{SV}_{v^R})$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 
@@ -53,7 +51,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 ***Parameters***
 - $R$: round number
 - $I$: iteration number
-- $(v^V, \mathsf{SV}_{v^V})$: Validation result
+- $\mathsf{SR}^V = ($v^V, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
 
 ***Algorithm***
 1. Extract committee $\mathsf{C}$ for the step
@@ -81,10 +79,11 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 ***Procedure***
 
-$RatificationStep( R, I, \mathsf{B}^c ) :$
+$RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
   - $s = I \times 3 + 1$
-1. $\mathsf{C}$ = [*DS*][dsa]$(R,s,CommitteeCredits)$
+  - $v^V, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
+1. $\mathsf{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathsf{C}):$
    1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \mathsf{SV}_{v^V})$
@@ -121,35 +120,42 @@ $RatificationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!----------------------- FOOTNOTES ----------------------->
-[^1]: We currently assume no double-votes are casted. In a future version of the protocol, double votes will be punished with slashing.
+[^1]: We currently assume no double votes are cast. In a future version of the protocol, double votes will be punished with slashing.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md -->
-[rat]: #ratification-step
+[rs]: #ratificationstep
 
+<!-- Basics -->
+[sr]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepresult
+[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
 
 <!-- Consensus -->
 [env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
-[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
 [ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
+
 <!-- Validation -->
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [vals]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md#validation-step
+
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#voting-committees
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittees
 [cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countsetbits
+
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
 [rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
+
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange

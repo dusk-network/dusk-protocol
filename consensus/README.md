@@ -1,6 +1,3 @@
-<!-- TODO: mention ProcessBlock -->
-<!-- TODO: All nodes can contribute to consensus by collecting votes and generating an Agreement message as soon as a quorum is reached on both Reductions -->
-<!-- TODO: Define sth like Candidate "signature": block_hash, round, iteration -->
 # Succinct Attestation
 **Succinct Attestation** (**SA**) is a permissionless, committee-based Proof-of-Stake consensus protocol. 
 The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating and validating new blocks.
@@ -13,7 +10,7 @@ Before continue reading, please make sure you are familiar with the system [Basi
 - [Overview](#overview)
 - [SA Environment](#environment)
 - [SA Algorithm](#sa-algorithm)
-  - [SAConsensus](#saconsensus)
+  - [SAInit](#sainit)
   - [SALoop](#saloop)
   - [SARound](#saround)
   - [SAIteration](#saiteration)
@@ -81,43 +78,49 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                          | Description                          |
 |-------------------------------|--------------------------------------|
-| $Round_{SA}$                  | Round number                         |
-| $Iteration_{SA}$              | Iteration number                     |
+| $R_{SA}$                      | Current round number                 |
+| $I_{SA}$                      | Current iteration number             |
 | $\mathsf{B}^c$                | Candidate block                      |
 | $\mathsf{B}^w$                | Winning block                        |
-| $\tau_{Proposal}$             | Current timeout for Proposal      |
-| $\tau_{Validation}$           | Current timeout for First Reduction  |
-| $\tau_{Ratification}$         | Current timeout for Second Reduction |
-| $\boldsymbol{PrevIterations}$ | Certificates of failed iterations    |
-<!-- | $\mathsf{V}^1$                | StepVotes of First Reduction         |
-| $\mathsf{V}^2$                | StepVotes of Second Reduction        | -->
+| $\tau_{Proposal}$             | Current Proposal timeout             |
+| $\tau_{Validation}$           | Current Validation timeout           |
+| $\tau_{Ratification}$         | Current Ratification timeout         |
+| $\boldsymbol{FailedCertificates}$ | Certificates of failed iterations for the current round |
+<!-- 
+| $\mathsf{V}^1$                | StepVotes of First Reduction         |
+| $\mathsf{V}^2$                | StepVotes of Second Reduction        | 
+-->
 
+<p><br></p>
 
 ## Procedures
-The SA consensus is defined by the [*SAConsensus*][sac] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
-The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ ([*ProcessBlock*][pb]) or $\mathsf{Quorum}$ ([*ProcessQuorum*][pq]) message, which could make a block accepted as the new $Tip$.
+The SA consensus is defined by the [*SAInit*][sac] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
+The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ (see [*HandleBlock*][hb]) which could trigger the *fallback* or *synchronization* procedures.
+Similarly, receiving a $\mathsf{Quorum}$ message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
 
-<!-- DOING -->
 
-### *SAConsensus*
-The *SAConsensus* procedure is the entry point of a consensus node. Upon booting, the node checks if there is a local state saved and, if so, loads it. Otherwise, it starts from the *Genesis Block*. Then, it probes the network to check if it is in sync or not with the blockchain. If not, it starts a synchronization procedure. When in sync, it executes the consensus algorithm per rounds. At the end of each round, if a winning block has been produced, it updates the state and starts a new round. 
+### *SAInit*
+*SAInit* is the entry point of a consensus node. 
+Upon boot, the node checks if there is a local state saved and, if so, loads it. Otherwise, it sets the local $Tip$ to *GenesisBlock*. 
+Then, it probes the network to check if it is in sync or not with the main chain. If not, it starts a synchronization procedure. 
 
-If, at any time, the node falls behind the network, the synchronization procedure is run before restarting the rounds loop.
+When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming $\mathsf{Block}$ messages. 
 
 ***Algorithm***
 
-1. Load local state
+1. Load local state $S$
 2. If there is no saved state
-   1. Set $Tip$ to Genesis Block
+   1. Set $Tip$ to $GenesisBlock$
 3. Otherwise
-   1. Check state validity
-   2. Set $State$ to loaded state
+   1. Check $S$'s validity
+   2. Set $State$ to $S$
    3. Set $Tip$ to last block
-4. Start SA loop procedure ([*SALoop*][sal])
+4. Start SA loop ([*SALoop*][sal])
+5. Start Block message handler ([*HandleBlock*][hb])
 
 ***Procedure***
 
-$\textit{SAConsensus}():$
+$\textit{SAInit}():$
 1. $S =$ *LoadState*$()$
 2. $\texttt{if } (S = NIL):$
    1. $Tip = GenesisBlock$
@@ -126,18 +129,22 @@ $\textit{SAConsensus}():$
    2. $State = S.State$
    3. $Tip = S.Tip$
 4. $\texttt{start}$([*SALoop*][sal])
-<!-- TODO: MessageHandler loop to handle Block and Quorum messages -->
+5. $\texttt{start}$([*HandleBlock*][hb])
+
+<p><br></p>
 
 ### *SALoop*
-The *SALoop* procedure executes SA rounds (*SARound*). We define this as a separate procedure to allow it to be stopped and restarted when synchronizing the blockchain.
+*SALoop* executes an infinite loop of consensus rounds ([*SARound*][sar]) and accepts winning blocks to the [local chain][lc]. 
+It is initially started by [*SAInit*][init] but it can be stopped and restarted by [synchronization][syn] procedures.
 
-The procedure executes an infinite loop of SA rounds. At each iteration, the $Round_{SA}$ global variable is set to $Tip$'s height plus one; then the SA round is executed; if the round produced a winning block, it executes the state transition using this block. If any round ends with no winning block, the consensus process is considered as faulty and halts. Such an event requires a manual recovery procedure.
+The procedure executes an infinite loop of SA rounds. At the end of each round, it accepts the resulting *winning block* $\mathsf{B}^w$ as the new $Tip$, it updates the state, and starts the following round. 
+If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and it's halted. Such an event requires a manual recovery procedure.
 
 ***Algorithm***
 
 1. Loop:
-   1. Set $Round_{SA}$ to $Tip$'s height plus one
-   2. Execute Round $Round_{SA}$ to produce winning block $\mathsf{B}^w$
+   1. Set $R_{SA}$ to $Tip$'s height plus one
+   2. Execute Round $R_{SA}$ to produce winning block $\mathsf{B}^w$
    3. If no winning block has been produced, halt consensus
    4. Execute state transition
 
@@ -145,87 +152,93 @@ The procedure executes an infinite loop of SA rounds. At each iteration, the $Ro
 
 $\textit{SALoop}():$
 1. $\texttt{loop}:$
-   1. $Round_{SA} = Tip.Height + 1$
-   2. $\mathsf{B}^w =$ [*SARound*][sar]$(Round_{SA})$
+   1. $R_{SA} = Tip.Height + 1$
+   2. $\mathsf{B}^w =$ [*SARound*][sar]$(R_{SA})$
    3. $\texttt{if } (\mathsf{B}^w = NIL):$ 
-       - $\texttt{stop}$
+       - $\texttt{halt}$
    4. $State =$ [*AcceptBlock*][ab]$(\mathsf{B}^w)$
 
-### SARound
-The *SARound* procedure handles the execution of a consensus round: first, it initializes the *Round State* variables; then, it starts the Ratification process in background, and starts executing SA iterations. If, at any time, a winning block is produced by the Ratification process, the round stops.
+<p><br></p>
+
+### *SARound*
+*SARound* executes a single consensus round. First, it initializes the [*Round State*][saenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle $\mathsf{Quorum}$ messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
+If, at any time, a winning block is produced, as the result of a successful iteration or due to a $\mathsf{Quorum}$ message, the round stops.
 
 ***Algorithm***
 
 1. Set variables:
-   - Initialize Proposal and Reduction timeouts
-   - Set candidate and winning block to $NIL$
-   - Set iteration to 0
-2. Start Ratification process
-3. While iteration number is less than $MaxIterations$ and no winning block has been produced
-   1. Execute SA iteration
+   - Initialize Proposal, Validation, and Ratification timeouts ($\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification}$)
+   - Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
+   - Set iteration $I_{SA}$ to 0
+2. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
+3. While $I_{SA}$ is less than $MaxIterations$ and no winning block has been produced
+   1. Execute SA iteration ([*SAIteration*][sai])
 4. If we reached $MaxIterations$ without a winning block
    1. Output $NIL$
-5. Otherwise, broadcast the winning block <!-- TODO: move this to SAConsensus ? -->
-6. Output the block
+5. Otherwise, broadcast the winning block $\mathsf{B}^w$ <!-- TODO: move this to SALoop ? -->
+6. Output $\mathsf{B}^w$
 
 ***Procedure***
 
-$\textit{SARound}(Round_{SA}):$
+$\textit{SARound}():$
 1. $\texttt{set }$:
-   - $\tau_{Proposal}, \tau_{Reduction_1}, \tau_{Reduction_2} = InitTimeout$
+   - $\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-   - $Iteration_{SA} = 0$
-2. $\texttt{start}$([*Ratification*][rata]$(Round_{SA}))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration_{SA} \le MaxIterations)$
-   1. [*SAIteration*][sai]$(Round_{SA}, Iteration_{SA})$
+   - $I_{SA} = 0$
+2. $\texttt{start}$([*HandleQuorum*][hq]$(R_{SA}))$
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (I_{SA} \le MaxIterations):$
+   1. [*SAIteration*][sai]$(R_{SA}, I_{SA})$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
 5. [*Broadcast*][mx]$(\mathsf{B}^w)$
 6. $\texttt{output } \mathsf{B}^w$
 
+<p><br></p>
 
-### SAIteration
-This procedure executes a sequence of *Proposal*, to generate a new candidate block ($\mathsf{B}^c$) for the current round and iteration, and two *Reduction* steps, to vote on the candidate block (if any). Quorum votes of first and second Reduction (if any) are stored in $\mathsf{V}^1$ and $\mathsf{V}^2$, respectively. If the votes of both committees reach a quorum, an [Agreement][amsg] message broadcasted, containing all quorum votes.
+### *SAIteration*
+*SAIteration* executes the sequence of *Proposal*, *Validation*, and *Ratification* steps.
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
 
+If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$ message is broadcast with the $\mathsf{Certificate}$ of the iteration (i.e. the two $\mathsf{StepVotes}$ $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
 
 ***Algorithm***
-1. Run Proposal to generate *candidate* block $\mathsf{B}^c$
-2. Run first Reduction on $\mathsf{B}^c$
-3. Run second Reduction on $\mathsf{B}^c$
-4. If any of the two Reductions failed
-   1. Create a certificate with the aggregated votes
-   2. Add the failed-iteration certificate to $\boldsymbol{PrevIterations}$
-5. and this node $\mathcal{N}$ is in the second Reduction committee:
-   1. Create $\mathsf{Agreement}$ message $\mathsf{M}^A$ with both Reduction votes
-   2. Broadcast message $\mathsf{M}^A$
+1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
+2. Run *Validation* on $\mathsf{B}^c$
+3. Run *Ratification* on the Validation result
+4. If Ratification reached a quorum: 
+   1. Create a certificate $\mathsf{C}$ with the Validation and Ratification votes
+   2. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$ with $\mathsf{C}$
+   3. Broadcast $\mathsf{M}^\mathsf{Q}$
+   4. If the Ratification result is $Success:
+      1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
+   5. If the Ratification result is $Fail$
+      1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
 
 ***Procedure***
+$\textit{SAIteration}(R, I):$
+1. $\mathsf{B}^c =$ [*ProposalStep*][ps]$(R, I)$
+2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
+3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
+4. $\texttt{if } (\mathsf{SR}^R.Result \ne NoQuorum):$
+   1. $\mathsf{C} = {\mathsf{SR}^V.SV, \mathsf{SR}^R.SV}$
+   2. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{C})$
+      | Field         | Value                   | 
+      |---------------|-------------------------|
+      | $Header$      | $\mathsf{H}_\mathsf{M}$ |
+      | $Certificate$ | $\mathsf{C}$            |
+   3. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
+   4. $\texttt{if } (\mathsf{SR}^R.Result = Success):$
+      1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+   5. $\texttt{else }:$
+      1. $\boldsymbol{FailedCertificates}[I] = {\mathsf{C}}$
 
-$\textit{SAIteration}(Round, Iteration):$
-- $r2Step = Iteration\times 3 + 2$
-- $C^{R2} =$ [*DS*][dsa]$(Round,r2Step,CommitteeCredits)$
-1. $\mathsf{B}^c =$ [*Proposal*][ps]$(Round, Iteration)$
-2. $(v^1, \mathsf{V}^1) =$ [*Reduction*][reda]$(Round, Iteration, 1, \mathsf{B}^c)$
-3. $(v^2, \mathsf{V}^2) =$ [*Reduction*][reda]$(Round, Iteration, 2, \mathsf{B}^c)$
-4. $\texttt{if } (v^1 = NIL) \texttt{ or } (v^1 = NIL)$
-   1. $\mathsf{C} = {\mathsf{V}^1, \mathsf{V}^2}$
-   2. $\boldsymbol{PrevIterations}[Iteration] = {\mathsf{C}}$
-5. $\texttt{else if} (pk_\mathcal{N} \in C^{R2}):$
-    1. $\mathsf{M}^A =$ [*Msg*][msg]$(\mathsf{Agreement}, [\mathsf{V}^1,\mathsf{V}^2])$
-        | Field       | Value                         | 
-        |-------------|-------------------------------|
-        | $Header$    | $\mathsf{H}_\mathsf{M}$       |
-        | $Signature$ | $\sigma_\mathsf{M}$           |
-        | $RVotes$    | $[\mathsf{V}^1,\mathsf{V}^2]$ |
-
-    2. [*Broadcast*][mx]$(\mathsf{M}^A)$
-
+<p><br></p>
 
 ### IncreaseTimeout
 *IncreaseTimeout* doubles a step timeout up to $MaxTimeout$.
 
 ***Parameters***
-- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Proposal$, $Reduction1$, or $Reduction2$)
+- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Proposal$, $Validation$, or $Ratification$)
 
 ***Procedure***
 
@@ -234,8 +247,8 @@ $\textit{IncreaseTimeout}(\tau_{Step}):$
 
 <!-- TODO: Define $GetStepNumber$ 
 Proposal: (Block.Iteration) \times 3 + 1
-red1: (Block.Iteration) \times 3 + 1
-red2: (Block.Iteration) \times 3 + 2
+val: (Block.Iteration) \times 3 + 1
+rat: (Block.Iteration) \times 3 + 2
 -->
 
 <!----------------------- FOOTNOTES ----------------------->
@@ -244,36 +257,46 @@ red2: (Block.Iteration) \times 3 + 2
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
-[sa]:   #overview
-[env]:  #environment
-[sac]:  #saconsensus
-[sar]:  #saround
-[sai]:  #saiteration
-[sal]:  #saloop
-[it]:   #increasetimeout
+[sa]:    #overview
+[saenv]: #environment
+[init]:  #sainit
+[sar]:   #saround
+[sai]:   #saiteration
+[sal]:   #saloop
+[it]:    #increasetimeout
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 [not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation
 [bas]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics
 
+[lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
+
 <!-- Chain Management -->
-[ab]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
-[pb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#processblock
-[rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
+[syn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#synchronization
+[ab]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
+[hb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#handleblock
+[hq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#handlequorum
+[rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
+[mw]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#makewinning
+
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#algorithm
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
 [sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#setbit
+
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/
 [ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
-<!-- Reduction -->
-[red]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/
-[reda]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md#reduction-algorithm
+
+<!-- Validation -->
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation
+[vs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md#ValidationStep
+
 <!-- Ratification -->
-[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
-[rata]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#ratification-algorithm
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
+[rs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#RatificationStep
+
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
