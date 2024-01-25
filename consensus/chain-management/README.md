@@ -712,7 +712,7 @@ $\textit{AcceptPoolBlocks}():$
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
 <!-- Messages -->
-[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate-message
 

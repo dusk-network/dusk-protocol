@@ -86,10 +86,6 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $\tau_{Validation}$           | Current Validation timeout           |
 | $\tau_{Ratification}$         | Current Ratification timeout         |
 | $\boldsymbol{FailedCertificates}$ | Certificates of failed iterations for the current round |
-<!-- 
-| $\mathsf{V}^1$                | StepVotes of First Reduction         |
-| $\mathsf{V}^2$                | StepVotes of Second Reduction        | 
--->
 
 <p><br></p>
 
@@ -299,8 +295,8 @@ rat: (Block.Iteration) \times 3 + 2
 
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
-[amsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#agreement-message
+[qmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#quorum
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification-message
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message

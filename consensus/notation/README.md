@@ -8,7 +8,7 @@ In this documentation we will use the following notation:
   - consensus parameters, state variables, and object fields, with whole words, (e.g. the $Quorum$ parameter)
 - $\boldsymbol{Bold}$ is used for vectors (e.g. a bitset $\boldsymbol{bs}$)
 - $\mathcal{Calligrafic}$ is used for actors (e.g. a provisioner $\mathcal{P}$)
-- $\mathsf{Sans Serif}$ is used for structures (e.g. a block $\mathsf{B}$, or a $\mathsf{Reduction}$ message)
+- $\mathsf{Sans Serif}$ is used for structures (e.g. a block $\mathsf{B}$, or a $\mathsf{Candidate}$ message)
 - *Italic* is used for function names (e.g. the *Hash* function)
 
 Moreover, we will conventionally use the following symbols:

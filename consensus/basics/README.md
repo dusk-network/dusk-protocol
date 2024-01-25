@@ -64,7 +64,7 @@ Specifically, while the stability of the Provisioner List during an epoch allows
 
 
 ## Voting Committees
-A *Voting Committee* is an array of provisioners entitled to cast votes on the validity of a candidate block in a specific Reduction step. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
+A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
 
 Formally, a voting committee is defined as:
 
@@ -91,9 +91,21 @@ For the sake of readability, in the rest of this documentation, we will use the 
 ### Step Committees
 Voting Committees in the [Validation][val] and [Ratification][rat] steps have a fixed number of credits that is defined by the global [consensus parameter][saenv] $CommitteeCredits$, currently set to $64$.
 
-During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
+When counting votes, each vote is multiplied by the influence of the voter in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
-Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the Reduction voting process.
+Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the voting process.
+
+### Votes
+<!-- DOING -->
+In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
+
+Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
+
+In particular, each vote is the digital signature of the hash of the following fields: 
+  - the previous block's hash, which identifies both the round and the branch to which the candidate is for;
+  - the iteration number, to distinguish between votes for different candidates of the same round;
+  - the step number, to distinguish Validation and Ratification votes.
+  - the candidate block's hash, to ensure which candidate the vote is for;
 
 ### Block Generator Extraction
 To extract a block generator, a one-member committee is created, using the $Deterministic Sortition$ procedure with $credits = 1$, that is, by assigning a single credit. The provisioner being assigned such credit becomes the block generator for the iteration.
@@ -104,14 +116,14 @@ $$ G_r^i = DS(r,s,1).$$
 
 <p><br></p>
 
-## Subcommittees
+### Subcommittees
 When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
 
 To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
 
 For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
 
-### Bitsets
+#### Bitsets
 We make use of *bitsets* (array of bits) to indicate which members are part of a given subcommittee. 
 Given a committee $\mathsf{C}$, a bitset indicates whether a member of $\mathsf{C}$ belongs to a subcommittee or not. 
 
@@ -161,23 +173,11 @@ $\textit{CountCredits}(\mathsf{C}, \boldsymbol{bs}) \rightarrow credits$:
 2. $\texttt{output } credits$
 
 
-### Votes
-<!-- TODO: move to Sortition/Voting Committees ? -->
-<!-- DOING -->
-In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
-
-Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
-
-In particular, each vote is the digital signature of the hash of the following fields: 
-  - the previous block's hash, which identifies both the round and the branch to which the candidate is for;
-  - the iteration number, to distinguish between votes for different candidates of the same round;
-  - the candidate block's hash, to ensure which candidate the vote is for;
-  - the step number, to distinguish Validation and Ratification votes.
-
 ## Certificates
 <!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
-A *Certificate* is an aggregated vote from a quorum committee along with the bitset of the voters. It is used as proof of a committee reaching Quorum or NilQuorum in the Reduction steps. 
-In particular, Quorum Certificates are used to prove a candidate block reached consensus and can be accepted to the chain; on the other hand, NilQuorum Certificates are used to prove that a candidate failed to reach a quorum (and can't reach any).
+A *Certificate* contains the aggregated votes from two Validation and Ratification steps that reached a quorum. It is used as proof of a committee reaching a quorum in the two steps. 
+In particular, certificates are used to prove the result of an iteration over a candidate block: if the iteration was successful, it proves a quorums of $Valid$ votes was received in both steps; if the iteration failed, it proves there was a quorum of $Invalid$, $NoCandidate$ or $NoQuorum$.
+
 
 ### Structures
 #### Certificate
@@ -198,10 +198,10 @@ To specify which committee members' votes are included, a [sub-committee bitset]
 
 The structure is defined as follows:
 
-| Field    | Type          | Size     | Description                                |
-|----------|---------------|----------|--------------------------------------------|
-| $Voters$ | BitSet        | 64 bits  | Bitset of the voters                       |
-| $Votes$  | BLS Signature | 48 bytes | Aggregated $\mathsf{Reduction}$ signatures |
+| Field    | Type          | Size     | Description                |
+|----------|---------------|----------|----------------------------|
+| $Voters$ | BitSet        | 64 bits  | Bitset of the voters       |
+| $Votes$  | BLS Signature | 48 bytes | Aggregated step signatures |
 
 The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
 

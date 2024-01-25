@@ -16,7 +16,7 @@ The main purpose of the Validation step is to agree on whether a candidate block
 In the Validation step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.
 
 If the node is part of the committee, it validates the output from the [Proposal][prop] step. If the output was $NIL$, it votes $NoCandidate$. Otherwise, it verifies the candidate block's validity against its previous block (i.e., the node's local $Tip$). If the candidate is valid, the node votes $Valid$, otherwise, it votes $Invalid$.
-Non-$Valid$ outputs are used to prove an iteration failed (i.e., it can't reach a quorum of $Valid$ votes), which is functional to block[*Attestation*][fin]; additionally, these votes are used for [slashing][sla].
+Non-$Valid$ outputs are used to prove an iteration failed (i.e., it can't reach a quorum of $Valid$ votes), which is functional to block [*Attestation*][fin]; additionally, these votes are used for [slashing][sla].
 The vote is broadcast using a $\mathsf{Validation}$ message (see [`Validation`][vmsg]).
 
 Then, all nodes, including the committee members, collect votes from the network until a *supermajority* ($\frac{2}{3}$ of the committee credits[^1]) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of non-$Valid$ votes is reached, or the step timeout expires.
@@ -160,7 +160,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 <!-- Messages -->
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
+[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
 
 <!-- TODO -->
