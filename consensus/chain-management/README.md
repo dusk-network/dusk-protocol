@@ -4,26 +4,36 @@
 In particular, this section describes how new blocks are accepted to the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
 ### ToC
-- [Overview](#overview)
-- [Finality](#finality)
-- [Environment](#environment)
-- [Block Verification](#block-verification)
-  - [*VerifyBlock*](#verifyblock)
-  - [*VerifyCertificate*](#verifycertificate)
-  - [*VerifyBlockHeader*](#verifyblockheader)
-- [Block Management](#block-management)
-  - [*AcceptBlock*](#acceptblock)
-  - [*ProcessBlock*](#processblock)
-- [Fallback](#fallback)
-  - [*Fallback* Procedure](#fallback-procedure)
-- [Synchronization](#synchronization)
-  - [*SyncBlock*](#syncblock)
-  - [*StartSync*](#startsync)
-  - [*HandleSyncTimeout*](#handlesynctimeout)
-  - [*AcceptPoolBlocks*](#acceptpoolblocks)
+  - [Overview](#overview)
+  - [Finality](#finality)
+    - [Consensus State](#consensus-state)
+    - [Rolling Finality](#rolling-finality)
+  - [Environment](#environment)
+  - [Block Verification](#block-verification)
+    - [VerifyBlock](#verifyblock)
+    - [VerifyBlockHeader](#verifyblockheader)
+    - [*VerifyCertificate*](#verifycertificate)
+    - [*VerifyVotes*](#verifyvotes)
+  - [Block Management](#block-management)
+    - [*ProcessQuorum*](#processquorum)
+    - [*MakeWinning*](#makewinning)
+    - [AcceptBlock](#acceptblock)
+    - [GetBlockState](#getblockstate)
+    - [CheckRollingFinality](#checkrollingfinality)
+      - [HasRollingFinality](#hasrollingfinality)
+      - [MakeChainFinal](#makechainfinal)
+    - [ProcessBlock](#processblock)
+  - [Fallback](#fallback)
+    - [Fallback Procedure](#fallback-procedure)
+  - [Synchronization](#synchronization)
+    - [SyncBlock](#syncblock)
+    - [StartSync](#startsync)
+    - [HandleSyncTimeout](#handlesynctimeout)
+    - [AcceptPoolBlocks](#acceptpoolblocks)
+
 
 ## Overview
-At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][valid] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
 In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][certs]). 
 
 There are two main reasons a network block is not in the chain:
