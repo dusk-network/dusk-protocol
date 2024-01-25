@@ -121,9 +121,9 @@ The message has the following structure:
 
 | Field       | Type                  | Size      | Description           |
 |-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
+| $Header$    | [MessageHeader][mh] | 137 bytes | Message header        |
 | $PrevHash$  | SHA3 Hash             | 256 bits  | Previous block's hash |
-| $Candidate$ | [*Block*][b]          |           | Candidate block       |
+| $Candidate$ | [Block][b]          |           | Candidate block       |
 | $Signature$ | BLS Signature         | 48 bytes  | Message signature     |
 
 The $\mathsf{Candidate}$ message has a variable size of 217 bytes plus the block size.
@@ -135,7 +135,7 @@ The $\mathsf{Validation}$ message is used by a member of a [Validation][val] com
 The message has the following structure:
 | Field       | Type                  | Size      | Description           |
 |-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
+| $Header$    | [MessageHeader][mh] | 137 bytes | Message header        |
 | $Signature$ | BLS Signature         | 48 bytes  | Signature of $Header$ |
 
 The $\mathsf{Validation}$ message has a total size of 185 bytes.
@@ -147,7 +147,7 @@ The $\mathsf{Ratification}$ message is used by a member of a [Ratification][rat]
 The message has the following structure:
 | Field       | Type                  | Size      | Description           |
 |-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [*MessageHeader*][mh] | 137 bytes | Message header        |
+| $Header$    | [MessageHeader][mh] | 137 bytes | Message header        |
 | $Signature$ | BLS Signature         | 48 bytes  | Signature of $Header$ |
 
 The $\mathsf{Ratification}$ message has a total size of 185 bytes.
@@ -167,7 +167,7 @@ The $\mathsf{Agreement}$ message has a total size of 297 bytes.
 ### Block Message
 
 The $\mathsf{Block}$ message is used to propagate a winning block to other peers.
-This message only contains a full block structure ([*Block*][b]) including a Certificate, plus the sender peer $\mathcal{S}$.
+This message only contains a full block structure ([Block][b]) including a Certificate, plus the sender peer $\mathcal{S}$.
 
 <!-- TODO 
 - $\mathsf{GetBlocks}$
@@ -186,9 +186,9 @@ This message only contains a full block structure ([*Block*][b]) including a Cer
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 
-<!-- Consensus -->
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#certificates
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
+<!-- Basics -->
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificate
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
 
 <!-- Validation -->
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md

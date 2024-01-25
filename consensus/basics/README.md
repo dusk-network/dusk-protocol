@@ -234,8 +234,8 @@ A candidate block that reaches an agreement is called a *winning* block.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md -->
-
-[cert]: #certificates
+[certs]: #certificates
+[cert]: #certificate
 [sv]:   #stepvotes
 [av]:   #aggregatevote
 

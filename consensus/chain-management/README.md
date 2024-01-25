@@ -23,9 +23,8 @@ In particular, this section describes how new blocks are accepted to the local b
   - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 ## Overview
-<!-- TODO: Add intro to local chain and certificates? -->
-At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Reduction][red] phases, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
-In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][cert]). 
+At node level, there are two ways for blocks to be added to the [local chain][c]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][valid] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][certs]). 
 
 There are two main reasons a network block is not in the chain:
  
@@ -36,6 +35,7 @@ There are two main reasons a network block is not in the chain:
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*ProcessBlock*][pb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
+<!-- TODO: mv to Basics ? -->
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
 
 When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
@@ -126,21 +126,24 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 8. If all verifications succeeded, output $true$
 
 ***Procedure***
-
 $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
-  - $\mathsf{C}_\mathsf{B^p} = \mathsf{B}.PrevBlockCertificate$
+  - $\mathsf{C}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
   - $\mathsf{C}_\mathsf{B} = \mathsf{B}.Certificate$
+  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
+  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_\mathsf{B^p},\eta_{\mathsf{B}^p},r_{\mathsf{B}^p},s_{\mathsf{B}^p})$
+3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_{\mathsf{B}^p},\upsilon_\mathsf{B})$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_\mathsf{B},\eta_{\mathsf{B}^p},r_{\mathsf{B}},s_{\mathsf{B}})$
+5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})$
 6. $\texttt{if } (isValid = false): \texttt{output } false$
 7. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{C}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{C}_i \ne NIL) :$
-      - $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i)$
+      <!-- TODO: support Invalid/NoQuorum votes -->
+      - $\upsilon_i = (\mathsf{B}.PrevBlock,i,NoCandidate,NIL)$
+      - $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i, \upsilon_i)$
       - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
 
@@ -181,73 +184,69 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
    8. $\texttt{output } true$
 
 
-### VerifyCertificate
-*VerifyCertificate* checks a block's certificate by verifying the two Reduction aggregated signatures against the respective committees.
+### *VerifyCertificate*
+*VerifyCertificate* checks a block's certificate by verifying the Validation and Ratification aggregated signatures against the respective committees.
 
 ***Parameters***
-- $\mathsf{C}$: the block's certificate
-- $b$: block's hash
-- $r$: round
-- $s$: step
+- $\mathsf{C}$: the certificate to verify
+- $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
 
 ***Algorithm***
-1. Check both Reduction votes are present
-2. Verify First-Reduction votes
-   1. If votes are not valid, output $false$
-3. Verify Second-Reduction votes
-   1. If votes are not valid, output $false$
-4. Output $true$
+1. Check both Validation and Ratification votes are present
+2. Verify Validation votes
+3. If votes are not valid, output $false$
+4. Verify Ratification votes
+5. If votes are not valid, output $false$
+6. Output $true$
 
 ***Procedure***
 
-$\textit{VerifyCertificate}(\mathsf{C}, b, r, i):$
+$\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 - $\texttt{set}:$
-   - $`\mathsf{V}_1, \mathsf{V}_2 \leftarrow \mathsf{C}`$
-   - $s_1 = i \times 3 + 1$
-   - $s_2 = i \times 3 + 2$
-1. $\texttt{if } (\mathsf{V}_1 = NIL) \texttt{ or } (\mathsf{V}_2 = NIL):$
+   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
+   - $\eta_{\mathsf{B}}^p, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
+   - $S^V = I \times 3 +1$
+   - $\mathcal{C}^V =$ [*DS*][ds]$(R,S^V,CommitteeCredits)$
+   - $\eta^V =$ *Hash*$(\eta_{\mathsf{B}}^p||I||v||\eta_{\mathsf{B}}||1)$ 
+   - $S^R = I \times 3 +2$
+   - $\mathcal{C}^R =$ [*DS*][ds]$(R,S^R,CommitteeCredits)$
+   - $\eta^R =$ *Hash*$(\eta_{\mathsf{B}}^p||I||v||\eta_{\mathsf{B}}||2)$
+   - $\texttt{if } (v=Valid) : Q = Supermajority$
+     $\texttt{else } : Q = Majority$
+1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
    1. $\texttt{output } false$
-2. $r_1 =$ [*VerifyVotes*][vv]$`(\mathsf{V}_1, b, r, s_1)`$
-3. $r_2 =$ [*VerifyVotes*][vv]$`(\mathsf{V}_2, b, r, s_2)`$
-4. $\texttt{if } (r_1{=}true) \texttt{ and } (r_2{=}true) :$
-   1. $\texttt{output } true$
-5. $\texttt{else}:$ 
-   1. $\texttt{output } false$
+2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \eta^V, Q, \mathcal{C}^V)`$
+3. $\texttt{if } (isValid{=}false): \texttt{output } false$
+4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \eta^R, Q, \mathcal{C}^R)`$
+5. $\texttt{if } (isValid{=}false): \texttt{output } false$
+6. $\texttt{output } true$
 
-### VerifyVotes
-$VerifyVotes$ checks the aggregated votes for a candidate are valid and reach the quorum.
+### *VerifyVotes*
+*VerifyVotes* checks the aggregated votes are valid and reach the target quorum.
 
 ***Parameters***
-- $\mathsf{V}$: $\mathsf{StepVotes}$ with the aggregated votes
-- $b$: the block's hash
-- $r$: round
-- $s$: step
+- $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
+- $\eta$: the vote's hash
+- $Q$: the target quorum
+- $\mathcal{C}$: the full committee
 
 ***Algorithm***
-1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{V}.BitSet$
-2. If $b$ is a timeout vote ($NIL$)
-   1. Set quorum target $q$ to $NilQuorum$
-3. Otherwise, set $q$ to $Quorum$
-4. If credits in $C^{\boldsymbol{bs}}$ are less than $q$
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{SV}.BitSet$
+2. If credits in $C^{\boldsymbol{bs}}$ are less than the target quorum $Q$
    1. Output $false$
-5. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
-6. Compute hash $\eta$ of round $r$, step $s$, and block $b$
-7. Verify aggregated signature over $\eta$
+3. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
+4. Verify aggregated signature over $\eta$
 
 ***Procedure***
 
-$VerifyVotes(\mathsf{V}, b, r, s)$:
+$VerifyVotes(\mathsf{SV}, \eta, Q)$:
 - $\texttt{set}:$
-  - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{V}$
-1. $C^{\boldsymbol{bs}} = $ [SubCommittee][sc]$(C_{r}^{s}, \boldsymbol{bs})$
-2. $\texttt{if } (b = NIL):$
-   1. $\texttt{set } q = NilQuorum$
-3. $\texttt{else}: \texttt{set } q = Quorum$
-4. $\texttt{if } ($[*CountCredits*][cc]$(C_{r}^{s}, \boldsymbol{bs}) \lt q):$
+  - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
+1. $\mathcal{C}^{\boldsymbol{bs}} = $ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
+2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
    1. $\texttt{output } false$
-5. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
-6. $\eta = Hash_{Blake2B}(r||s||hash)$
-7. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
+3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
+4. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
 ## Block Management
@@ -258,11 +257,25 @@ We here define block-management procedures:
   - *ProcessBlock*: process a block from the network
 
 ### *ProcessQuorum*
+<!-- TODO: check if this is explained somewhere
+# Quorum Handler
+When the [Validation][val] and [Ratification][rat] steps reach a quorum, a [Quorum][qmsg] message is produced, which contains a [Certificate][cert] with the aggregated votes of the two quorum committees.
+Since the certificate proves a candidate reached a quorum, receiving this message is sufficient to accept the candidate into the local chain.
+
+The Quorum handler task manages [Quorum][qmsg] messages produced by the node or received from the network. In particular, when such a message is received (or produced), the corresponding candidate block is accepted.
+
+## Overview
+When a node generates or receives a $\mathsf{Quorum}$ message, it adds the included $\mathsf{Certificate}$ to the corresponding candidate block and makes it a *winning block* for the corresponding round and iteration.
+
+If the $\mathsf{Quorum}$ message was received from the network, the aggregated votes (see [`StepVotes`][sv]) are verified against the generator and committee members of the corresponding round and iteration. Both the validity of the votes and the quorum quota are verified.
+
+The winning block will then be accepted as the new tip of the local chain.
+ -->
 *ProcessQuorum* manages $\mathsf{Quorum}$ messages for the current round. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
-- [SA Environment][cparams]
+- [SA Environment][saenv]
 - $R$: round number
 
 ***Algorithm***
@@ -661,6 +674,7 @@ $\textit{AcceptPoolBlocks}():$
 [sb]:  #syncblock
 [ss]:  #startsync
 [vb]:  #verifyblock
+[vbh]: #verifyblockheader
 [vc]:  #verifycertificate
 [vv]:  #verifyvotes
 [qh]:  #ProcessQuorum
@@ -672,18 +686,23 @@ $\textit{AcceptPoolBlocks}():$
 [c]:https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Consensus -->
-[sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#stepvotes
-[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#protocol-overview
+[saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
-[vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifyblockheader
-[vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#verifycertificate
-<!-- Reduction -->
-[red]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/reduction/README.md
+
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+
 <!-- Messages -->
 [mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-exchange
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
-[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#reduction-message
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate-message
+
 <!-- Sortition -->
-[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
-[cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countcredits
+[ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
+
+<!-- Basics -->
+[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+[certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
+[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
+[cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits

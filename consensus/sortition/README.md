@@ -154,7 +154,7 @@ $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md  -->
-[dsa]: #algorithm
+[ds]: #deterministic-sortition-ds
 [de]: #deterministic-extraction-de
 
 <!-- Blockchain -->
