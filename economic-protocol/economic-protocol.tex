@@ -1,5 +1,5 @@
 \documentclass[twocolumn, nofootinbib]{revtex4-2} %uncomment to hide comments
-\documentclass[draft, twocolumn, nofootinbib]{revtex4-2} %uncomment to see comments
+%\documentclass[draft, twocolumn, nofootinbib]{revtex4-2} %uncomment to see comments
 
 % General comments:
 % contract vs. function in a contract
@@ -130,59 +130,137 @@
 
     \section{Specification}\label{sec:specifications}
 	In this section, we describe how gas is handled in different scenarios. We summarize all cases in Table~\ref{tab:gas}.
-	\input{table-summary}
-%    \begin{table*}[t]
-%    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|b{0.45\linewidth}|b{0.3\linewidth}|}
-%        \hline
-%        \textbf{Scenario} & \textbf{Contract fee} &
-%        \textbf{Normal flow} & \Insufficientgas \\
-%        \hline
-%        \hline
-%        1. User pays gas & No &
-%        \begin{itemize}
-%            \item 70\% \gasunspent returned to \user.
-%            \item 30\% \gasunspent paid to executed contracts depending
-%                  on the \gaslimit allocated across \icc.
-%            \item 100\% \gasconsumed paid to the \blockgenerator.
-%        \end{itemize} &
-%        \begin{itemize}
-%            \item 100\% \gasconsumed paid to the \blockgenerator.
-%        \end{itemize} \\
-%        \hline
-%        2. User pays gas; contract applies fee & Yes &
-%        \begin{itemize}
-%            \item Like Scenario 1.
-%            \item \fee paid to the charging contract.
-%        \end{itemize} &
-%        \begin{itemize}
-%            \item 100\% \gasconsumed paid to the \blockgenerator.
-%            \item \fee returned to \user.
-%        \end{itemize} \\
-%        \hline
-%        3. Contract pays gas; contract applies fee & Yes &
-%        \begin{itemize}
-%            \item \gasconsumed charged entirely to \contract.
-%            \item 30\% \gasunspent paid to executed contracts depending
-%                  on the \gaslimit allocated across \icc.
-%            \item 70\% \gasunspent returned to contract.
-%            \item 100\% \gasconsumed paid to the \blockgenerator.
-%            \item \fee paid to the charging contract.
-%        \end{itemize} &
-%        \begin{itemize}
-%            \item 100\% \gasconsumed locked for a number of epochs.
-%            \item \fee gets refunded to the \user.
-%        \end{itemize} \\
-%        \hline
-%        4. Obfuscated transactions & Variable, \% of an obfuscated amount & As in
-%        Scenario 3, \fee is calculated as \% of transacted amount. &
-%        Additional considerations needed. \\
-%        \hline
-%        5. Autocontracts & No & TBD & TBD \\
-%        \hline
-%    \end{tabular}
-%        \caption{Summary of how gas and fees are handled in each scenario.}
-%    	\label{tab:gas}
-%    \end{table*}
+
+	\begin{table*}[t] 
+		\vspace{0.3cm}
+		\begin{spacing}{1.1}
+			\centering
+			\scalebox{0.75}{	
+				\begin{tabular}{| c | c | l | c | c | c |}
+					\hline
+					%
+					\multirow{2}{*}{\textbf{Scenario}}
+					& \multicolumn{3}{c|}{\textbf{Normal flow}}
+					& \multicolumn{2}{c|}{\textbf{Insufficient gas}}
+					\\ \cline{2-6}
+					%
+					& \gasconsumed
+					& \multicolumn{1}{c}\gasunspent
+					& \fee
+					& \gasconsumed
+					& \fee
+					\\ \hline
+					% SCENARIO 1
+					\multirow{4}{*}{1. User pays gas}
+					& 
+					& $\bullet$ 70\% returned to \user
+					& \multirow{4}{*}{no fee}
+					& 
+					& \multirow{4}{*}{no fee}
+					\\
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts
+					& 
+					& 100\% to \blockgenerator
+					& 	
+					\\
+					& (paid by \user)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& 
+					& (paid by \user)
+					& 		
+					\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+					\\ \hline	
+					% SCENARIO 2
+					& 
+					& $\bullet$ 70\% returned to \user
+					& 
+					& 
+					& \multirow{4}{*}{returned to \user}
+					\\
+					2. User pays gas,
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts 
+					& paid to
+					& 100\% to \blockgenerator
+					& 	
+					\\
+					contract applies fee
+					& (paid by \user)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& charging contract
+					& (paid by \user)
+					& 	
+					\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+					\\ \hline	
+					% SCENARIO 3
+					& 
+					& $\bullet$ 70\% returned to \contract
+					& 
+					& 
+					& \multirow{4}{*}{returned to \user}
+					\\
+					3. Contract pays gas,
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts 
+					& paid to
+					& 100\% locked for
+					& 	
+					\\
+					contract applies fee
+					& (charged to \contract)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& charging contract
+					& a number of epochs
+					& 	
+					\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+					\\ \hline	
+					% SCENARIO 4
+					\multirow{2}{*}{4. Obfuscated transactions}
+					& \multirow{2}{*}{TBD}
+					& \multirow{2}{*}{TBD (or as in scenario 3???)}
+					& variable: \% of
+					& \multirow{2}{*}{TBD}
+					& \multirow{2}{*}{TBD}
+					\\
+					
+					& 
+					&  
+					& transacted amount
+					& 
+					& 	
+					\\
+					\hline											
+					% SCENARIO 5
+					5. Autocontracts
+					& TBD
+					& TBD
+					& no fee
+					& TBD
+					& TBD
+					\\
+					\hline		
+				\end{tabular}
+			}
+			\caption{Summary of how gas and fees are handled in each scenario.}
+			\label{tab:gas}
+		\end{spacing}
+	\end{table*}
 
     \subsection{Scenario 1: User pays gas}\label{sec:specifications:scenario-1}
     This case mirrors the conventional gas expenditure method in most
