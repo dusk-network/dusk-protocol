@@ -1,10 +1,12 @@
-%\documentclass[twocolumn, nofootinbib]{revtex4-2} %uncomment to hide comments
+\documentclass[twocolumn, nofootinbib]{revtex4-2} %uncomment to hide comments
 \documentclass[draft, twocolumn, nofootinbib]{revtex4-2} %uncomment to see comments
 
 % General comments:
 % contract vs. function in a contract
 % crossover
 % direct
+
+%\usepackage[pagebackref=true]{hyperref}
 
 \usepackage{multirow}
 \usepackage{array}
@@ -128,64 +130,65 @@
 
     \section{Specification}\label{sec:specifications}
 	In this section, we describe how gas is handled in different scenarios. We summarize all cases in Table~\ref{tab:gas}.
-    \begin{table*}[t]
-    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|b{0.45\linewidth}|b{0.3\linewidth}|}
-        \hline
-        \textbf{Scenario} & \textbf{Contract fee} &
-        \textbf{Normal flow} & \Insufficientgas \\
-        \hline
-        \hline
-        1. User pays gas & No &
-        \begin{itemize}
-            \item 70\% \gasunspent returned to \user.
-            \item 30\% \gasunspent paid to executed contracts depending
-                  on the \gaslimit allocated across \icc.
-            \item 100\% \gasconsumed paid to the \blockgenerator.
-        \end{itemize} &
-        \begin{itemize}
-            \item 100\% \gasconsumed paid to the \blockgenerator.
-        \end{itemize} \\
-        \hline
-        2. User pays gas; contract applies fee & Yes &
-        \begin{itemize}
-            \item Like Scenario 1.
-            \item \fee paid to the charging contract.
-        \end{itemize} &
-        \begin{itemize}
-            \item 100\% \gasconsumed paid to the \blockgenerator.
-            \item \fee returned to \user.
-        \end{itemize} \\
-        \hline
-        3. Contract pays gas; contract applies fee & Yes &
-        \begin{itemize}
-            \item \gasconsumed charged entirely to \contract.
-            \item 30\% \gasunspent paid to executed contracts depending
-                  on the \gaslimit allocated across \icc.
-            \item 70\% \gasunspent returned to contract.
-            \item 100\% \gasconsumed paid to the \blockgenerator.
-            \item \fee paid to the charging contract.
-        \end{itemize} &
-        \begin{itemize}
-            \item 100\% \gasconsumed locked for a number of epochs.
-            \item \fee gets refunded to the \user.
-        \end{itemize} \\
-        \hline
-        4. Obfuscated transactions & Variable, \% of an obfuscated amount & As in
-        Scenario 3, \fee is calculated as \% of transacted amount. &
-        Additional considerations needed. \\
-        \hline
-        5. Autocontracts & No & TBD & TBD \\
-        \hline
-    \end{tabular}
-        \caption{Summary of how gas and fees are handled in each scenario.}
-    	\label{tab:gas}
-    \end{table*}
+	\input{table-summary}
+%    \begin{table*}[t]
+%    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|b{0.45\linewidth}|b{0.3\linewidth}|}
+%        \hline
+%        \textbf{Scenario} & \textbf{Contract fee} &
+%        \textbf{Normal flow} & \Insufficientgas \\
+%        \hline
+%        \hline
+%        1. User pays gas & No &
+%        \begin{itemize}
+%            \item 70\% \gasunspent returned to \user.
+%            \item 30\% \gasunspent paid to executed contracts depending
+%                  on the \gaslimit allocated across \icc.
+%            \item 100\% \gasconsumed paid to the \blockgenerator.
+%        \end{itemize} &
+%        \begin{itemize}
+%            \item 100\% \gasconsumed paid to the \blockgenerator.
+%        \end{itemize} \\
+%        \hline
+%        2. User pays gas; contract applies fee & Yes &
+%        \begin{itemize}
+%            \item Like Scenario 1.
+%            \item \fee paid to the charging contract.
+%        \end{itemize} &
+%        \begin{itemize}
+%            \item 100\% \gasconsumed paid to the \blockgenerator.
+%            \item \fee returned to \user.
+%        \end{itemize} \\
+%        \hline
+%        3. Contract pays gas; contract applies fee & Yes &
+%        \begin{itemize}
+%            \item \gasconsumed charged entirely to \contract.
+%            \item 30\% \gasunspent paid to executed contracts depending
+%                  on the \gaslimit allocated across \icc.
+%            \item 70\% \gasunspent returned to contract.
+%            \item 100\% \gasconsumed paid to the \blockgenerator.
+%            \item \fee paid to the charging contract.
+%        \end{itemize} &
+%        \begin{itemize}
+%            \item 100\% \gasconsumed locked for a number of epochs.
+%            \item \fee gets refunded to the \user.
+%        \end{itemize} \\
+%        \hline
+%        4. Obfuscated transactions & Variable, \% of an obfuscated amount & As in
+%        Scenario 3, \fee is calculated as \% of transacted amount. &
+%        Additional considerations needed. \\
+%        \hline
+%        5. Autocontracts & No & TBD & TBD \\
+%        \hline
+%    \end{tabular}
+%        \caption{Summary of how gas and fees are handled in each scenario.}
+%    	\label{tab:gas}
+%    \end{table*}
 
     \subsection{Scenario 1: User pays gas}\label{sec:specifications:scenario-1}
     This case mirrors the conventional gas expenditure method in most
     blockchains.
     The \user specifies a \gaslimit and a \gasprice.
-
+    
     \subsubsection{Normal flow}\label{sec:specifications:scenario-1:normal-flow}
     
     In this case, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
@@ -201,9 +204,9 @@
 	In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator.
 
     \subsubsection{Reward to contracts}\label{sec:specifications:scenario-1:insufficient-gas-1:reward-to-contract}
-    In this scenario, the reward to the contract is paid by the user,
-    considering that the whole gas spent goes to the network, and the
-    percentile paid to the direct contract and the ICC is taken from the
+    In this scenario, the reward to the contract is paid by the \user,
+    considering that the whole \gasconsumed goes to the network, and the
+    percentile paid to the \direct contract and the \icc is taken from the
     crossover.
     It might make sense to let the contracts establish what they want to be
     paid (with a maximum amount) and communicate this information during the
@@ -219,26 +222,27 @@
     The \user sets \gaslimit, \gasprice, and \fee.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-2:normal-flow}
-	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
+	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, all \gasconsumed is transferred 
+	to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. 
+	Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of
+	its own \gasunspent.
 	\mbi{I have the same observation as before.}
     
     \subsubsection{Insufficient gas}\label{sec:specifications:scenario-2:insufficient-gas}
-    In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator and the \fee is refunded to the \user.
+    In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator and 
+    the \fee is refunded to the \user.
 
     \subsection{Scenario 3: Contract pays gas, contract applies fee}\label{sec:specifications:scenario-3}
     This represents a unique approach in the blockchain domain.
-    This model lets a contract set a fixed \fee paid by the user.
+    This model lets a contract set a fixed \fee paid by the \user.
     The special case when a \fee does not cover the contract's gas costs
     is described in Section~\ref{sec:specifications:scenario-3:user-pays-fees-lesser}.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-3:normal-flow}
-    \begin{itemize}
-        \item The \direct contract pays for \gas by setting
-              \gaslimit and \gasprice.
-        \item The \direct contract earns the \fee paid by the \user.
-        \item Each \icc is paid 30\% of its own \gasunspent.
-        \item 100\% of \gasconsumed is transferred to the \blockgenerator.
-    \end{itemize}
+    In this case, the \direct contract pays for \gas by setting \gaslimit and \gasprice. 
+    The \direct contract earns the \fee paid by the \user, and each \icc is paid 30\% of 
+    its own \gasunspent.
+    As before, all \gasconsumed is transferred to the \blockgenerator.
 
     \subsubsection{Insufficient gas}\label{sec:specifications:scenario-3:insufficient-gas}
     A smart contract incurring in an \insufficientgas error is exposed
@@ -424,9 +428,9 @@
     contracts without introducing unnecessary complications.
 
     \section{Innovative cost management approach}\label{sec:innovative-cost-management-approach}
-    Dusk's Economic Model stands out from traditional approaches by allowing
+    Dusk's economic model stands out from traditional approaches by allowing
     users to pay smart contracts directly and specify their preferred payment
-    method to the Transfer Contract.
+    method to the \transfercontract.
     This model permits the transfer of gas costs to contracts rather than users,
     aligning more closely with conventional scenarios where service providers
     bear infrastructural costs.
