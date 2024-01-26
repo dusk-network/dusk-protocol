@@ -209,6 +209,7 @@ We assume that if the message was originally broadcasted by the local node it is
 The *Send* function represents a point-to-point message from the node to one of its peers. Its defined as *Send*$(\mathcal{P},\mathsf{M})$, where $\mathcal{P}$ is the recipient peer, and $\mathsf{M}$ is the message to send.
 
 
+<!----------------------- FOOTNOTES ----------------------->
 
 [^1]: Note that the BLS signature definition already includes the hashing of the message being signed. However, we explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
 
