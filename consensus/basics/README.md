@@ -232,7 +232,7 @@ $Result$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 $\textit{AggregateVote}( \mathsf{SV}, \mathsf{C}, \sigma, pk ) :$
 1. $\mathsf{SV}.Votes =$ *BLS_Aggregate*$(\mathsf{SV}.Votes, \sigma)$
-2. $`\mathsf{SV}.Voters =`$ [*SetBit*][sb]$`(\mathsf{SV}.Voters, \mathsf{C}, pk)`$
+2. $\mathsf{SV}.Voters =$ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathsf{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
 
 <!-- TODO: Blockchain: Block/Transaction structures here ? -->
@@ -267,6 +267,7 @@ A candidate block that reaches an agreement is called a *winning* block.
 [sc]:    #subcommittee
 [cb]:    #countsetbits
 [bs]:    #bitset
+[sb]:    #setbit
 
 <!-- Consensus -->
 [saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
