@@ -1,12 +1,20 @@
-\documentclass[twocolumn, nofootinbib]{revtex4-2} %uncomment to hide comments
-%\documentclass[draft, twocolumn, nofootinbib]{revtex4-2} %uncomment to see comments
+%\documentclass[twocolumn, nofootinbib]{revtex4-2} %uncomment to hide comments
+\documentclass[draft, twocolumn, nofootinbib]{revtex4-2} %uncomment to see comments
 
+% General comments:
+% contract vs. function in a contract
+% crossover
+% direct
+
+\usepackage{multirow}
 \usepackage{array}
 \usepackage[colorinlistoftodos, textwidth = 20mm, obeyDraft]{todonotes}
 \newcommand{\mbi}[1]{{\todo[inline, size=\small, color=olive!40]{\textbf{Marta}: #1}}}
 
 \usepackage{xspace}
 \newcommand{\dusk}{{\footnotesize\textsf{DUSK}}\xspace}
+
+\usepackage{setspace}
 
 % Emphasized words
 \newcommand{\emphathize}[1]{\textbf{#1}\xspace}
@@ -22,6 +30,7 @@
 \newcommand{\gasconsumed}{\emphathize{gas consumed}}
 \newcommand{\gasunspent}{\emphathize{gas unspent}}
 \newcommand{\insufficientgas}{\emphathize{insufficient gas}}
+\newcommand{\Insufficientgas}{\emphathize{Insufficient gas}}
 \newcommand{\icc}{\emphathize{ICC}}
 \newcommand{\provider}{\emphathize{provider}}
 \newcommand{\transfercontract}{\emphathize{transfer contract}}
@@ -46,21 +55,30 @@
 %    \tableofcontents
 
 	\section{Introduction}\label{sec:introduction}
+	\mbi{I moved the abstract to this initial section.}
 	The economic model of Dusk encompasses the mechanisms enabling smart
 	contract owners to create economic value through the services they offer.
 	It consists of levying service fees, offsetting gas costs for users,
 	and optimizing gas payments for improved profitability.
 	Essentially, the economic model allows service providers to be
-	productized and profit.
-	\mbi{I can't follow the last sentence (grammatically).}
+	productized and for profit.
 
     \section{Terminology}\label{sec:terminology}
-    \mbi{the following terms are missing: block generator, transfer contract, 
-    crossover, direct contract.}
     Throughout this document, we use the following terms.
+    \mbi{I added two terms that were used across the doc: \transfercontract,
+    \blockgenerator.}    
     \begin{itemize}
         \item \contract: smart contract method activated by the user
               through a transaction.
+        \mbi{With this definition, any function of an smart contract is
+        called a \contract. However, in this document, the word \contract
+        seems to have two different meanings: (1) a method of an smart contract
+        and (2) a smart contract. I think it is best to call the functions
+        of a smart contract just functions or \textbf{methods}.}
+        \mbi{Following my above comment, when talking about \icc, by this
+        definition, an smart contract with two different methods where one
+        calls the other, would also be considered an \icc, although there is
+        only one smart contract involved. Terminology seems counterintuitive to me.}
         \item \user: party initiating the \contract transaction.
         \item \gas: unit measure of computational resource.
               In this scope, \gaslimit indicates the maximum amount of
@@ -71,97 +89,96 @@
               If a computation requires more resources than those allocated,
               then we incur in an \insufficientgas error.
         \item \gasprice: amount of \dusk that a sender is
-              willing to spend per unit of gas (unit of gas are specified in
+              willing to spend per unit of gas (the amount is specified in
               Lux, where 1 Lux equals 10\textsuperscript{-9} \dusk). The higher
               the \gasprice, the more incentivized are the block generators
               to include the transaction in the next block. This way, transactions
               with high gas prices are generally confirmed more quickly.
               Because of this, \gasprice generally determines the
               transaction priority.
-        \item \icc\footnote{ICCs cannot be called directly. As such, the
+        \item \icc (inter-contract call): interaction between
+              multiple contracts. ICCs cannot be called directly. As such, the
               contract methods should be tagged as \ctoc (contract-to-contract) or
               \direct. The former can only be called only by another contract,
-              while the latter can only be called by a user (through a
-              transaction).} (inter-contract call): interaction between
-              multiple contracts.
-              This term is also used interchangeably for those contract methods that
-              can only be called by other contract.
-              \mbi{does this mean those that can be called by just one other single
-              	contract?}
+              while the latter can only be called by a user through a
+              transaction.
+              %This term is also used interchangeably for those contract methods that
+              %can only be called by other contract.
         \item \fee: amount of \dusk charged by a smart contract to a user, when the
               former requires payment for its services.
               The \fee is known by the transfer contract (changeable
               through a transaction), but needs to be communicated to the user,
               who approves/signes it.
-              \mbi{by \textit{changeable through a transaction} do we mean that the
-              deployer of the contract can change the fee through a tx sent to the
-              transfer contract?}
-              \mbi{what does it mean that \textit{the fee needs to be communicated to the
-              user}? Isn't the fee already information? What does the user
-              need to approve/sign?}
               This way the possibility of fee malleability is removed, thus
               preventing a bait-and-switch attack where a contract could change
               the fee with a high priority transaction and drain the user's
               funds.
-              \mbi{add reference to bait-and-switch attack.}
+              \mbi{It is not clear to me how this attack is prevented. Is it that when
+              the user calls the contract with a transaction, he includes as part of
+              the transaction a signature with the fixed fee so that if the fee changes,
+              then the transaction is reverted?}
         \item \contractaccount: in the scenario where the contract pays
               for gas on behalf of the user, this account is
               where fees are accrued and gas is paid.
         \item \provider: intermediary service entity between a
               \user and a \contract.
+    	\item \transfercontract: smart contract responsible for handling \dusk.
+    	\item \blockgenerator: full-node eligible to propose a candidate block to the network. 
     \end{itemize}
 
-    \section{Specifications}\label{sec:specifications}
-	In this section, we describe how gas is handled in different scenarios.
+    \section{Specification}\label{sec:specifications}
+	In this section, we describe how gas is handled in different scenarios. We summarize all cases in Table~\ref{tab:gas}.
     \begin{table*}[t]
-    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|m{0.45\linewidth}|m{0.3\linewidth}|}
+    \begin{tabular}{|m{0.15\linewidth}|m{0.1\linewidth}|b{0.45\linewidth}|b{0.3\linewidth}|}
         \hline
-        \textbf{Scenario} & \textbf{Contract Fee} &
-        \textbf{Normal Flow} & \insufficientgas \\
+        \textbf{Scenario} & \textbf{Contract fee} &
+        \textbf{Normal flow} & \Insufficientgas \\
         \hline
         \hline
-        User pays gas & No &
+        1. User pays gas & No &
         \begin{itemize}
-            \item 70\% \gasunspent returned to user
+            \item 70\% \gasunspent returned to \user.
             \item 30\% \gasunspent paid to executed contracts depending
-                  on the \gaslimit allocated across ICC
-            \item 100\% \gasconsumed paid to the Block Generator
+                  on the \gaslimit allocated across \icc.
+            \item 100\% \gasconsumed paid to the \blockgenerator.
         \end{itemize} &
         \begin{itemize}
-            \item 100\% \gasconsumed paid to the Block Generator
+            \item 100\% \gasconsumed paid to the \blockgenerator.
         \end{itemize} \\
         \hline
-        User pays gas; contract applies fee & Yes &
+        2. User pays gas; contract applies fee & Yes &
         \begin{itemize}
-            \item Like Scenario 1
-            \item \fee paid to the charging contract
+            \item Like Scenario 1.
+            \item \fee paid to the charging contract.
         \end{itemize} &
         \begin{itemize}
-            \item 100\% \gasconsumed paid to the Block Generator
-            \item \fee returned to \user
+            \item 100\% \gasconsumed paid to the \blockgenerator.
+            \item \fee returned to \user.
         \end{itemize} \\
         \hline
-        Contract pays gas; contract applies fee & Yes &
+        3. Contract pays gas; contract applies fee & Yes &
         \begin{itemize}
-            \item \gasconsumed charged entirely to \contract
+            \item \gasconsumed charged entirely to \contract.
             \item 30\% \gasunspent paid to executed contracts depending
-                  on the \gaslimit allocated across ICC
-            \item 70\% \gasunspent returned to contract
-            \item 100\% \gasconsumed paid to the Block Generator.
-            \item \fee paid to the charging contract
+                  on the \gaslimit allocated across \icc.
+            \item 70\% \gasunspent returned to contract.
+            \item 100\% \gasconsumed paid to the \blockgenerator.
+            \item \fee paid to the charging contract.
         \end{itemize} &
         \begin{itemize}
-            \item 100\% \gasconsumed locked for a number of epochs
-            \item \fee gets refunded to the \user
+            \item 100\% \gasconsumed locked for a number of epochs.
+            \item \fee gets refunded to the \user.
         \end{itemize} \\
         \hline
-        Obfuscated transactions & Variable, \% of an obfuscated amount & As in
-        Scenario 3, \fee calculated as \% of transacted amount &
-        Additional considerations needed \\
+        4. Obfuscated transactions & Variable, \% of an obfuscated amount & As in
+        Scenario 3, \fee is calculated as \% of transacted amount. &
+        Additional considerations needed. \\
         \hline
-        Autocontracts & No & TBD & TBD \\
+        5. Autocontracts & No & TBD & TBD \\
         \hline
     \end{tabular}
+        \caption{Summary of how gas and fees are handled in each scenario.}
+    	\label{tab:gas}
     \end{table*}
 
     \subsection{Scenario 1: User pays gas}\label{sec:specifications:scenario-1}
@@ -170,14 +187,10 @@
     The \user specifies a \gaslimit and a \gasprice.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-1:normal-flow}
-    \begin{itemize}
-        \item 70\% of \gasunspent reverts to the \user.
-        \item The \direct contract keeps 30\% of \gasunspent.
-        \item Each \icc receives 30\% of its own \gasunspent.
-        \mbi{\textit{own} $\rightarrow$ corresponding?}
-        \item 100\% of \gasconsumed is transferred to the \blockgenerator.
-    \end{itemize}
+    
+    In this case, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
 
+	\mbi{I have a remark for this scenario.} 
     The most notable contract that uses this kind of strategy is perhaps the
     \transfercontract, which (according to the current configuration)
     will accrue  30\% of the gas spent per transaction.
@@ -185,37 +198,32 @@
     consumed overall.
 
     \subsubsection{Insufficient gas}\label{sec:specifications:scenario-1:insufficient-gas}
-    \begin{itemize}
-        \item 100\% of \gasconsumed is transferred to the \blockgenerator.
-    \end{itemize}
+	In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator.
 
     \subsubsection{Reward to contracts}\label{sec:specifications:scenario-1:insufficient-gas-1:reward-to-contract}
     In this scenario, the reward to the contract is paid by the user,
-    considering that the whole has spent goes to the network, and the
+    considering that the whole gas spent goes to the network, and the
     percentile paid to the direct contract and the ICC is taken from the
     crossover.
     It might make sense to let the contracts establish what they want to be
     paid (with a maximum amount) and communicate this information during the
     calculation of the reward.
-
+    \mbi{\textit{Rewards} are not defined anywhere. Is this an extra amount of \dusk paid by 
+   		the user?}     
+	\mbi{\textit{Crossover} is a technical detail that it is also not defined and maybe adds too much
+		noise to this section.}
+	
     \subsection{Scenario 2: User pays gas, contract applies fee}\label{subsec:scenario-2}
     This scenario mirrors the previous one, but with an additional \fee
     that the \user must add to the transaction.
     The \user sets \gaslimit, \gasprice, and \fee.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-2:normal-flow}
-    \begin{itemize}
-        \item 70\% of \gasunspent reverts to the \user.
-        \item The \direct earns the \fee paid by the \user.
-        \item Each \icc is paid 30\% of its own \gasunspent.
-        \item 100\% of \gasconsumed is transferred to the \blockgenerator.
-    \end{itemize}
-
+	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
+	\mbi{I have the same observation as before.}
+    
     \subsubsection{Insufficient gas}\label{sec:specifications:scenario-2:insufficient-gas}
-    \begin{itemize}
-        \item 100\% of used \gas is transferred to the \blockgenerator.
-        \item The \fee is refunded to the \user.
-    \end{itemize}
+    In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator and the \fee is refunded to the \user.
 
     \subsection{Scenario 3: Contract pays gas, contract applies fee}\label{sec:specifications:scenario-3}
     This represents a unique approach in the blockchain domain.
@@ -369,7 +377,7 @@
     In other words, after-batch autocontract execution would be very vulnerable
     to sandwich bots.
 
-    \section{Motivations}\label{sec:motivations}
+    \section{Model discussion}\label{sec:discussion}
     Dusk differs from traditional blockchain models by charging gas fees to
     contracts rather than users.
 
@@ -386,7 +394,7 @@
               requirements
     \end{itemize}
 
-    \subsection{But we can already do this without changing much!}\label{sec:motivations:but-we-can-already-do-this}
+    \subsection{But we can already do this without changing much!}\label{sec:discussion:but-we-can-already-do-this}
     Adopting the economic protocol at Dusk's base layer rather than at the
     application level yields unique strategic benefits.
     It promotes a unified approach to the UX of wallets and clients, and
@@ -404,8 +412,8 @@
     positions the Dusk for sustainable scalability and a robust future-proof
     framework.
 
-    \subsection{Addressing perverse incentives}\label{sec:motivations:addressing-perverse-incentives}
-    A crucial aspect of the Economic Model is to motivate developers and
+    \subsection{Addressing perverse incentives}\label{sec:discussion:addressing-perverse-incentives}
+    A crucial aspect of the economic model is to motivate developers and
     maintain the sustainability of smart contracts.
     However, offering rewards by rebating (part of) gas to the owner, as
     observed in some other blockchain platforms, might result in perverse
@@ -426,9 +434,9 @@
     Albeit other blockchains are trying to create incentives for smart contract
     developers (owners), they all tend to keep the current gas philosophy quite
     unchanged, that is users pay for gas, i.e.\ part of gas spent by the user is
-
     thus paid to contracts' owner.
 
+	\scalebox{0.87}{
     \begin{tabular}{|m{0.3\linewidth}|m{0.7\linewidth}|}
         \hline
         Configuration & Contract Owner Incentives \\
@@ -444,7 +452,7 @@
         Gas-and-mint subsidized contracts & Owner is subsidized by users' gas
         and also part of the block reward \\
         \hline
-    \end{tabular}
+    \end{tabular}}
 
     \subsection{User pays gas}\label{sec:innovative-cost-management-approach:user-pays-gas}
     This is how gas has been traditionally handled so far.
