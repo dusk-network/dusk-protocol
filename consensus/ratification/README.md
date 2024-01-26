@@ -34,7 +34,7 @@ The output, together with the Validation output, will be used to determine the o
 ### Procedures
 
 #### *RatificationStep*
-*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $\mathsf{SR}^R=(v^R, \mathsf{SV}_{v^R})$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
+*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $\mathsf{SR}^R=(v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 
@@ -51,7 +51,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 ***Parameters***
 - $R$: round number
 - $I$: iteration number
-- $\mathsf{SR}^V = ($v^V, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
+- $\mathsf{SR}^V = ($v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
 
 ***Algorithm***
 1. Extract committee $\mathsf{C}$ for the step
@@ -82,17 +82,17 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
   - $s = I \times 3 + 1$
-  - $v^V, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
+  - $v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
 1. $\mathsf{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathsf{C}):$
-   1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \mathsf{SV}_{v^V})$
-      <!-- TODO: update when updating Consensus Message definition
-      | Field       | Value                     | 
-      |-------------|---------------------------|
-      | $Header$    | $\mathsf{H}_{\mathsf{M}}$ |
-      | $Signature$ | $\sigma_{\mathsf{M}}$     | 
-      -->
+   1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
+      | Field             | Value                     | 
+      |-------------------|---------------------------|
+      | $Header$          | $\mathsf{H}_{\mathsf{M}}$ |
+      | $Vote$            | $v^V$                     | 
+      | $CandidateHash$   | $\eta_{\mathsf{B}^c}$     |
+      | $ValidationVotes$ | $\mathsf{SV}_{v^V}$       |
 
    2. [*Broadcast*][mx]$(\mathsf{M})$
 
@@ -112,11 +112,11 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
             - $\texttt{if } (v^R = Valid): Q = Quorum$
             - $\texttt{else}: Q = Majority$
          5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
-            1. $\texttt{output } (v^R, \mathsf{SV}_{v^R})$
+            1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Ratification}):$
     1. [*IncreaseTimeout*][it]$(\tau_{Ratification})$
-    2. $\texttt{output } (NoQuorum, NIL)$
+    2. $\texttt{output } (NoQuorum, NIL, NIL)$
 
 
 <!----------------------- FOOTNOTES ----------------------->

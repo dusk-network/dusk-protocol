@@ -297,27 +297,35 @@ The corresponding candidate block is then marked as the winning block of the rou
       1. Verify $\mathsf{M}^Q.Certificate$ ($\mathsf{C}$) is valid ([*VerifyQuorum*][va])
       2. If valid:
          1. Propagate $\mathsf{M}^Q$
-         2. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
-         3. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
-         4. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Certificate$
+         2. If the quorum vote is $Valid$
+            1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
+            2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
+            3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Certificate$
+         3. Otherwise
+            1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
+         4. Stop [*SAIteration*][sai]
 
 ***Procedure***
-
+<!-- TODO: define candidate pool/db and functions, eg FetchCandidate -->
 $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{H_M}, \sigma_{\mathsf{M}}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
-          - $`\_, r_{\mathsf{M}}, s_{\mathsf{M}}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{H_M}`$
+          - $`\mathsf{H_M}, v, \eta_{\mathsf{B}^c}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
+          - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{H_M}`$
+          - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
-       1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \eta_{\mathsf{B}^c}, r_{\mathsf{M}}, s_{\mathsf{M}})$
+       1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \upsilon)$
        2. $\texttt{if } (isValid = true) :$
-          1. [*Propagate*][mx]$(\mathsf{M}^Q)$
-          <!-- TODO: define candidate pool/db and functions -->
-          2. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
-          3. $\texttt{if } (\mathsf{B}^c = NIL) :$
-            - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
-          4. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+          1. $\texttt{stop}$([*SAIteration*][sai])
+          2. [*Propagate*][mx]$(\mathsf{M}^Q)$
+          3. $\texttt{if } (v = Valid) :$
+             1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
+             2. $\texttt{if } (\mathsf{B}^c = NIL) :$
+               - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
+             3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+          4. $\texttt{else } :$
+             1. $\boldsymbol{FailedCertificates}[I_{\mathsf{M}}] = {\mathsf{C}}$
 
 
 ### *MakeWinning*

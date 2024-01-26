@@ -51,19 +51,17 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 
 ***Procedure***
 
-$Proposal(R, I)$:
+$\textit{Proposal}(R, I)$:
 1. $\texttt{set}$:
    - $s = I \times 3$
 2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(R,s,1)$
 3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
-   2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \eta_{\mathsf{B}_{R-1}}, \mathsf{B}^c)$
+   2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
       | Field       | Value                     | 
       |-------------|---------------------------|
       | $Header$    | $\mathsf{H}_\mathsf{M}$   |
-      | $PrevHash$  | $\eta_{\mathsf{B}_{R-1}}$ |
       | $Candidate$ | $\mathsf{B}^c$            |
-      | $Signature$ | $\sigma_\mathsf{M}$       |
    3. [*Broadcast*][mx]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else}:$
@@ -71,9 +69,9 @@ $Proposal(R, I)$:
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
       1. $\mathsf{M} = $ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M} \ne NIL):$
-         - $`(\mathsf{H}_\mathsf{M},\_,\mathsf{B}_\mathsf{M},\sigma_\mathsf{M}) \leftarrow \mathsf{M}`$
-         - $`(pk_\mathsf{M},\_,\_,\eta_\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
-         1. $`\texttt{if }(\text{ } *VerifySignature*(\sigma_\mathsf{M}, pk_\mathsf{M}) = true \text{ })`$
+         - $`(\mathsf{H}_\mathsf{M}, \mathsf{B}_\mathsf{M}) \leftarrow \mathsf{M}`$
+         - $`(\_, pk_\mathsf{M}, \sigma_\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
+         1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M}) = true \text{ })`$
          2. $`\texttt{and }(\text{ } pk_\mathsf{M} = pk_{\mathcal{G}} \text{ })`$
          3. $`\texttt{and } (\text{ }\eta_\mathsf{M} = \eta_{\mathsf{B}_\mathsf{M}} \text{ }):`$
             1. [*Propagate*][mx]$(\mathsf{M})$
@@ -166,3 +164,4 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message
+[ms]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures

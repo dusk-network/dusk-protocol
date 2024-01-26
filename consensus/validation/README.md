@@ -95,13 +95,12 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
       2. $\texttt{if } (isValid = true) : v = Valid$
       3. $\texttt{else}: v = Invalid$
-   3. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, v)$
-      <!-- TODO: update when updating Consensus Message definition
-      | Field       | Value                     | 
-      |-------------|---------------------------|
-      | $Header$    | $\mathsf{H}_{\mathsf{M}}$ |
-      | $Signature$ | $\sigma_{\mathsf{M}}$     | 
-      -->
+   3. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, v, \eta_{\mathsf{B}^c})$
+      | Field           | Value                     | 
+      |-----------------|---------------------------|
+      | $Header$        | $\mathsf{H}_{\mathsf{M}}$ |
+      | $Vote$          | $v$                       | 
+      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$     | 
 
    4. [*Broadcast*][mx]$(\mathsf{M})$
 
@@ -121,11 +120,11 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
             - $\texttt{if } (v^V = Valid): Q = Quorum$
             - $\texttt{else}: Q = Majority$
          5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
-            1. $\texttt{output } (v^V, \mathsf{SV}_{v^V})$
+            1. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
     1. [*IncreaseTimeout*][it]$(\tau_{Validation})$
-    2. $\texttt{output } (NoQuorum, NIL)$
+    2. $\texttt{output } (NoQuorum, NIL, NIL)$
 
 
 <!----------------------- FOOTNOTES ----------------------->

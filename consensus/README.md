@@ -215,15 +215,20 @@ $\textit{SAIteration}(R, I):$
 1. $\mathsf{B}^c =$ [*ProposalStep*][ps]$(R, I)$
 2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
 3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
-4. $\texttt{if } (\mathsf{SR}^R.Result \ne NoQuorum):$
-   1. $\mathsf{C} = {\mathsf{SR}^V.SV, \mathsf{SR}^R.SV}$
-   2. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{C})$
-      | Field         | Value                   | 
-      |---------------|-------------------------|
-      | $Header$      | $\mathsf{H}_\mathsf{M}$ |
-      | $Certificate$ | $\mathsf{C}$            |
+- $\texttt{set}:$
+  - $ \_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V$
+  - $ v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
+1. $\texttt{if } (v \ne NoQuorum):$
+   1. $\mathsf{C} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
+   2. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, v, \eta_{\mathsf{B}^c}, \mathsf{C})$
+      | Field           | Value                   |
+      |-----------------|-------------------------|
+      | $Header$        | $\mathsf{H}_\mathsf{M}$ |
+      | $Vote$          | $v$                     |
+      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$   |
+      | $Certificate$   | $\mathsf{C}$            |
    3. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
-   4. $\texttt{if } (\mathsf{SR}^R.Result = Success):$
+   4. $\texttt{if } (v = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
    5. $\texttt{else }:$
       1. $\boldsymbol{FailedCertificates}[I] = {\mathsf{C}}$
