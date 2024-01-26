@@ -1,0 +1,234 @@
+\begin{table*}[t] 
+	\vspace{0.3cm}
+	\begin{spacing}{1.1}
+		\centering
+		\scalebox{0.75}{	
+			\begin{tabular}{| c | c | l | c | c | c |}
+				\hline
+				%
+				\multirow{2}{*}{\textbf{Scenario}}
+					& \multicolumn{3}{c|}{\textbf{Normal flow}}
+					& \multicolumn{2}{c|}{\textbf{Insufficient gas}}
+				\\ \cline{2-6}
+				%
+					& \gasconsumed
+					& \multicolumn{1}{c}\gasunspent
+					& \fee
+					& \gasconsumed
+					& \fee
+				\\ \hline
+				% SCENARIO 1
+				\multirow{4}{*}{1. User pays gas}
+					& 
+					& $\bullet$ 70\% returned to \user
+					& \multirow{4}{*}{no fee}
+					& 
+					& \multirow{4}{*}{no fee}
+				\\
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts
+					& 
+					& 100\% to \blockgenerator
+					& 	
+				\\
+					& (paid by \user)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& 
+					& (paid by \user)
+					& 		
+				\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+				\\ \hline	
+				% SCENARIO 2
+					& 
+					& $\bullet$ 70\% returned to \user
+					& 
+					& 
+					& \multirow{4}{*}{returned to \user}
+				\\
+				2. User pays gas,
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts 
+					& paid to
+					& 100\% to \blockgenerator
+					& 	
+				\\
+				contract applies fee
+					& (paid by \user)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& charging contract
+					& (paid by \user)
+					& 	
+				\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+				\\ \hline	
+				% SCENARIO 3
+					& 
+					& $\bullet$ 70\% returned to \contract
+					& 
+					& 
+					& \multirow{4}{*}{returned to \user}
+					\\
+					3. Contract pays gas,
+					& 100\% to \blockgenerator
+					& $\bullet$ 30\% paid to executed contracts 
+					& paid to
+					& 100\% locked for
+					& 	
+					\\
+					contract applies fee
+					& (charged to \contract)
+					& \hspace{0.2cm} depending on the \gaslimit
+					& charging contract
+					& a number of epochs
+					& 	
+					\\
+					& 
+					& \hspace{0.2cm} allocated across \icc
+					& 
+					& 
+					& 		
+					\\ \hline	
+				% SCENARIO 4
+				\multirow{2}{*}{4. Obfuscated transactions}
+					& \multirow{2}{*}{TBD}
+					& \multirow{2}{*}{TBD (or as in scenario 3???)}
+					& variable: \% of
+					& \multirow{2}{*}{TBD}
+					& \multirow{2}{*}{TBD}
+					\\
+					
+					& 
+					&  
+					& transacted amount
+					& 
+					& 	
+					\\
+				\hline											
+				% SCENARIO 5
+				5. Autocontracts
+				& TBD
+				& TBD
+				& no fee
+				& TBD
+				& TBD
+				\\
+				\hline		
+			\end{tabular}
+		}
+		\caption{Summary of how gas and fees are handled in each scenario.}
+		\label{tab:gas}
+	\end{spacing}
+\end{table*}
+
+%\begin{table*}[h] 
+%	\vspace{0.3cm}
+%	\begin{spacing}{1.1}
+%		\centering
+%		\scalebox{0.7}{	
+%			\begin{tabular}{| l | l | l | l | l | l | l |}
+%				\hline
+%				%
+%				\multicolumn{2}{|c|}{\multirow{2}{*}{\textbf{Scenario}}}
+%					& \multirow{2}{*}{1. User pays gas}
+%					& 2. User pays gas
+%					& 3. Contract pays gas 
+%					& 4. Obfuscated 
+%					& \multirow{2}{*}{5. Autocontracts} \\
+%				%
+%					&
+%					&
+%					& contract applies fee
+%					& contract applies fee
+%					& transactions
+%					& \\
+%				\hline
+%				%R3
+%				\multirow{6}{*}{Normal flow}
+%					& {\gasconsumed}
+%					& 100\% to \blockgenerator
+%					& 100\% to \blockgenerator
+%					& 100\% to \blockgenerator
+%					& TBD
+%					& TBD \\
+%				\cline{2-7}
+%					& \multirow{4}{*}{\gasunspent}
+%					& $\bullet$ 70\% to \blockgenerator
+%					& $\bullet$ 70\% to \blockgenerator
+%					& $\bullet$ 70\% to \blockgenerator
+%					& \multirow{4}{*}{TBD}
+%					& \multirow{4}{*}{TBD} \\
+%				%
+%					& 
+%					& $\bullet$ 30\% to executed contracts
+%					& $\bullet$ 30\% to executed contracts
+%					& $\bullet$ 30\% to executed contracts
+%					& 
+%					&  \\
+%				%
+%					& 
+%					& depending on the \gaslimit
+%					& depending on the \gaslimit
+%					& depending on the \gaslimit
+%					& 
+%					&  \\
+%				%
+%					& 
+%					& allocated across \icc
+%					& allocated across \icc
+%					& allocated across \icc
+%					& 
+%					&  \\
+%				\cline{2-7}
+%					& \fee
+%					& No fee
+%					& paid to charging contract
+%					& paid to charging contract
+%					& variable: \% of an obfuscated transacted amount
+%					& No fee \\
+%
+%				\hline										
+%%				Contract fee
+%%				& No fee
+%%				& adf
+%%				& 81.9\% \\
+%%				\hline
+%%				Normal flow
+%%				&  	
+%%					\begin{minipage} [t] {0.4\textwidth} 
+%%					\begin{itemize}\itemsep-0em 
+%%						\item 100\% \gasconsumed is paid to the \blockgenerator.
+%%						\item 70\% \gasunspent is returned to the user.
+%%						\item 30\% \gasunspent is paid to executed contracts depending on the \gaslimit allocated across \icc.
+%%					\end{itemize} 
+%%					\end{minipage} 
+%%				&  
+%%					\begin{minipage} [t] {0.4\textwidth} 
+%%					\begin{itemize}\itemsep-0em 
+%%						\item 100\% \gasconsumed is paid to the \blockgenerator.
+%%						\item 70\% \gasunspent is returned to the user.
+%%						\item 30\% \gasunspent is paid to executed contracts depending on the \gaslimit allocated across \icc.
+%%						\item \fee is paid to the charging contract.
+%%					\end{itemize} 
+%%					\end{minipage} 
+%%				& 80.9\% \\
+%%				\hline
+%%				Insufficient gas
+%%				& Yes
+%%				&  64,773,603 
+%%				& 80.1\% \\
+%%				\hline
+%			\end{tabular}
+%		}
+%		\caption{Summary of how gas and fees are handled in each scenario.}
+%		\label{tab:gas}
+%	\end{spacing}
+%\end{table*}
