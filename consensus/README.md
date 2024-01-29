@@ -58,8 +58,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $MinStake$         | 1000           | Minimum amount of a single stake (in Dusk)           |
 | $Epoch$            | 2160           | Epoch duration in number of blocks                   |
 | $CommitteeCredits$ | 64             | Total credits in a voting committee                  |
-| $SMQuorum$         | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
-| $MQuorum$          | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
+| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
+| $Majority$         | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
 | $MaxIterations$    | 255            | Maximum number of iterations for a single round      |
 | $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)                    |
