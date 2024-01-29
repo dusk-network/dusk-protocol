@@ -222,7 +222,7 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
    - $S^V =$ [*GetStepNum*][gsn]$(I, RatStep)$
    - $\mathcal{C}^R =$ [*DS*][dsp]$(R,S^R,CommitteeCredits)$
    - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
-   - $Q =$[*GetQuorum*][gq]$(v)$
+   - $Q =$ [*GetQuorum*][gq]$(v)$
 1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
    1. $\texttt{output } false$
 2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$

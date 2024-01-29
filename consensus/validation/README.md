@@ -123,7 +123,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true):$
          1. [*Propagate*][mx]$(\mathsf{M^V})$
          2. $`\mathsf{SV}_{v^V} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^V}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
-         3. $Q =$[*GetQuorum*][gq]$(v^V)$
+         3. $Q =$ [*GetQuorum*][gq]$(v^V)$
          4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
             1. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
 

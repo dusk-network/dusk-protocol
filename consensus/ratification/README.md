@@ -111,14 +111,14 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       - $`v^R, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
       - $`pk_\mathsf{M^R}, \sigma_\mathsf{M^R} \leftarrow \mathsf{SI}`$
       - $\upsilon^V = (\mathsf{CI}||\mathsf{VI}||ValStep)$
-      - $Q^V =$[*GetQuorum*][gq]$(v^R)$
+      - $Q^V =$ [*GetQuorum*][gq]$(v^R)$
 
       1. $\texttt{if } (pk_\mathsf{M^R} \in \mathcal{C})$
       2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^R}) = true):$
       3. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true)$
          1. [*Propagate*][mx]$(\mathsf{M^R})$
          2. $`\mathsf{SV}_{v^R} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^R}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )`$
-         3. $Q =$[*GetQuorum*][gq]$(v^R)$
+         3. $Q =$ [*GetQuorum*][gq]$(v^R)$
          4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
             1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
 
