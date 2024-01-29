@@ -4,6 +4,7 @@ In this section, we describe the building blocks of the SA consensus protocol, s
 ### ToC
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
+  - [Candidate Block](#candidate-block)
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
     - [Votes](#votes)
@@ -24,7 +25,8 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [StepResult](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
-    - [Candidate Block](#candidate-block)
+
+
 
 ## Provisioners and Stakes
 A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
@@ -63,6 +65,13 @@ $$Epoch \lt M \le 2{\times}Epoch.$$
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
+## Candidate Block
+A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+
+Therefore, for each iteration, only one (valid) candidate block can be produced[^2]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{R,I}$, where $R$ is the consensus round, and $i$ is the consensus iteration. 
+Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
+
+A candidate block that reaches an agreement is called a *winning* block.
 
 ## Voting Committees
 A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
@@ -249,14 +258,6 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 3. $\texttt{output } \mathsf{SV}$
 
 <!-- TODO: Blockchain: Block/Transaction structures here ? -->
-
-### Candidate Block
-A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
-
-Therefore, for each iteration, only one (valid) candidate block can be produced[^2]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{R,I}$, where $R$ is the consensus round, and $i$ is the consensus iteration. 
-Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
-
-A candidate block that reaches an agreement is called a *winning* block.
 
 <!-- TODO ## Timeouts -->
 

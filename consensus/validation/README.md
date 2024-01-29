@@ -7,10 +7,8 @@ The main purpose of the Validation step is to agree on whether a candidate block
 
 ### ToC
   - [Overview](#overview)
-  - [Validation Step](#validation-step)
     - [Procedures](#procedures)
       - [*ValidationStep*](#validationstep)
-
 
 ## Overview
 In the Validation step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.

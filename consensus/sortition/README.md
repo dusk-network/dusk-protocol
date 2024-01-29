@@ -4,13 +4,13 @@
 *Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation][sa] protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
 ### ToC
-- [Overview](#overview)
-  - [Score](#score)
-  - [Seed](#seed)
-- [Procedures](#procedures)
-  - [Deterministic Sortition (*DS*)](#deterministic-sortition-ds)
-  - [Deterministic Extraction (*DE*)](#deterministic-extraction-de)
-- [References](#references)
+  - [Overview](#overview)
+    - [Score](#score)
+    - [Seed](#seed)
+  - [Procedures](#procedures)
+    - [Deterministic Sortition (*DS*)](#deterministic-sortition-ds)
+    - [Deterministic Extraction (*DE*)](#deterministic-extraction-de)
+  - [References](#references)
 
 
 ## Overview

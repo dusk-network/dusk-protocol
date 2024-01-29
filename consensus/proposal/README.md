@@ -2,12 +2,11 @@
 *Proposal* is the first step in an [*SA iteration*][sai]. In this step, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, other provisioners wait for the candidate block produced by the generator.
 
 #### ToC
-- [Overview](#overview)
-- [Procedures](#procedures)
-  - [*ProposalStep*](#proposalstep)
-  - [*GenerateBlock*](#generateblock)
-  - [*SelectTransactions*](#selecttransactions)
-
+  - [Overview](#overview)
+  - [Procedures](#procedures)
+    - [*ProposalStep*](#proposalstep)
+    - [*GenerateBlock*](#generateblock)
+    - [*SelectTransactions*](#selecttransactions)
 
 ## Overview
 In the Proposal step, each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to extract the *block generator*. If the node is selected, it creates a new *candidate block*, and broadcasts it using a $\mathsf{Candidate}$ message (see [`Candidate`][cmsg]).

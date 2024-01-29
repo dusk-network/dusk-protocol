@@ -7,14 +7,17 @@ Provisioners participate in turns to the production and validation of each new b
 Before reading, please make sure you are familiar with the system [Basics][bas] and the document [Notation][not].
 
 ### ToC
-- [Overview](#overview)
-- [SA Environment](#environment)
-- [SA Algorithm](#sa-algorithm)
-  - [SAInit](#sainit)
-  - [SALoop](#saloop)
-  - [SARound](#saround)
-  - [SAIteration](#saiteration)
-  - [IncreaseTimeout](#increasetimeout)
+  - [Overview](#overview)
+  - [Environment](#environment)
+  - [Procedures](#procedures)
+    - [*SAInit*](#sainit)
+    - [*SALoop*](#saloop)
+    - [*SARound*](#saround)
+    - [*SAIteration*](#saiteration)
+    - [*IncreaseTimeout*](#increasetimeout)
+    - [*GetQuorum*](#getquorum)
+    - [*GetStepNum*](#getstepnum)
+
 
 
 ## Overview

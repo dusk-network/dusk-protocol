@@ -8,10 +8,9 @@ If a quorum is reached for any result, a $\mathsf{Quorum}$ [`Quorum`][qmsg] is g
 The main purpose of the Ratification step is to ensure provisioners are "aligned" with respect to the Validation result: if Validation result was $Valid$, it ensures a supermajority of provisioners saw such a result and hence accepted the block. Similarly, in case of $\text{non-}Valid$ result, it ensures a majority of provisioners will certify this iteration as failed, which, in turn, is used in determining if a winning candidate will be Attested or not (see [Finality][fin]).
 
 ### ToC
-- [Overview](#overview)
-- [Ratification Step](#ratification-step)
-  - [Procedures](#procedures)
-    - [*RatificationStep*](#ratificationstep)
+  - [Overview](#overview)
+    - [Procedures](#procedures)
+      - [*RatificationStep*](#ratificationstep)
 
 
 ## Overview

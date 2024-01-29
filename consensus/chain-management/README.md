@@ -15,14 +15,14 @@ In particular, this section describes how new blocks are accepted to the local b
     - [*VerifyCertificate*](#verifycertificate)
     - [*VerifyVotes*](#verifyvotes)
   - [Block Management](#block-management)
-    - [*HandleQuorum*](#HandleQuorum)
+    - [*HandleQuorum*](#handlequorum)
     - [*MakeWinning*](#makewinning)
-    - [AcceptBlock](#acceptblock)
+    - [*AcceptBlock*](#acceptblock)
     - [GetBlockState](#getblockstate)
     - [CheckRollingFinality](#checkrollingfinality)
       - [HasRollingFinality](#hasrollingfinality)
       - [MakeChainFinal](#makechainfinal)
-    - [HandleBlock](#HandleBlock)
+    - [HandleBlock](#handleblock)
   - [Fallback](#fallback)
     - [Fallback Procedure](#fallback-procedure)
   - [Synchronization](#synchronization)
@@ -31,7 +31,6 @@ In particular, this section describes how new blocks are accepted to the local b
       - [*StartSync*](#startsync)
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
-
 
 
 ## Overview
