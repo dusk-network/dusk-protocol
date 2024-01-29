@@ -78,8 +78,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                          | Description                          |
 |-------------------------------|--------------------------------------|
-| $R_{SA}$                      | Current round number                 |
-| $I_{SA}$                      | Current iteration number             |
+| $Round$                      | Current round number                 |
+| $Iteration$                      | Current iteration number             |
 | $\mathsf{B}^c$                | Candidate block                      |
 | $\mathsf{B}^w$                | Winning block                        |
 | $\tau_{Proposal}$             | Current Proposal timeout             |
@@ -139,8 +139,8 @@ If, for any reason, the round ends without a winning block, the consensus is dee
 ***Algorithm***
 
 1. Loop:
-   1. Set $R_{SA}$ to $Tip$'s height plus one
-   2. Execute Round $R_{SA}$ to produce winning block $\mathsf{B}^w$
+   1. Set $Round$ to $Tip$'s height plus one
+   2. Execute Round $Round$ to produce winning block $\mathsf{B}^w$
    3. If no winning block has been produced, halt consensus
    4. Execute state transition
 
@@ -148,8 +148,8 @@ If, for any reason, the round ends without a winning block, the consensus is dee
 
 $\textit{SALoop}():$
 1. $\texttt{loop}:$
-   1. $R_{SA} = Tip.Height + 1$
-   2. $\mathsf{B}^w =$ [*SARound*][sar]$(R_{SA})$
+   1. $Round = Tip.Height + 1$
+   2. $\mathsf{B}^w =$ [*SARound*][sar]$(Round)$
    3. $\texttt{if } (\mathsf{B}^w = NIL):$ 
        - $\texttt{halt}$
    4. $State =$ [*AcceptBlock*][ab]$(\mathsf{B}^w)$
@@ -165,9 +165,9 @@ If, at any time, a winning block is produced, as the result of a successful iter
 1. Set variables:
    - Initialize Proposal, Validation, and Ratification timeouts ($\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification}$)
    - Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-   - Set iteration $I_{SA}$ to 0
+   - Set iteration $Iteration$ to 0
 2. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-3. While $I_{SA}$ is less than $MaxIterations$ and no winning block has been produced
+3. While $Iteration$ is less than $MaxIterations$ and no winning block has been produced
    1. Execute SA iteration ([*SAIteration*][sai])
 4. If we reached $MaxIterations$ without a winning block
    1. Output $NIL$
@@ -180,10 +180,10 @@ $\textit{SARound}():$
 1. $\texttt{set }$:
    - $\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-   - $I_{SA} = 0$
-2. $\texttt{start}$([*HandleQuorum*][hq]$(R_{SA}))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (I_{SA} \le MaxIterations):$
-   1. [*SAIteration*][sai]$(R_{SA}, I_{SA})$
+   - $Iteration = 0$
+2. $\texttt{start}$([*HandleQuorum*][hq]$(Round))$
+3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
+   1. [*SAIteration*][sai]$(Round, Iteration)$
 4. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
 5. [*Broadcast*][mx]$(\mathsf{B}^w)$
