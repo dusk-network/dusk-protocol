@@ -1,72 +1,25 @@
 <!-- TODO: Define BlockGenerator() and Committee() procedures -->
-<!-- TODO: Add # Overview -->
+
 # Deterministic Sortition
-*Deterministic Sortition* ($DS$ in short) is the non-interactive process used in the [Succinct Attestation](consensus/README.md) protocol to select the *Block Generator* during the [*Attestation*](consensus/attestation/README.md) phase, and the members of the *Voting Committees* during the [*Reduction*][red] phases.
+*Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation][sa] protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
 ### ToC
-- [Voting Committees](#voting-committees)
-  - [Reduction Committees](#reduction-committees)
-  - [Block Generator Extraction](#block-generator-extraction)
-- [Algorithm Overview](#algorithm-overview)
-  - [Score](#score)
-  - [Seed](#seed)
-- [Algorithm](#algorithm)
-  - [*Deterministic Sortition* (DS)](#deterministic-sortition-ds)
-  - [*Deterministic Extraction* (DE)](#deterministic-extraction-de)
-- [Subcommittees](#subcommittees)
-  - [*BitSet*](#bitset)
-  - [*SubCommittee*](#subcommittee)
-  - [*CountCredits*](#countcredits)
+  - [Overview](#overview)
+    - [Score](#score)
+    - [Seed](#seed)
+  - [Procedures](#procedures)
+    - [Deterministic Sortition (*DS*)](#deterministic-sortition-ds)
+    - [Deterministic Extraction (*DE*)](#deterministic-extraction-de)
+  - [References](#references)
 
-## Voting Committees
-<!-- TODO: move this to Consensus main README ? -->
-A *Voting Committee* is an array of provisioners entitled to cast votes on the validity of a candidate block in a specific Reduction step. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
 
-Formally, a voting committee is defined as:
+## Overview
+The *Deterministic Sortition* ($DS$) algorithm generates a [voting committee][com] by assigning credits to [eligible][pro] provisioners.
 
-$`$ C_{r}^{s} = [m_0^C,\dots,m_n^C],$`$
+The algorithm takes as inputs the round number $R$ and step number $S$, and outputs the corresponding committee.
+It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{R-1}$, and the number of credits to assign $credits$.
 
-where $r$ and $s$ are the consensus round and step, respectively, $n$ is the number of members in the committee, and each member $m_i^C$ is defined as:
-
-$$ m_i^C = (pk_i, influence), $$ 
-
-where $pk_i$ is the public key of the $i\text{th}$ provisioner to be added to the committee by the $DS$ algorithm, and $influence$ is the number of credits it is assigned.
-
-Note that members are ordered by insertion (a provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have index $0$, and the last one will have index $n$.
-
-For the sake of readability, in the rest of this documentation, we will use the following notation:
-- $C[i]$ denotes the $i\text{th}$ member of committee $C$. Formally:
-  - $C[i] = m_i^C$
-- $i_m^C$ denotes the index $i$ of member $m$ in committee $C$. Formally:
-  - $i_m^C = i : m_i^C = m$
-- $m_{pk}^C$ denotes the member of $C$ with publick key $pk$.
-  - $m_{pk}^C = m : m \in C \wedge pk_m = pk$
-- We say a provisioner $P$ is in a committee $C$ if such committee contains a member with $P$'s public key. Formally:
-  - $P \in C \text{ }if\text{ } \exists \text{ } m^C :   pk_{m^C}=pk_P$
-
-### Reduction Committees
-Voting Committees in the Reduction steps have a fixed number of credits that is defined by the global [consensus parameter][cp] $CommitteeCredits$, currently set to $64$.
-
-During a [Reduction][red] step, votes from a given member are multiplied by its influence in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
-
-Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the Reduction voting process.
-
-### Block Generator Extraction
-To extract a block generator, a one-member committee is created, using the $Deterministic Sortition$ procedure with $credits = 1$, that is, by assigning a single credit. The provisioner being assigned such credit becomes the block generator for the iteration.
-
-Formally, the block generator for round $r$ and step $s$ is defined as:
-
-$$ G_r^i = DS(r,s,1).$$
-
-<p><br></p>
-
-## Algorithm Overview
-The *Deterministic Sortition* ($DS$) algorithm generates a voting committee by assigning credits to [eligible](consensus/README.md#provisioners-and-stakes) provisioners.
-
-The algorithm takes as inputs the round number $r$ and step number $s$, and outputs the corresponding committee.
-It also uses the provisioner set $\boldsymbol{P}$, the block produced in the previous round ${B}_{r-1}$, and the number of credits to assign $credits$.
-
-The algorithm assigns one credit at a time to a randomly-selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*Score*](#score), described below.
+The algorithm assigns one credit at a time to a randomly selected provisioner using the *Deterministic Extraction* ($DE$) algorithm, which is based on a pseudo-random number called [*Score*](#score), described below.
 
 Each provisioner can be assigned one or more credits, depending on their *stakes*. Specifically, the extraction algorithm follows a weighted distribution that favors provisioners with higher stakes. In other words, the higher the stake, the higher the probability of being assigned a credit.
 
@@ -81,9 +34,9 @@ The extraction procedure assigns credits based on a pseudo-random number called 
 
 Formally:
 
-$$ Score_{r}^{s} = Int( Hash_{SHA3}( Seed_{r-1}||r||s||c ) ) \mod W,$$
+$$ Score_{R}^{S} = Int( Hash_{SHA3}( Seed_{R-1}||R||S||c ) ) \mod W,$$
 
-where $r$ and $s$ are the consensus round and step, $Seed_{r-1}$ is the $Seed$ of block $\mathsf{B}_{r-1}$, $c$ is the number of the credit being assigned (e.g., $c=3$ represents the third credit to assign), and $W$ is the total *stake weight* of provisioners when assigning credit $c$ during $DS$. $Int()$ denotes the integer interpretation of the hash value.
+where $R$ and $S$ are the consensus round and step, $Seed_{R-1}$ is the $Seed$ of block $\mathsf{B}_{R-1}$, $c$ is the number of the credit being assigned (e.g., $c=3$ represents the third credit to assign), and $W$ is the total *stake weight* of provisioners when assigning credit $c$ during $DS$. $Int()$ denotes the integer interpretation of the hash value.
 
 The use of a hash value based on the above parameters allows to generate a unique score value for each single credit being assigned, ensuring the randomness of the extraction process.
 The use of the modulo operation guarantees a provisioner is extracted within a single iteration over the provisioner set (see the $DE$ algorithm).
@@ -105,17 +58,17 @@ Note that $Seed_0$ is a randomly-generated value contained in the genesis block 
 
 <p><br></p>
 
-## Algorithm
+## Procedures
 We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, $DS$ uses the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
 
-### Deterministic Sortition (DS)
+### Deterministic Sortition (*DS*)
 
 ***Parameters***
 
- - $r$: consensus round
- - $s$: consensus step
- - $credits$: number of credits to assign
- - $\boldsymbol{P}_r = [P_0,\dots,P_n]$: provisioner set for round $r$
+ - $R$: consensus round
+ - $S$: consensus step
+ - $Credits$: number of credits to assign
+ - $\boldsymbol{P}_R = [P_0,\dots,P_n]$: provisioner set for round $R$
 
 ***Algorithm***
 
@@ -136,21 +89,21 @@ We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, 
 
 ***Procedure***
 
-$DS(r, s, credits)$:
+$DS(R, S, Credits, \boldsymbol{P}_R)$:
 1. $C = \emptyset$
-2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_r :$
+2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_R :$
    - $w_\mathcal{P} = S_\mathcal{P}.Amount$
-3. $`W = \sum_{i=0}^{|\boldsymbol{P}_r|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_r`$
+3. $`W = \sum_{i=0}^{|\boldsymbol{P}_R|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_R`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
-   1. $Score_c^{r,s} = Int(Hash_{SHA3}( Seed_{r-1}||r||s||c)) \mod W$
-   2. $\boldsymbol{P}_r' = SortByPK(\boldsymbol{P}_r)$
-   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{r,s}, \boldsymbol{P}_r')$
+   1. $Score_c^{R,S} = Int(Hash_{SHA3}( Seed_{R-1}||R||S||c)) \mod W$
+   2. $\boldsymbol{P}_R' = SortByPK(\boldsymbol{P}_R)$
+   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{R,S}, \boldsymbol{P}_R')$
    4. $\texttt{if } \mathcal{P}_c \notin C$ : 
        - $m_{\mathcal{P}_c}^C = (\mathcal{P}_c,0)$ 
        - $C = C \cup m_{\mathcal{P}_c}^C$
-   5. $m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1$
+   5. $`m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1`$
    6. $d = min(w_{P},1)$
-   7. $w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d$
+   7. $`w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d`$
    8. $W = W - d$
    9.  $\texttt{if } W \le 0$
        - $\texttt{output } C$
@@ -158,7 +111,7 @@ $DS(r, s, credits)$:
 
 <p><br></p>
 
-### Deterministic Extraction (DE)
+### Deterministic Extraction (*DE*)
 
 ***Parameters***
  - $Score$: score for current credit assignation
@@ -173,7 +126,7 @@ $DS(r, s, credits)$:
 
 ***Procedure***
 
-$`DE(Score_i^{r,s}, \boldsymbol{P})`$:
+$`DE(Score_i^{R,S}, \boldsymbol{P})`$:
   1. $\texttt{for }  \mathcal{P} = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :
      1. $\texttt{if } w_\mathcal{P} \ge Score$
         1. $\texttt{output } \mathcal{P}$
@@ -184,36 +137,7 @@ $`DE(Score_i^{r,s}, \boldsymbol{P})`$:
 
 <p><br></p>
 
-## Subcommittees
-When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
 
-To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
-
-For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
-
-### BitSet
-$BitSet$ takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
-
-$BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
-
-<!-- TODO: countSetBits -->
-
-### SubCommittee
-$SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
-
-$SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
-
-### CountCredits
-<!-- TODO: fix \sum rendering -->
-$CountCredits$ takes a voting committee $C$ and a list of members $\boldsymbol{P}$ and returns the cumulative amount of credits belonging to such members with respect to $C$.
-
-***Procedure***
-
-$CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
-1. $`credits = \sum_{i=0}^{n} m_{pk_i}^{C}.influence`$
-2. $\texttt{output } credits$
-
-<!-- TODO: AggregatePKs-? ->
 
 <!----------------------- REFERENCES ----------------------->
 ## References
@@ -230,14 +154,19 @@ $CountCredits(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow credits$:
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md  -->
-[cc]: #countcredits
-[sc]: #subcommittee
-[dsa]: #algorithm
-
+[ds]: #deterministic-sortition-ds
 [de]: #deterministic-extraction-de
+
 <!-- Blockchain -->
 [bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader
 <!-- Consensus -->
-[cp]:  https://github.com/dusk-network/dusk-protocol/tree/main/README.md#consensus-parameters
-<!-- Reduction -->
-[red]: https://github.com/dusk-network/dusk-protocol/tree/main/reduction/README.md
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+
+<!-- Basics -->
+[pro]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md##provisioners-and-stakes
+[com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
