@@ -128,7 +128,12 @@
     	\item \blockgenerator: full-node eligible to propose a candidate block to the network. 
     \end{itemize}
 
+	\mbi{In the following section, I removed the bullets and wrote the specs in words, since
+		the table already summarizes the flow in each scenario. I also made some changes to
+		the table.}
+		
     \section{Specification}\label{sec:specifications}
+	
 	In this section, we describe how gas is handled in different scenarios. We summarize all cases in Table~\ref{tab:gas}.
 
 	\begin{table*}[t] 
@@ -233,7 +238,7 @@
 					% SCENARIO 4
 					\multirow{2}{*}{4. Obfuscated transactions}
 					& \multirow{2}{*}{TBD}
-					& \multirow{2}{*}{TBD (or as in scenario 3???)}
+					& \multirow{2}{*}{TBD}
 					& variable: \% of
 					& \multirow{2}{*}{TBD}
 					& \multirow{2}{*}{TBD}
@@ -271,7 +276,23 @@
     
     In this case, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
 
-	\mbi{I have a remark for this scenario.} 
+	\mbi{I have an observation for this scenario that also applies to Scenario~2. \\
+	At first I thought that from the total \gasunspent, 70\% is paid back to the user
+	and the remaining 30\% is split between the \direct contract and the \icc. However, 
+	Ed explained to me that this is not what this means, but rather the \direct contract gets
+	30\% from the total \gasunspent, and then each \icc 30\% of the gas designated for it.\\
+	In this case, consider this scenario: contract A gets called with 1000 gas limit,
+	executes 500 of gas and calls B with 200 gas limit. Now B only spends 100 (leaving
+	100 unspent). If we count it like this, then:\\
+	- Block generator: 1000 - 400 = 600 \\
+	- User: 70\% of 400 = 280 \\
+	- Contract A: 30\% of 400 = 120 \\
+	- Contract B: 30\% of 200 = 30 \\
+	If the user is also the owner of contracts A and B, the user set 1000 as maximum
+	gas limit, spent 600, and received 430 instead of 400. So, the user is making \dusk
+	out of the blue. Is this how this works or am I missing something here? If so, I
+	can't see why we want to incentivize this.
+	} 
     The most notable contract that uses this kind of strategy is perhaps the
     \transfercontract, which (according to the current configuration)
     will accrue  30\% of the gas spent per transaction.
@@ -334,12 +355,6 @@
     Specifically, locked gas isn't disbursed but held for a duration of epochs.
     Additionally, the \fee is refunded to the \user.
 
-    \begin{itemize}
-        \item \gasconsumed is not paid to anyone, but gets locked for
-              a number of epochs,
-        \item \fee is refunded to the \user.
-    \end{itemize}
-
     \subsubsection{Setting gas price and limit}\label{sec:specifications:scenario-3:setting-gas-price-and-limit}
     The contract determines user priority by indicating a \gasprice
     (together with \gaslimit and the \fee) to Rusk and likely
@@ -380,25 +395,26 @@
 
     The \provider is a contract template designed for those who want to
     advertise and broker infrastructural services.
-    Its primary purpose is to create a marketplace for Provers and potentially
+    Its primary purpose is to create a marketplace for (zero-knowledge proof system)
+    provers and potentially
     provide other services too such as subscription, off-chain payments, etc.
     Implementing the prover fee through a smart contract offers several
     advantages over using multiple output circuits:
 
     \begin{enumerate}
-        \item \textbf{Reduced note proliferation}: Fees managed by a contract
+        \item \textbf{Reduced note proliferation}: fees managed by a contract
               can be accumulated within a single note, which can be withdrawn
-              later
-        \item \textbf{Instant notification of new services}: Wallets are
+              later.
+        \item \textbf{Instant notification of new services}: wallets are
               immediately notified of new services and their fees through a
-              simple event broadcast by registrars
-        \item \textbf{Support for off-chain services}: The contract allows
+              simple event broadcast by registrars.
+        \item \textbf{Support for off-chain services}: the contract allows
               notifications and incentives for off-chain services, such as
-              community-run proof sequencers and provers
+              community-run proof sequencers and provers.
     \end{enumerate}
 
-    Incorporating the Service Provider Smart Contract into the Economic
-    Protocol's considerations and modeling is essential.
+    Incorporating the service provider smart contract into the economic
+    protocol's considerations and modeling is essential.
     It promotes incentives for provers and enables wallets to be notified of
     different provers' services.
 
@@ -411,7 +427,7 @@
     This scenario requires the user to produce a proof based on the percentage
     of the transacted amount.
     However, further consideration is needed to determine if this payment can
-    be generalized within the Transfer Contract, or if this mechanism must be
+    be generalized within the \transfercontract, or if this mechanism must be
     completely delegated to the smart contract method.
 
     \subsection{Scenario 5: Autocontracts}\label{sec:specifications:scenario-5}
@@ -437,7 +453,7 @@
             ID order", or a more complicated "contract fee order"?}
 
     This is an interesting question and way more profound than you probably
-    perceive right now.
+    perceive at first glance.
     For the simple reason that in all ``normal'' transactions, the block
     generator is not bound to order by fees (although we expect him to).
     However, the block generator has (should have) no power to stop an
@@ -452,8 +468,8 @@
     gas-wise.
     For instance, if we would allow subscriber execution immediately after an
     event, this would mean that their gas would add to the block gas limit and
-    might prevent some other transactions to be executed (this might also be an
-    attack BTW). If we do stuff at the end of a batch, though, this would
+    might prevent some other transactions to be executed (which might also lead to
+    attacks). If we perform extra operations at the end of a batch, though, this would
     complicate things quite substantially since a limit order might be
     ``gamed'' by some other executed transaction.
     In other words, after-batch autocontract execution would be very vulnerable
@@ -461,19 +477,19 @@
 
     \section{Model discussion}\label{sec:discussion}
     Dusk differs from traditional blockchain models by charging gas fees to
-    contracts rather than users.
+    contracts rather than users. The main advantages of this approach are:
 
     \begin{itemize}
-        \item This approach fundamentally improves user experience
-        \item Solidifies long-term developer commitment through a sustainable
-              revenue stream
+        \item It fundamentally improves user experience.
+        \item It solidifies long-term developer commitment through a sustainable
+              revenue stream.
         \item It departs from conventional models where network congestion sets
               the price, opting instead for a cost-effective utilization-based
-              approach
-        \item Shifts the focus from speculative tokens to genuine service
+              approach.
+        \item It shifts the focus from speculative tokens to genuine service
               utility, minimizing scams, and conferring special advantages to
               financial institutions by aligning with regulatory compliance
-              requirements
+              requirements.
     \end{itemize}
 
     \subsection{But we can already do this without changing much!}\label{sec:discussion:but-we-can-already-do-this}
@@ -481,7 +497,7 @@
     application level yields unique strategic benefits.
     It promotes a unified approach to the UX of wallets and clients, and
     incentivizes novel feature creation through a standardized base layer.
-    In fact, the very concept of autocontracts from Section~\ref{sec:specifications:scenario-5} emerges
+    In fact, the very concept of autocontracts that was introduced in Section~\ref{sec:specifications:scenario-5} emerges
     from this setup and would not be possible at application level, offering a
     truly unique mechanism to create a scalable market for optimized smart
     contracts.
@@ -521,18 +537,17 @@
 	\scalebox{0.87}{
     \begin{tabular}{|m{0.3\linewidth}|m{0.7\linewidth}|}
         \hline
-        Configuration & Contract Owner Incentives \\
+        \textbf{Configuration} & \textbf{Contract owner incentives} \\
         \hline
-        \hline
-        Traditional & No incentive (Owner's margin is \textbf{absent}, or
-        depends on the smart-contract's specific logic) \\
+        Traditional & No incentive (owner's margin is \textbf{absent}, or
+        depends on the smart-contract's specific logic). \\
         \hline
         Gas-subsidized contracts & Owner is subsidized by users' gas: a
-        percentile of the gas fees no longer goes to the Block Generator, but
-        to the invoked contracts \\
+        percentile of the gas fees no longer goes to the \blockgenerator, but
+        to the invoked contracts. \\
         \hline
         Gas-and-mint subsidized contracts & Owner is subsidized by users' gas
-        and also part of the block reward \\
+        and also part of the block reward. \\
         \hline
     \end{tabular}}
 
@@ -559,11 +574,11 @@
     incentivize block producers, and therefore it is unwise to remove them.
 
     \subsection{Gas and mint subsidized contracts}\label{sec:innovative-cost-management-approach:gas-and-mint-subsidized-contracts}
-    Like above, but with the addition of a percentile of the inflation going to
+    Here we follow the same approach as before, but with the addition of a percentile of the inflation going to
     owners.
     
-    \begin{thebibliography}{99}
-    	\bibitem{item} Author et al., {\it Title of the paper}. 3d ed. Editorial, Place: year. Link: (date of consultation). 
-   	\end{thebibliography}
+%    \begin{thebibliography}{99}
+%    	\bibitem{item} Author et al., {\it Title of the paper}. 3d ed. Editorial, Place: year. Link: (date of consultation). 
+%   	\end{thebibliography}
 
 \end{document}
