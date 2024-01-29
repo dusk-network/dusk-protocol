@@ -58,9 +58,9 @@ As a consequence of the above, blocks from iterations greater than 0 could poten
 To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
 In particular, Blocks in the [local chain][lc] can be in three states:
 
-  - *Accepted*: the block has a Valid Quorum but there might be a lower-iteration block with the same parent that also reached a Valid Quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a NilQuorum certificate. 
+  - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a [Failed Certificate][certs]. 
 
-  - *Attested*: the block has a Valid Quorum and all previous iterations have a NilQuorum Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  - *Attested*: the block has a Valid Quorum and all previous iterations have a Failed Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
   
   - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
 
@@ -382,7 +382,7 @@ The block state is computed according to the [Finality][fin] rules.
 - $\mathsf{B}$: the block being accepted to the chain
 
 ***Algorithm***
-1. If all failed iterations have a NilQuorum certificate:
+1. If all failed iterations have a [Failed certificate][certs]:
    1. Set $cstate$ to "Attested"
    2. If $\mathsf{B}$'s parent is Final
       1. Set $cstate$ to "Final"
@@ -401,8 +401,6 @@ $\textit{GetBlockState}(\mathsf{B}):$
    1. $\texttt{set } cstate = \text{"Accepted"}$
 3. $\texttt{output } cstate$
 
-  
-> :exclamation: Note: current implementation also includes partial (non-quorum) certificates in $FailedIterations$, so the number of NilQuorum certificates should be counted, instead of just the length of $FailedIterations$ 
 
 ### CheckRollingFinality
 *CheckRollingFinality* checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.

@@ -198,7 +198,7 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 ## Certificates
 <!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
 A *Certificate* contains the aggregated votes from two Validation and Ratification steps that reached a quorum. It is used as proof of a committee reaching a quorum in the two steps. 
-In particular, certificates are used to prove the result of an iteration over a candidate block: if the iteration was successful, it proves a quorums of $Valid$ votes was received in both steps; if the iteration failed, it proves there was a quorum of $Invalid$, $NoCandidate$ or $NoQuorum$.
+In particular, certificates are used to prove the result of an iteration over a candidate block: if the iteration was successful, it proves a quorums of $Valid$ votes was received in both steps; if the iteration failed, it proves there was a quorum of $Invalid$, $NoCandidate$ or $NoQuorum$. We use the terms *Valid Certificate* and *Failed Certificate* to refer to the two types of quorum the certificate proves.
 
 
 ### Structures
