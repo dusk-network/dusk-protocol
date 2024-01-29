@@ -78,8 +78,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                          | Description                          |
 |-------------------------------|--------------------------------------|
-| $Round$                      | Current round number                 |
-| $Iteration$                      | Current iteration number             |
+| $Round$                       | Current round number                 |
+| $Iteration$                   | Current iteration number             |
 | $\mathsf{B}^c$                | Candidate block                      |
 | $\mathsf{B}^w$                | Winning block                        |
 | $\tau_{Proposal}$             | Current Proposal timeout             |
@@ -259,11 +259,11 @@ $\textit{IncreaseTimeout}(\tau_{Step}):$
 ***Procedure***
 
 $\textit{GetQuorum}(v):$
-$\texttt{if } (v = Valid): \texttt{output} Supermajority$
-$\texttt{else}: \texttt{output} Majority$
+- $\texttt{if } (v = Valid): \texttt{output } Supermajority$
+- $\texttt{else}: \texttt{output } Majority$
 
 ### *GetStepNum*
-*GetStepNum* returns the absolute stepnumber of a step. It is used for the [*DS*][ds] procedure.
+*GetStepNum* returns the absolute step number (since the first round) of a step. It is used for the [*DS*][ds] procedure.
 
 ***Parameters***
 - $I$: the iteration number
@@ -272,7 +272,7 @@ $\texttt{else}: \texttt{output} Majority$
 ***Procedure***
 
 $\textit{GetStepNum}(I, Step):$
-$\texttt{output} I \times + StepNum$ 
+- $\texttt{output } I \times + StepNum$ 
 
 
 <!----------------------- FOOTNOTES ----------------------->
