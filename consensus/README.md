@@ -239,7 +239,7 @@ $\textit{SAIteration}(R, I):$
 
 <p><br></p>
 
-### IncreaseTimeout
+### *IncreaseTimeout*
 *IncreaseTimeout* doubles a step timeout up to $MaxTimeout$.
 
 ***Parameters***
@@ -250,18 +250,30 @@ $\textit{SAIteration}(R, I):$
 $\textit{IncreaseTimeout}(\tau_{Step}):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} \times 2, MaxTimeout)$
 
-<!-- TODO: Define $GetStepNumber$ 
-Proposal: (Block.Iteration) \times 3 + 1
-val: (Block.Iteration) \times 3 + 1
-rat: (Block.Iteration) \times 3 + 2
--->
-
 ### *GetQuorum*
 *GetQuorum* returns the quorum target depending on the vote $v$
+
+***Parameters***
+- $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
+
+***Procedure***
 
 $\textit{GetQuorum}(v):$
 $\texttt{if } (v = Valid): \texttt{output} Supermajority$
 $\texttt{else}: \texttt{output} Majority$
+
+### *GetStepNum*
+*GetStepNum* returns the absolute stepnumber of a step. It is used for the [*DS*][ds] procedure.
+
+***Parameters***
+- $I$: the iteration number
+- $StepNum$: the step number ($PropStep$, $ValStep$, $RatStep$)
+
+***Procedure***
+
+$\textit{GetStepNum}(I, Step):$
+$\texttt{output} I \times + StepNum$ 
+
 
 <!----------------------- FOOTNOTES ----------------------->
 
@@ -277,6 +289,7 @@ $\texttt{else}: \texttt{output} Majority$
 [sal]:   #saloop
 [it]:    #increasetimeout
 [gq]:    #getquorum
+[gsn]:   #getstepnum
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 [not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation

@@ -53,8 +53,8 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 
 $\textit{Proposal}(R, I)$:
 1. $\texttt{set}$:
-   - $s = I \times 3$
-2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(R,s,1)$
+   - $S =$ [*GetStepNum*][gsn]$(I, PropStep)$
+2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(R,S,1)$
 3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
    2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
@@ -157,11 +157,13 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
+
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-<!-- Validation -->
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 
 <!-- TODO: Add ExecuteTransactions -->
 [xt]: https://github.com/dusk-network/dusk-protocol/tree/main/

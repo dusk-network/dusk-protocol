@@ -107,6 +107,18 @@ In particular, each vote is the digital signature of the hash of the following f
   - the step number, to distinguish Validation and Ratification votes.
   - the candidate block's hash, to ensure which candidate the vote is for;
 
+### Step Numbers
+In some contexts, it is useful to numerically identify the SA step.
+For instance, this is done to distinguish Validation votes from Ratification votes, the step number (within the iteration) is included. 
+
+In this respect, we define the following parameters:
+
+| Parameter  | Value |
+|------------|-------|
+| $PropStep$ | 0     |
+| $ValStep$  | 1     |
+| $RatStep$  | 2     |
+
 ### Block Generator Extraction
 To extract a block generator, a one-member committee is created, using the $Deterministic Sortition$ procedure with $credits = 1$, that is, by assigning a single credit. The provisioner being assigned such credit becomes the block generator for the iteration.
 

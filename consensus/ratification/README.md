@@ -82,7 +82,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
-  - $s = I \times 3 + 1$
+  - $S =$ [*GetStepNum*][gsn]$(I, RatStep)$
   - $v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
 1. $\mathcal{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
@@ -145,6 +145,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
 <!-- Proposal -->
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal

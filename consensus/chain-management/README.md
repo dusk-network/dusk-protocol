@@ -217,10 +217,10 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 - $\texttt{set}:$
    - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
    - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
-   - $S^V = I \times 3 +1$
+   - $S^V =$ [*GetStepNum*][gsn](I, ValStep)$
    - $\mathcal{C}^V =$ [*DS*][ds]$(R,S^V,CommitteeCredits)$
    - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
-   - $S^R = I \times 3 +2$
+   - $S^V =$ [*GetStepNum*][gsn](I, RatStep)$
    - $\mathcal{C}^R =$ [*DS*][ds]$(R,S^R,CommitteeCredits)$
    - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
    - $Q =$[*GetQuorum*][gq]$(v)$
@@ -716,6 +716,7 @@ $\textit{AcceptPoolBlocks}():$
 [sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
+[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md

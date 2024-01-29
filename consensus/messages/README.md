@@ -81,13 +81,6 @@ $$\eta_\mathsf{M} = Sign_{BLS}(Hash_{Blake2B}(\upsilon_\mathsf{M}), sk),$$
 where $sk$ is the secret key paired with the message's $Signer$, and $\upsilon$ is the *signature value*, that is, the content of the message being signed[^1].
 Note that the signature value depends on the message type.
 
-***StepNumber***
-To distinguish Validation votes from Ratification votes, the step number (within the iteration) is included. In this respect we define the following parameters:
-
-| Parameter | Value |
-|-----------|--- ---|
-| $ValStep$ | 1     |
-| $RatStep$ | 2     |
 
 ***Procedures***
 With respect to message signatures, we also define the following procedures:

@@ -86,8 +86,8 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 $ValidationStep( R, I, \mathsf{B}^c ) :$
 - $\texttt{set}:$ 
-  - $s = I \times 3 + 1$
-1. $\mathsf{C}$ = [*DS*][dsa]$(R,s,CommitteeCredits)$
+  - $S =$ [*GetStepNum*][gsn]$(I, ValStep)$
+1. $\mathsf{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathsf{C}):$
    1. $\texttt{if } (\mathsf{B}^c = NIL):$
@@ -149,6 +149,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
 [ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
