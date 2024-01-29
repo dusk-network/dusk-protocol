@@ -39,7 +39,7 @@ The procedure performs two tasks:
 1. If the node is part of the Validation committee $\mathsf{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
 
 2. It collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
-   - if $Valid$ votes reach $Quorum$, the step outputs $Valid$;
+   - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
    - if the timeout $\tau_{Validation}$ expires, the step outputs $NoQuorum$.
@@ -73,7 +73,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
       2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
-         3. Set the target quorum $Q$ to $Quorum$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
+         3. Set the target quorum $Q$ to $Supermajority$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
          4. If votes in $\mathsf{SV}_{v^V}$ reach $Q$
             1. Output $(v^V, \mathsf{SV}_{v^V})$
 
@@ -117,7 +117,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
          2. $v^V = \mathsf{M}.Vote$
          3. $\mathsf{SV}_{v^V} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^V}, \mathsf{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )$
          4. $\texttt{set}:$
-            - $\texttt{if } (v^V = Valid): Q = Quorum$
+            - $\texttt{if } (v^V = Valid): Q = Supermajority$
             - $\texttt{else}: Q = Majority$
          5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
             1. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$

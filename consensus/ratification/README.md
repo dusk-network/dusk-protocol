@@ -41,7 +41,7 @@ The procedure performs two tasks:
 1. If the node is part of the Ratification committee $\mathsf{C}$, it broadcasts a $\mathsf{Ratification}$ message with the Validation result $(v^V, \mathsf{SV}_{v^V})$.
 
 2. It collects $\mathsf{Ratification}$ messages from all committee members, and sets the result depending on the votes:
-   - if $Valid$ votes reach $Quorum$, the step outputs $Valid$;
+   - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
    - if the timeout $\tau_{Ratification}$ expires, the step outputs $NoQuorum$.
@@ -69,7 +69,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
       2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $v^R$ into the aggregated $\mathsf{SV}_{v^R}$
-         3. Set the target quorum $Q$ to $Quorum$ if $v^R$ is $Valid$ or $Majority$ if $v^R$ is $Invalid$, $NoCandidate$, or $NoQuorum$
+         3. Set the target quorum $Q$ to $Supermajority$ if $v^R$ is $Valid$ or $Majority$ if $v^R$ is $Invalid$, $NoCandidate$, or $NoQuorum$
          4. If votes in $\mathsf{SV}_{v^R}$ reach $Q$
             1. Output $(v^R, \mathsf{SV}_{v^R})$
 
@@ -109,7 +109,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
          2. $v^R = \mathsf{M}.Vote$
          3. $\mathsf{SV}_{v^R} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^R}, \mathsf{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )$
          4. $\texttt{set}:$
-            - $\texttt{if } (v^R = Valid): Q = Quorum$
+            - $\texttt{if } (v^R = Valid): Q = Supermajority$
             - $\texttt{else}: Q = Majority$
          5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
             1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$

@@ -4,7 +4,7 @@ The protocol is run by Dusk stakers, known as ***provisioners***, which are resp
 
 Provisioners participate in turns to the production and validation of each new block of the ledger. Participation is determined by the [*Deterministic Sortition*][ds] (*DS* in short) algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
 
-Before continue reading, please make sure you are familiar with the system [Basics][bas] and the document [Notation][not].
+Before reading, please make sure you are familiar with the system [Basics][bas] and the document [Notation][not].
 
 ### ToC
 - [Overview](#overview)
@@ -54,8 +54,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 |-------------------------|----------------|------------------------------------------------------|
 | $GenesisBlock$          | $\mathsf{B_0}$ | Genesis block of the network                         |
 | $Version$               | 0              | Protocol version number                              |
-| $Dusk$                  | 1.000.000.000  | Value of one unit of Dusk (in lux)                   |
-| $MinStake$              | 1.000          | Minimum amount of a single stake (in Dusk)           |
+| $Dusk$                  | 1000000000  | Value of one unit of Dusk (in lux)                   |
+| $MinStake$              | 1000          | Minimum amount of a single stake (in Dusk)           |
 | $Epoch$                 | 2160           | Epoch duration in number of blocks                   |
 | $CommitteeCredits$      | 64             | Total credits in a voting committee                  |
 | $SMQuorum$              | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
