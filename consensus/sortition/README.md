@@ -101,9 +101,9 @@ $DS(R, S, Credits, \boldsymbol{P}_R)$:
    4. $\texttt{if } \mathcal{P}_c \notin C$ : 
        - $m_{\mathcal{P}_c}^C = (\mathcal{P}_c,0)$ 
        - $C = C \cup m_{\mathcal{P}_c}^C$
-   5. $m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1$
+   5. $`m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1`$
    6. $d = min(w_{P},1)$
-   7. $w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d$
+   7. $`w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d`$
    8. $W = W - d$
    9.  $\texttt{if } W \le 0$
        - $\texttt{output } C$
@@ -161,10 +161,12 @@ $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
 [bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader
 <!-- Consensus -->
 [sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md
-[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
+<!-- Basics -->
 [pro]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md##provisioners-and-stakes
 [com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees

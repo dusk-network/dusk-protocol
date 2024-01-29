@@ -1,11 +1,11 @@
 # Ratification
 *Ratification* is the third step in an [*SA iteration*][sai]. In this step, the result of the [Validation][val] step is agreed upon by another committee of randomly chosen provisioners.
 
-Members of the extracted committee cast a vote with the output of the[Validation][step] as resulting from the $\mathsf{Validation}$ messages received. At the same time, all provisioners, including committee members, collect Ratification votes from the network until a target quorum is reached or the step timeout expires.
+Members of the extracted committee cast a vote with the output of the [Validation][val] step as resulting from the $\mathsf{Validation}$ messages received. At the same time, all provisioners, including committee members, collect Ratification votes from the network until a target quorum is reached or the step timeout expires.
 
-If a quorum is reached for any result, a $mathsf{Quorum}$ [`Quorum`][qmsg] is generated with the aggregated signatures of both Validation and Ratification steps.
+If a quorum is reached for any result, a $\mathsf{Quorum}$ [`Quorum`][qmsg] is generated with the aggregated signatures of both Validation and Ratification steps.
 
-The main purpose of the Ratification step is to ensure provisioners are "aligned" with respect to the Validation result: if Validation result was $Valid$, it ensures a supermajority of provisioners saw such a result and hence accepted the block. Similarly, in case of non-$Valid$ result, it ensures a majority of provisioners will certify this iteration as failed, which, in turn, is used in determining if a winning candidate will be Attested or not (see [Finality][fin]).
+The main purpose of the Ratification step is to ensure provisioners are "aligned" with respect to the Validation result: if Validation result was $Valid$, it ensures a supermajority of provisioners saw such a result and hence accepted the block. Similarly, in case of $\text{non-}Valid$ result, it ensures a majority of provisioners will certify this iteration as failed, which, in turn, is used in determining if a winning candidate will be Attested or not (see [Finality][fin]).
 
 ### ToC
 - [Overview](#overview)
@@ -20,7 +20,7 @@ In the Ratification step, each node first executes the [*Deterministic Sortition
 If the node is part of the committee, it casts a vote with the winning [Validation][val] vote ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$). 
 The vote is broadcast using a $\mathsf{Ratification}$ message (see [`Ratification`][rmsg]), which includes the $\mathsf{StepVotes}$ of the aggregated Validation votes.
 
-Then, all nodes, including the committee members, collect votes from the network until a *supermajority*  ($\frac{2}{3}$ of the committee credits) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of non-$Valid$ votes is reached, or the step timeout expires. 
+Then, all nodes, including the committee members, collect votes from the network until a *supermajority*  ($\frac{2}{3}$ of the committee credits) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of $\text{non-}Valid$ votes is reached, or the step timeout expires. 
 Ratification votes (except for $NoQuorum$) are only considered valid if accompanied by a $\mathsf{StepVotes}$ with a quorum of matching Validation votes.
 
 Note that, since Ratification votes require a quorum of Validation votes (except for $NoQuorum$) to be valid, only one vote between $Valid$, $Invalid$, and $NoCandidate$ can be received, plus $NoQuorum$. In other words, $Valid$, $Invalid$, and $NoCandidate$ are mutually exclusive in Ratification. In fact, it's impossible to receive a valid $NoCandidate$ vote (which requires a majority) and $Valid$ vote in the same Ratification step, unless a provisioner casts a double vote[^1].
@@ -34,7 +34,7 @@ The output, together with the Validation output, will be used to determine the o
 ### Procedures
 
 #### *RatificationStep*
-*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $\mathsf{SR}^R=(v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
+*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $`\mathsf{SR}^R=(v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})`$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 
@@ -51,7 +51,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 ***Parameters***
 - $R$: round number
 - $I$: iteration number
-- $\mathsf{SR}^V = ($v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
+- $\mathsf{SR}^V = (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
 
 ***Algorithm***
 1. Extract committee $\mathcal{C}$ for the step
@@ -84,7 +84,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
   - $S =$ [*GetStepNum*][gsn]$(I, RatStep)$
   - $v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
-1. $\mathcal{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
+1. $\mathcal{C}$ = [*DS*][dsp]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
@@ -111,14 +111,14 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
       - $`v^R, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
       - $`pk_\mathsf{M^R}, \sigma_\mathsf{M^R} \leftarrow \mathsf{SI}`$
-      - $\upsilon^V =$(\mathsf{CI}||\mathsf{VI}||ValStep)$
+      - $\upsilon^V = (\mathsf{CI}||\mathsf{VI}||ValStep)$
       - $Q^V =$[*GetQuorum*][gq]$(v^R)$
 
       1. $\texttt{if } (pk_\mathsf{M^R} \in \mathcal{C})$
       2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^R}) = true):$
       3. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true)$
          1. [*Propagate*][mx]$(\mathsf{M^R})$
-         2. $\mathsf{SV}_{v^R} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^R}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )$
+         2. $`\mathsf{SV}_{v^R} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^R}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )`$
          3. $Q =$[*GetQuorum*][gq]$(v^R)$
          4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
             1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
@@ -136,20 +136,24 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [rs]: #ratificationstep
 
 <!-- Basics -->
+[vc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
+[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittees
+[cb]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countsetbits
 [sr]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepresult
 [sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
 
 <!-- Consensus -->
-[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
 [gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
 <!-- Proposal -->
-[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
-[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
+[prop]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
+[props]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
 
 <!-- Validation -->
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
@@ -157,17 +161,18 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
-[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-[vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#voting-committees
-[sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittees
-[cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countsetbits
+[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
 
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
+[vv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyvotes
+[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 [rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 
 <!-- Messages -->
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
-[ms]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification
+[qmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#quorum
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures

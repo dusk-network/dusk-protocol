@@ -22,7 +22,7 @@ If it was generated or received from the network, the step returns the candidate
 *ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
 It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
-In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsa]. If the node's extracted, it generates the candidate $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network. If the block is received, it outputs it, otherwise, it outputs $NIL$.
+In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsp]. If the node's extracted, it generates the candidate $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network. If the block is received, it outputs it, otherwise, it outputs $NIL$.
 
 ***Parameters*** 
 - [SA Environment][env]
@@ -30,7 +30,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 - $I$: iteration number
 
 ***Algorithm***
-1. Extract the block generator ($\mathcal{G}$) [*DS*][dsa]$(R,S,1)$
+1. Extract the block generator ($\mathcal{G}$) [*DS*][dsp]$(R,S,1)$
 2. If this node's provisioner is the block generator:
    1. Generate candidate block $\mathsf{B}^c$
    2. Create $\mathsf{Candidate}$ message $\mathsf{M}$ containing $\mathsf{B}^c$
@@ -54,7 +54,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 $\textit{Proposal}(R, I)$:
 1. $\texttt{set}$:
    - $S =$ [*GetStepNum*][gsn]$(I, PropStep)$
-2. $pk_{\mathcal{G}} =$ [*DS*][dsa]$(R,S,1)$
+2. $pk_{\mathcal{G}} =$ [*DS*][dsp]$(R,S,1)$
 3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
    2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
@@ -72,11 +72,11 @@ $\textit{Proposal}(R, I)$:
 4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
-      1. $\mathsf{M^C} = $ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
+      1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M^C} \ne NIL):$
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
          - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
-         - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{V}`$
+         - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}`$
          1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M^C}) = true \text{ })`$
          2. $\texttt{and }(\eta_{\mathsf{B}^p} = \eta_{Tip})$
          3. $`\texttt{and }(\text{ } pk_\mathsf{M^C} = pk_\mathcal{G} \text{ }):`$
@@ -90,7 +90,7 @@ $\textit{Proposal}(R, I)$:
 
 ### *GenerateBlock*
 *GenerateBlock* creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
-It is called by [*ProposalStep*][ps], which will broadcast the returned block in a $\mathsf{Candidate}$ message.
+It is called by [*ProposalStep*][props], which will broadcast the returned block in a $\mathsf{Candidate}$ message.
 
 ***Parameters***
 - [SA Environment][env]
@@ -102,7 +102,7 @@ It is called by [*ProposalStep*][ps], which will broadcast the returned block in
 2. Execute $\boldsymbol{txs}$ and get new state $State_R$
 3. Compute transaction Merkle tree root $TxRoot_R$
 4. Set new $Seed_R$ by signing the previous one $Seed_{R-1}$
-5. Create block header $\mathsf{H}_{\mathsf{B}^c_{R,I}}$
+5. Create block header $`\mathsf{H}_{\mathsf{B}^c_{R,I}}`$
 6. Create candidate block $\mathsf{B}^c$
 7. Output $\mathsf{B}^c$
 
@@ -127,15 +127,15 @@ $GenerateBlock(R,I)$
     | $Generator$            | $pk_\mathcal{N}$                   |
     | $TxRoot$               | $TxRoot_R$                         |
     | $State$                | $State_R$                          |
-    | $PrevBlockCertificate$ | $\mathsf{B}_{r-1}.Certificate$     | 
+    | $PrevBlockCertificate$ | $\mathsf{B}_{R-1}.Certificate$     | 
     | $FailedIterations$     | $\boldsymbol{FailedCertificates}$  |
     
-6. $`\mathsf{B}^c_{r,i} = (\mathsf{H}, \boldsymbol{tx})`$
+6. $`\mathsf{B}^c_{R,I} = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 
     |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
     | $Transactions$ | $\boldsymbol{txs}$           |
-7. $\texttt{output } \mathsf{B}^c_{r,i}$
+7. $\texttt{output } \mathsf{B}^c_{R,I}$
 
 <p><br></p>
 
@@ -148,13 +148,13 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md -->
-[prop]: #proposal
-[ps]: #proposalstep
-[gb]: #generateblock
-[st]: #selecttransactions
+[prop]:  #proposal
+[props]: #proposalstep
+[gb]:    #generateblock
+[st]:    #selecttransactions
 
 <!-- Consensus -->
-[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 [gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
@@ -162,14 +162,14 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 
 <!-- Sortition -->
-[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
-[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
+[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
+[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
 
 <!-- TODO: Add ExecuteTransactions -->
 [xt]: https://github.com/dusk-network/dusk-protocol/tree/main/
 
 <!-- Messages -->
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message
-[ms]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate

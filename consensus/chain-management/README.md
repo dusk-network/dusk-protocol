@@ -77,7 +77,7 @@ Due to its relevance, we formally define the ***last final block*** as the highe
 The mechanism is based on the following observations:
  - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
  - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any certificate for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
- - Since each committee is randomly extracted with [Deterministic Sortition][sort], it can be considered as a random sampling of the provisioner set.
+ - Since each committee is randomly extracted with [Deterministic Sortition][ds], it can be considered as a random sampling of the provisioner set.
  - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
  - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
  - While all blocks succeeding $B^A$ include Certificates confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Certificates are enough to consider $B^A$ as Final.
@@ -146,9 +146,9 @@ $\textit{VerifyBlock}(\mathsf{B}):$
   - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_{\mathsf{B}^p},\upsilon_\mathsf{B})$
+3. $isValid$ = [*VerifyCertificate*][vc]$`(\mathsf{C}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})$
+5. $isValid$ = [*VerifyCertificate*][vc]$`(\mathsf{C}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
 6. $\texttt{if } (isValid = false): \texttt{output } false$
 7. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{C}_i = \mathsf{B}.FailedIterations[i]$
@@ -217,11 +217,11 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 - $\texttt{set}:$
    - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
    - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
-   - $S^V =$ [*GetStepNum*][gsn](I, ValStep)$
-   - $\mathcal{C}^V =$ [*DS*][ds]$(R,S^V,CommitteeCredits)$
+   - $S^V =$ [*GetStepNum*][gsn]$(I, ValStep)$
+   - $\mathcal{C}^V =$ [*DS*][dsp]$(R,S^V,CommitteeCredits)$
    - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
-   - $S^V =$ [*GetStepNum*][gsn](I, RatStep)$
-   - $\mathcal{C}^R =$ [*DS*][ds]$(R,S^R,CommitteeCredits)$
+   - $S^V =$ [*GetStepNum*][gsn]$(I, RatStep)$
+   - $\mathcal{C}^R =$ [*DS*][dsp]$(R,S^R,CommitteeCredits)$
    - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
    - $Q =$[*GetQuorum*][gq]$(v)$
 1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
@@ -253,7 +253,7 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 $VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 - $\texttt{set}:$
   - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
-1. $\mathcal{C}^{\boldsymbol{bs}} = $ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
+1. $\mathcal{C}^\boldsymbol{bs} =$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
 2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
@@ -287,7 +287,7 @@ The winning block will then be accepted as the new tip of the local chain.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
-- [SA Environment][saenv]
+- [SA Environment][cenv]
 - $R$: round number
 
 ***Algorithm***
@@ -310,9 +310,9 @@ $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{CI}, \mathsf{V}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
+          - $`\mathsf{CI}, \mathsf{VI}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
           - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
-          - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{V}`$
+          - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
           - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
        1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \upsilon)$
@@ -346,7 +346,7 @@ $MakeWinning(\mathsf{B}, \mathsf{C}):$
 2. $\mathsf{B}^w = \mathsf{B}$
 
 
-### AcceptBlock
+### *AcceptBlock*
 *AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable. 
 
 ***Parameters***
@@ -368,13 +368,13 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $\boldsymbol{txs} = \mathsf{B}.Transactions$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
-   - $h = \mathsf{H}_\mathsf{B}.Height$
+   - $h = \mathsf{H_B}.Height$
 2. $newState =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
 3. $Provisioners = newState.Provisioners$
 4. $Tip = \mathsf{B}$
 5. $s =$ *GetBlockState*$(\mathsf{B})$
 6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
-7. *CheckRollingFinality*$()$
+7. [*CheckRollingFinality*][crf]$()$
 
 ### GetBlockState
 The block state is computed according to the [Finality][fin] rules.
@@ -393,8 +393,8 @@ The block state is computed according to the [Finality][fin] rules.
 ***Procedure***
 
 $\textit{GetBlockState}(\mathsf{B}):$
-- $\texttt{set } h = \mathsf{H}_\mathsf{B}.Height$
-1. $\texttt{if } (|\mathsf{H}_\mathsf{B}.FailedIterations| = \mathsf{H}_\mathsf{B}.Iteration-1) :$
+- $\texttt{set } h = \mathsf{H_B}.Height$
+1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
    1. $\texttt{set } cstate = \text{"Attested"}$
    2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
       1. $\texttt{set } cstate = \text{"Final"}$
@@ -439,7 +439,7 @@ The procedure acts depending on the block's height: if the block has the same he
 1. Loop:
    1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
       - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
-      1. Check block hash $\mathsf{H}_\mathsf{B}$
+      1. Check block hash $\mathsf{H_B}$
       2. Check if block is blacklisted
       3. If block height is same as $Tip$
          1. Check block's validity as successor of the $Tip$'s predecessor
@@ -458,7 +458,7 @@ $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
        - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
-       1. $isValidHash = (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$ \
+       1. $isValidHash = (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B}))`$ \
           $\texttt{if } (isValidHash = false) : \texttt{stop}$
        2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
           <!-- B.Height = Tip.Height -->
@@ -693,6 +693,7 @@ $\textit{AcceptPoolBlocks}():$
 [cs]:  #consensus-state
 [fin]: #finality
 [rf]:  #rolling-finality
+[crf]: #checkrollingfinality
 [fal]: #fallback
 [hst]: #handlesynctimeout
 [hb]:  #HandleBlock
@@ -711,27 +712,29 @@ $\textit{AcceptPoolBlocks}():$
 [b]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 [lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
+<!-- Basics -->
+[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+[certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
+[sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
+[cc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
+
 <!-- Consensus -->
-[saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
-[sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
-[gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
-[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
+[sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
+[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
-
-<!-- Messages -->
-[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
-[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate-message
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
 <!-- Sortition -->
-[ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
+[ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
+[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
 
-<!-- Basics -->
-[sv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
-[certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
-[sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
-[cc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
+<!-- Messages -->
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
+[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block
+[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate
+[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures

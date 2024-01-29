@@ -90,7 +90,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 <p><br></p>
 
 ## Procedures
-The SA consensus is defined by the [*SAInit*][sac] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
+The SA consensus is defined by the [*SAInit*][init] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
 The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ (see [*HandleBlock*][hb]) which could trigger the *fallback* or *synchronization* procedures.
 Similarly, receiving a $\mathsf{Quorum}$ message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
 
@@ -157,7 +157,7 @@ $\textit{SALoop}():$
 <p><br></p>
 
 ### *SARound*
-*SARound* executes a single consensus round. First, it initializes the [*Round State*][saenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle $\mathsf{Quorum}$ messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
+*SARound* executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle $\mathsf{Quorum}$ messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
 If, at any time, a winning block is produced, as the result of a successful iteration or due to a $\mathsf{Quorum}$ message, the round stops.
 
 ***Algorithm***
@@ -206,23 +206,23 @@ If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$
    2. Set vote to $(v, \eta_{\mathsf{B}^c})$
    3. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$
    4. Broadcast $\mathsf{M}^\mathsf{Q}$
-   5. If the Ratification result is $Success:
+   5. If the Ratification result is $Success$:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
    6. If the Ratification result is $Fail$
       1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
 
 ***Procedure***
 $\textit{SAIteration}(R, I):$
-1. $\mathsf{B}^c =$ [*ProposalStep*][ps]$(R, I)$
+1. $\mathsf{B}^c =$ [*ProposalStep*][props]$(R, I)$
 2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
 3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
 - $\texttt{set}:$
-  - $ \_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V$
-  - $ v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
+  - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
+  - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
 4. $\texttt{if } (v \ne NoQuorum):$
    1. $\mathsf{C} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
-   2. $\mathsf{V} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{V}, \mathsf{C})$
+   2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
+   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{C})$
       | Field           | Value                 |
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -282,7 +282,7 @@ $\texttt{output} I \times + StepNum$
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
 [sa]:    #overview
-[saenv]: #environment
+[cenv]: #environment
 [init]:  #sainit
 [sar]:   #saround
 [sai]:   #saiteration
@@ -292,8 +292,8 @@ $\texttt{output} I \times + StepNum$
 [gsn]:   #getstepnum
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
-[not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation
-[bas]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics
+[not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation/README.md
+[bas]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md
 
 [lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
@@ -306,27 +306,25 @@ $\texttt{output} I \times + StepNum$
 [mw]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#makewinning
 
 <!-- Sortition -->
-[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/
-[dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#algorithm
-[sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittee
-[sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#setbit
+[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 
-<!-- Proposal -->
-[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/
-[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
+<!-- Basics -->
+[sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
+[sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#setbit
 
-<!-- Validation -->
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation
+<!-- Consensus -->
+[prop]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
+[props]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md#proposalstep
+
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [vs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md#ValidationStep
 
-<!-- Ratification -->
-[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 [rs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md#RatificationStep
 
 <!-- Messages -->
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[mh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-header
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [qmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#quorum
-[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification-message
-[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate-message
+[rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate

@@ -31,15 +31,11 @@ To run the SA protocol, nodes exchange four main types of messages:
 - $\mathsf{Ratification}$: it contains the vote of a member of the voting committee for a [Ratification][val] step;
 - $\mathsf{Quorum}$: it contains the aggregated votes of a specific iteration's Validation and Ratification steps; it is generated at the end of an SA iteration if a quorum was reached in the Ratification step;
 
-Formally, we denote a consensus message $\mathsf{M}$ as:
-
-$`$\mathsf{M} = (\mathsf{H_M}, \sigma_\mathsf{M}, f_1,\dots,f_n),$`$
-
-where $`\mathsf{H_M}`$ is the message header ([ConsensusInfo][cinf]), $`\sigma_\mathsf{M}`$ is the provisioner signature on the header, and $f_1, \dots, f_n$ are the other fields specific to each message type.
+Consensus messages are composed of a [ConsensusInfo][cinf] structure, some fields specific to the message type, and, with the exception of the $\mathsf{Quorum}$ message, a [SignInfo][sinf] structure, containing the public key and signature of the provisioner that created the message. 
 
 #### Sender
 All messages include a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. 
-For the sake of simplicity, we omit this field from the structure definition.
+For the sake of readability, this field is omitted from the structure definition.
 
 
 #### ConsensusInfo
@@ -168,7 +164,7 @@ The $\mathsf{Quorum}$ message is used at the end of a successful SA iteration to
 | $VoteInfo$      | [VoteInfo][vinf]      | 33 byte   | Quorum vote            |
 | $Certificate$   | [Certificate][cert]   | 112 bytes | Iteration certificate  |
 
-Note that the $\mathsf{Quorum}$ message is not signed, since the $Certificate$ is already made of signatures, which can be verified against the $ConsensusInfo$ and the $VoteInfo$
+Note that the $\mathsf{Quorum}$ message is not signed, since the $Certificate$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $VoteInfo$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
 
 The $\mathsf{Quorum}$ message has a total size of 249 bytes.
 
@@ -241,15 +237,21 @@ The *Send* function represents a point-to-point message from the node to one of 
 [sinf]: #signinfo
 [sigs]: #signatures
 [mx]:   #procedures
+[msg]:  #msg
+
+[net]: https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md
 
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
 
-<!-- Consensus -->
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
-
 <!-- Basics -->
 [certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificate
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+[cert]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificate
+[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+
+<!-- Consensus -->
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+
+
