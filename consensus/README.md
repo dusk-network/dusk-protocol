@@ -61,7 +61,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $SMQuorum$              | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
 | $MQuorum$               | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
 | $MaxIterations$         | 255            | Maximum number of iterations for a single round      |
-| $RollingFinalityBlocks$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
+| $RollingFinality$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 | $InitTimeout$           | 5              | Initial step timeout (in seconds)                    |
 | $MaxTimeout$            | 60             | Maximum timeout for a single step (in seconds)       |
 | $BlockGas$              | 5.000.000.000  | Gas limit for a single block                         |

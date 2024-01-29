@@ -406,7 +406,7 @@ $\textit{GetBlockState}(\mathsf{B}):$
 > :exclamation: Note: current implementation also includes partial (non-quorum) certificates in $FailedIterations$, so the number of NilQuorum certificates should be counted, instead of just the length of $FailedIterations$ 
 
 ### CheckRollingFinality
-*CheckRollingFinality* checks if the last $RollingFinalityBlocks$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
+*CheckRollingFinality* checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
 
 ***Procedure***
 $\textit{CheckRollingFinality}():$
@@ -415,12 +415,12 @@ $\textit{CheckRollingFinality}():$
    1. *MakeChainFinal*$()$
 
 #### HasRollingFinality
-*HasRollingFinality* outputs true if the last $RollingFinalityBlocks$ are all Attested and false otherwise.
+*HasRollingFinality* outputs true if the last $RollingFinality$ are all Attested and false otherwise.
 
 ***Procedure***
 $\textit{HasRollingFinality}():$
 - $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
-1. $\texttt{for } i = tip \dots tip{-}RollingFinalityBlocks :$
+1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
    1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
       1. $\texttt{output } false$
 2. $\texttt{output } true$ 
