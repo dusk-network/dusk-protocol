@@ -5,13 +5,13 @@ In this documentation we will use the following notation:
 - $Latex$ is used for:
   - variables, with lowercase letters (e.g. a variable $v$)
   - simple objects, with uppercase letters (e.g. a committee $C$)
-  - consensus parameters, state variables, and object fields, with whole words, (e.g. the $Quorum$ parameter)
+  - consensus parameters, state variables, and object fields, with whole words, (e.g. the $Epoch$ parameter)
 - $\boldsymbol{Bold}$ is used for vectors (e.g. a bitset $\boldsymbol{bs}$)
 - $\mathcal{Calligrafic}$ is used for actors (e.g. a provisioner $\mathcal{P}$)
 - $\mathsf{Sans Serif}$ is used for structures (e.g. a block $\mathsf{B}$, or a $\mathsf{Candidate}$ message)
 - *Italic* is used for function names (e.g. the *Hash* function)
 
-Moreover, we will conventionally use the following symbols:
+Moreover, we will use the following symbols:
 - $pk$ and $sk$ are used to denote public and secret keys, respectively
 - $\sigma$ characters are used for signatures (e.g. a message signature $\sigma_{M}$)
 - $\eta$ characters are used for hash digests (e.g. a block hash $\eta_B$)
@@ -32,6 +32,6 @@ Some procedures (typically containing a loop) are executed concurrently to each 
 - $\texttt{stop}(P)$: interrupts the procedure $P$;
 - $\texttt{restart}(P)$: stops and restart the procedure $P$.
 
-Within these procedures, we use the command $\texttt{stop}$ (with no arguments) to indicate the interruption of the execution.
+Within these procedures, we use the command $\texttt{stop}$ (with no arguments) to indicate the interruption of the procedure execution.
 
 Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ if $P$ is currently running, and $false$ otherwise.
