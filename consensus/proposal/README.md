@@ -41,8 +41,8 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
    2. While timeout has not expired:
       1. If a $\mathsf{Candidate}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
          1. If $\mathsf{M}$'s signature is valid
-         2. and $\mathsf{M}$'s signer is $\mathcal{G}$
-         3. and $\mathsf{M}$'s $BlockHash$ is $Candidate$'s hash
+         2. and $\mathsf{M}.PrevHash$ is $Tip$
+         3. and $\mathsf{M}$'s signer is $\mathcal{G}$
             1. Propagate $\mathsf{M}$
             2. Output $\mathsf{M}$'s block ($\mathsf{B}^c_\mathsf{M}$)
    3. If timeout expired
@@ -58,22 +58,28 @@ $\textit{Proposal}(R, I)$:
 3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
    2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
-      | Field       | Value                     | 
-      |-------------|---------------------------|
-      | $Header$    | $\mathsf{H}_\mathsf{M}$   |
-      | $Candidate$ | $\mathsf{B}^c$            |
+      | Field       | Value               | 
+      |-------------|---------------------|
+      | $PrevHash$  | $\eta_{Tip}$        |
+      | $Round$     | $R$                 |
+      | $Iteration$ | $I$                 |
+      | $Candidate$ | $\mathsf{B}^c$      |
+      | $Signer$    | $pk_\mathcal{N}$    |
+      | $Signature$ | $\sigma_\mathsf{M}$ |
+
    3. [*Broadcast*][mx]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
 4. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
-      1. $\mathsf{M} = $ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
-         $\texttt{if } (\mathsf{M} \ne NIL):$
-         - $`(\mathsf{H}_\mathsf{M}, \mathsf{B}_\mathsf{M}) \leftarrow \mathsf{M}`$
-         - $`(\_, pk_\mathsf{M}, \sigma_\mathsf{M}) \leftarrow \mathsf{H}_\mathsf{M}`$
-         1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M}) = true \text{ })`$
-         2. $`\texttt{and }(\text{ } pk_\mathsf{M} = pk_{\mathcal{G}} \text{ })`$
-         3. $`\texttt{and } (\text{ }\eta_\mathsf{M} = \eta_{\mathsf{B}_\mathsf{M}} \text{ }):`$
+      1. $\mathsf{M^C} = $ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
+         $\texttt{if } (\mathsf{M^C} \ne NIL):$
+         - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
+         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
+         - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{V}`$
+         1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M^C}) = true \text{ })`$
+         2. $\texttt{and }(\eta_{\mathsf{B}^p} = \eta_{Tip})$
+         3. $`\texttt{and }(\text{ } pk_\mathsf{M^C} = pk_\mathcal{G} \text{ }):`$
             1. [*Propagate*][mx]$(\mathsf{M})$
             2. $\texttt{output } \mathsf{B}_\mathsf{M}$
    3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Proposal}):$

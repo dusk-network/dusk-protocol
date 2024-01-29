@@ -38,7 +38,7 @@ The output, together with the Validation output, will be used to determine the o
 
 The procedure performs two tasks: 
 
-1. If the node is part of the Ratification committee $\mathsf{C}$, it broadcasts a $\mathsf{Ratification}$ message with the Validation result $(v^V, \mathsf{SV}_{v^V})$.
+1. If the node is part of the Ratification committee $\mathcal{C}$, it broadcasts a $\mathsf{Ratification}$ message with the Validation result $(v^V, \mathsf{SV}_{v^V})$.
 
 2. It collects $\mathsf{Ratification}$ messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
@@ -54,9 +54,9 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 - $\mathsf{SR}^V = ($v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
 
 ***Algorithm***
-1. Extract committee $\mathsf{C}$ for the step
+1. Extract committee $\mathcal{C}$ for the step
 2. Start step timeout $\tau_{Ratification}$
-3. If the node $\mathcal{N}$ is part of $\mathsf{C}$:
+3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. Create a $\mathsf{Ratification}$ message $\mathsf{M}$ for vote $v^V$
    2. Broadcast $\mathsf{M}$
 
@@ -66,10 +66,11 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 5. While timeout $\tau_{Ratification}$ has not expired:
    1. If a $\mathsf{Ratification}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M}$'s signature is valid
-      2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
+      2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
+      3. and $ValidationVotes$ are a valid quorum of votes for the previous Validation step :
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $v^R$ into the aggregated $\mathsf{SV}_{v^R}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $v^R$ is $Valid$ or $Majority$ if $v^R$ is $Invalid$, $NoCandidate$, or $NoQuorum$
+         3. Set the target quorum $Q$ to $Supermajority$ if $v^R$ is $Valid$ or $Majority$ otherwise
          4. If votes in $\mathsf{SV}_{v^R}$ reach $Q$
             1. Output $(v^R, \mathsf{SV}_{v^R})$
 
@@ -83,16 +84,20 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
   - $s = I \times 3 + 1$
   - $v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
-1. $\mathsf{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
+1. $\mathcal{C}$ = [*DS*][dsa]$(R,S,CommitteeCredits)$
 2. $\tau_{Start} = \tau_{Now}$
-3. $\texttt{if } (pk_\mathcal{N} \in \mathsf{C}):$
+3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
-      | Field             | Value                     | 
-      |-------------------|---------------------------|
-      | $Header$          | $\mathsf{H}_{\mathsf{M}}$ |
-      | $Vote$            | $v^V$                     | 
-      | $CandidateHash$   | $\eta_{\mathsf{B}^c}$     |
-      | $ValidationVotes$ | $\mathsf{SV}_{v^V}$       |
+      | Field             | Value                 | 
+      |-------------------|-----------------------|
+      | $PrevHash$        | $\eta_{Tip}$          |
+      | $Round$           | $R$                   |
+      | $Iteration$       | $I$                   |
+      | $Vote$            | $v^V$                 |
+      | $CandidateHash$   | $\eta_{\mathsf{B}^c}$ |
+      | $Signer$          | $pk_\mathcal{N}$      |
+      | $Signature$       | $\sigma_\mathsf{M}$   |
+      | $ValidationVotes$ | $\mathsf{SV}_{v^V}$   |
 
    2. [*Broadcast*][mx]$(\mathsf{M})$
 
@@ -101,17 +106,21 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
 5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Ratification}):$
-   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
-      - $\texttt{set: } \sigma_\mathsf{M} = \mathsf{M}.Signature$
-      1. $\texttt{if } (pk_\mathsf{M} \in \mathsf{C})$
-      2. $\texttt{and }($*VerifySignature*$(\sigma_\mathsf{M}, pk_\mathsf{M}) = true):$
-         1. [*Propagate*][mx]$(\mathsf{M})$
-         2. $v^R = \mathsf{M}.Vote$
-         3. $\mathsf{SV}_{v^R} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^R}, \mathsf{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )$
-         4. $\texttt{set}:$
-            - $\texttt{if } (v^R = Valid): Q = Supermajority$
-            - $\texttt{else}: Q = Majority$
-         5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
+   1. $\texttt{if } (\mathsf{M^R} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
+      - $`\mathsf{CI}, \mathsf{VI}, \mathsf{SI}, \mathsf{SV}^V \leftarrow \mathsf{M^R}`$
+      - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
+      - $`v^R, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
+      - $`pk_\mathsf{M^R}, \sigma_\mathsf{M^R} \leftarrow \mathsf{SI}`$
+      - $\upsilon^V =$(\mathsf{CI}||\mathsf{VI}||ValStep)$
+      - $Q^V =$[*GetQuorum*][gq]$(v^R)$
+
+      1. $\texttt{if } (pk_\mathsf{M^R} \in \mathcal{C})$
+      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^R}) = true):$
+      3. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true)$
+         1. [*Propagate*][mx]$(\mathsf{M^R})$
+         2. $\mathsf{SV}_{v^R} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^R}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )$
+         3. $Q =$[*GetQuorum*][gq]$(v^R)$
+         4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
             1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Ratification}):$
@@ -160,3 +169,4 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 [mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
+[ms]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures

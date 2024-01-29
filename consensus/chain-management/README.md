@@ -142,8 +142,8 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
   - $\mathsf{C}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
   - $\mathsf{C}_\mathsf{B} = \mathsf{B}.Certificate$
-  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
-  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
+  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
+  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
 3. $isValid$ = [*VerifyCertificate*][vc]$(\mathsf{C}_{\mathsf{B}^p},\upsilon_\mathsf{B})$
@@ -154,7 +154,7 @@ $\textit{VerifyBlock}(\mathsf{B}):$
    - $\mathsf{C}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{C}_i \ne NIL) :$
       <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,i,NoCandidate,NIL)$
+      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
       - $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i, \upsilon_i)$
       - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
@@ -216,20 +216,19 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
 $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 - $\texttt{set}:$
    - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
-   - $\eta_{\mathsf{B}}^p, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
+   - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
    - $S^V = I \times 3 +1$
    - $\mathcal{C}^V =$ [*DS*][ds]$(R,S^V,CommitteeCredits)$
-   - $\eta^V =$ *Hash*$(\eta_{\mathsf{B}}^p||I||v||\eta_{\mathsf{B}}||1)$ 
+   - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
    - $S^R = I \times 3 +2$
    - $\mathcal{C}^R =$ [*DS*][ds]$(R,S^R,CommitteeCredits)$
-   - $\eta^R =$ *Hash*$(\eta_{\mathsf{B}}^p||I||v||\eta_{\mathsf{B}}||2)$
-   - $\texttt{if } (v=Valid) : Q = Supermajority$
-     $\texttt{else } : Q = Majority$
+   - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
+   - $Q =$[*GetQuorum*][gq]$(v)$
 1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
    1. $\texttt{output } false$
-2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \eta^V, Q, \mathcal{C}^V)`$
+2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
 3. $\texttt{if } (isValid{=}false): \texttt{output } false$
-4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \eta^R, Q, \mathcal{C}^R)`$
+4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
 5. $\texttt{if } (isValid{=}false): \texttt{output } false$
 6. $\texttt{output } true$
 
@@ -238,27 +237,27 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 
 ***Parameters***
 - $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
-- $\eta$: the vote's hash
+- $\upsilon$: the [signature value][ms]
 - $Q$: the target quorum
-- $\mathcal{C}$: the full committee
+- $\mathcal{C}$: the step committee
 
 ***Algorithm***
 1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{SV}.BitSet$
 2. If credits in $C^{\boldsymbol{bs}}$ are less than the target quorum $Q$
    1. Output $false$
 3. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
-4. Verify aggregated signature over $\eta$
+4. Verify aggregated signature over $\upsilon$
 
 ***Procedure***
 
-$VerifyVotes(\mathsf{SV}, \eta, Q)$:
+$VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 - $\texttt{set}:$
   - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
 1. $\mathcal{C}^{\boldsymbol{bs}} = $ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
 2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
-4. $\texttt{output } Verify_{BLS}(\eta, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
+4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
 ## Block Management
@@ -311,8 +310,9 @@ $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{H_M}, v, \eta_{\mathsf{B}^c}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
-          - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{H_M}`$
+          - $`\mathsf{CI}, \mathsf{V}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
+          - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
+          - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{V}`$
           - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
        1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \upsilon)$
@@ -715,14 +715,16 @@ $\textit{AcceptPoolBlocks}():$
 [saenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
 [sl]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
+[gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
 
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
 <!-- Messages -->
-[mx]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block-message
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate-message
+[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
 
 <!-- Sortition -->
 [ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 

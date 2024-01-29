@@ -61,18 +61,19 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
       1. Verify $\mathsf{B}^c$ against $Tip$
       2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
       3. Otherwise, set $v$ to $Invalid$
-   3. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
-   4. Broadcast $\mathsf{M}$
+   3. Set $VoteInfo$ to $(v, \eta_{\mathsf{B}^c})$
+   4. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
+   5. Broadcast $\mathsf{M}$
 
 4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
    1. Initialize $\mathsf{SV}_v$
 
 5. While timeout $\tau_{Validation}$ has not expired:
-   1. If a $\mathsf{Validation}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
-      1. If $\mathsf{M}$'s signature is valid
-      2. and $\mathsf{M}$'s signer is in the committee $\mathsf{C}$
-         1. Propagate $\mathsf{M}$
-         2. Collect $\mathsf{M}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
+   1. If a $\mathsf{Validation}$ message $\mathsf{M^V}$ is received for round $R$ and iteration $I$:
+      1. If $\mathsf{M^V}$'s signature is valid
+      2. and $\mathsf{M^V}$'s signer is in the committee $\mathsf{C}$
+         1. Propagate $\mathsf{M^V}$
+         2. Collect $\mathsf{M^V}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
          3. Set the target quorum $Q$ to $Supermajority$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
          4. If votes in $\mathsf{SV}_{v^V}$ reach $Q$
             1. Output $(v^V, \mathsf{SV}_{v^V})$
@@ -95,31 +96,37 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
       2. $\texttt{if } (isValid = true) : v = Valid$
       3. $\texttt{else}: v = Invalid$
-   3. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, v, \eta_{\mathsf{B}^c})$
-      | Field           | Value                     | 
-      |-----------------|---------------------------|
-      | $Header$        | $\mathsf{H}_{\mathsf{M}}$ |
-      | $Vote$          | $v$                       | 
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$     | 
+   3. $\texttt{set}: \mathsf{V} = (v, \eta_{\mathsf{B}^c})$
+   4. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, \mathsf{V})$
+      | Field           | Value                 | 
+      |-----------------|-----------------------|
+      | $PrevHash$      | $\eta_{Tip}$          |
+      | $Round$         | $R$                   |
+      | $Iteration$     | $I$                   |
+      | $Vote$          | $v$                   |
+      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
+      | $Signer$        | $pk_\mathcal{N}$      |
+      | $Signature$     | $\sigma_\mathsf{M}$   |
 
-   4. [*Broadcast*][mx]$(\mathsf{M})$
+   5. [*Broadcast*][mx]$(\mathsf{M})$
 
 4. $\texttt{set}:$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
 5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}):$
-   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
-      - $\texttt{set: } \sigma_\mathsf{M} = \mathsf{M}.Signature$
-      1. $\texttt{if } (pk_{\mathsf{M}} \in \mathsf{C})$
-      2. $\texttt{and }($*VerifySignature*$(\sigma_\mathsf{M}, pk_\mathsf{M}) = true):$
-         1. [*Propagate*][mx]$(\mathsf{M})$
-         2. $v^V = \mathsf{M}.Vote$
-         3. $\mathsf{SV}_{v^V} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^V}, \mathsf{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )$
-         4. $\texttt{set}:$
-            - $\texttt{if } (v^V = Valid): Q = Supermajority$
-            - $\texttt{else}: Q = Majority$
-         5. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
+   1. $\texttt{if } (\mathsf{M^V} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
+      - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
+      - $\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}$
+      - $v^V, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}$
+      - $pk_\mathsf{M^V}, \sigma_\mathsf{M^V} \leftarrow \mathsf{SI}$
+
+      1. $\texttt{if } (pk_{\mathsf{M^V}} \in \mathsf{C})$
+      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true):$
+         1. [*Propagate*][mx]$(\mathsf{M^V})$
+         2. $\mathsf{SV}_{v^V} =$ [*AggregateVote*][av]$( \mathsf{SV}_{v^V}, \mathsf{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )$
+         3. $Q =$[*GetQuorum*][gq]$(v^V)$
+         4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
             1. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
@@ -142,25 +149,29 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
-<!-- Proposal -->
+
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal
 [ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal#proposalstep
-<!-- Ratification -->
+
 [rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification
+
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 [dsa]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#voting-committees
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#subcommittees
 [cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#countsetbits
+
 <!-- Chain Management -->
 [vbh]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#verifyblockheader
 [rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
-[fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
+[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
+
 <!-- Messages -->
-[msg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
-[mx]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
+[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation-message
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#message-creation
 
 <!-- TODO -->
 [sla]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/slashing

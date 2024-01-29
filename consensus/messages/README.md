@@ -1,23 +1,28 @@
 <!-- TODO: mv Verify message functions here -->
-# Messages
+# Protocol Messages
 This section describes the network messages exchanged by nodes to participate in the SA consensus protocol.
 
 ## ToC
   - [Consensus Messages](#consensus-messages)
-    - [Hash and Signature](#hash-and-signature)
-    - [Structures](#structures)
-      - [ConsensusHeader](#consensusheader)
+      - [Sender](#sender)
+      - [ConsensusInfo](#consensusinfo)
+      - [VoteInfo](#voteinfo)
+    - [Signatures](#signatures)
+      - [SignInfo](#signinfo)
+    - [Messages](#messages)
       - [Candidate](#candidate)
       - [Validation](#validation)
       - [Ratification](#ratification)
       - [Quorum](#quorum)
       - [Block](#block)
+      - [Sync messages](#sync-messages)
     - [Procedures](#procedures)
       - [*Msg*](#msg)
       - [*Broadcast*](#broadcast)
       - [*Receive*](#receive)
       - [*Propagate*](#propagate)
       - [*Send*](#send)
+
 
 ## Consensus Messages
 To run the SA protocol, nodes exchange four main types of messages:
@@ -30,45 +35,44 @@ Formally, we denote a consensus message $\mathsf{M}$ as:
 
 $`$\mathsf{M} = (\mathsf{H_M}, \sigma_\mathsf{M}, f_1,\dots,f_n),$`$
 
-where $`\mathsf{H_M}`$ is the message header ([ConsensusHeader][ch]), $`\sigma_\mathsf{M}`$ is the provisioner signature on the header, and $f_1, \dots, f_n$ are the other fields specific to each message type.
+where $`\mathsf{H_M}`$ is the message header ([ConsensusInfo][cinf]), $`\sigma_\mathsf{M}`$ is the provisioner signature on the header, and $f_1, \dots, f_n$ are the other fields specific to each message type.
 
-### SAInfo
-`SAInfo` includes information required to identify a candidate block: the previous block hash and the SA round and iteration.
+#### Sender
+All messages include a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. 
+For the sake of simplicity, we omit this field from the structure definition.
+
+
+#### ConsensusInfo
+All consensus messages share a common $\mathsf{ConsensusInfo}$ structure that allows identifying the candidate block they refer to. The information included is: the previous block hash, and the round and iteration numbers.
 
 Recall that there's a different candidate block for each round and iteration. However, in the case of a fork, two candidates could exist for the same round and iteration. Including the previous block's hash allows distinguishing the two candidates.
 
-The `SAInfo` structure is: 
-| Field       | Type          | Size      | Description                       |
-|-------------|---------------|-----------|-----------------------------------|
-| $PrevHash$  | SHA3          | 32 bytes  | Previous block's hash             |
-| $Round$     | Integer       | 64 bits   | Round number                      |
-| $Iteration$ | Integer       | 64 bits   | Iteration number                  |
+The $\mathsf{ConsensusInfo}$ structure is defined as follows:
+
+| Field       | Type    | Size     | Description         |
+|-------------|---------|----------|---------------------|
+| $PrevHash$  | SHA3    | 32 bytes | Previous block hash |
+| $Round$     | Integer | 64 bits  | Round number        |
+| $Iteration$ | Integer | 64 bits  | Iteration number    |
 
 The structure's total size is 48 bytes.
 
-#### ConsensusHeader
-All consensus messages share a common $\mathsf{ConsensusHeader}$ structure, defined as follows:
+#### VoteInfo
+$\mathsf{VoteInfo}$ contains the information of a Validation or Ratification vote.
 
-| Field       | Type              | Size      | Description                       |
-|-------------|-------------------|-----------|-----------------------------------|
-| $SAInfo$    | [`SAInfo`][#info] | 48 bytes  | Consensus info for the message    |
-| $Signer$    | BLS Key           | 96 bytes  | Public Key of the message creator |
-| $Signature$ | BLS Signature     | 48 bytes  | Message signature                 |
+| Field           | Type    | Size     | Description            |
+|-----------------|---------|----------|------------------------|
+| $Vote$          | Integer | 1 byte   | Validation vote        |
+| $CandidateHash$ | SHA3    | 32 bytes | Candidate block's hash |
 
-The $ConsensusHeader$ structure has a total size of 192 bytes.
+$Vote$ can be $NoCandidate$ ($0$), $Valid$ ($1$), $Invalid$ ($2$), or $NoQuorum$ ($3$).
+When $Vote$ is $NoCandidate$ or $NoQuorum$, $CandidateHash$ is empty.
+Note that an empty $CandidateHash$ is not included in the [*signature value*][sigs].
 
-**Signer**
-The $Signer$ field identifies the provisioner sending the message. For instance, in a $Candidate$ message, this field identifies the block generator, while, in a $\mathsf{Validation}$ message, it identifies the committee member who cast the vote.
-
-
-**Signature**
-The $Signature$ field is not just the signature of the whole message but varies depending on the message type. This signature is used for the consensus protocol, especially for $\mathsf{Validation}$ and $\mathsf{Ratification}$ messages, whose signature is used to prove the vote and, if a quorum is reached, to certify the quorum in an iteration.
-
-**Sender**
-For all messages, we additionally define a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. For the sake of simplicity, we omit this field from the structure definition.
+The $\mathsf{VoteInfo}$ structure has a total size of 33 bytes.
 
 ### Signatures
-Each message contains a *message signature* (included in the $Signature$ field) which is used to verify the message content but is also functional to prove the reached agreement over a candidate block (see [Certificates][certs])
+Each message contains a *message signature* (included in the $Signature$ field) which is used to verify the message authenticity but is also functional to prove the reached agreement over a candidate block (see [Certificates][certs])
 
 Formally, given a message $\mathsf{M}$, we define its signature $\eta_\mathsf{M}$ as
 
@@ -77,27 +81,50 @@ $$\eta_\mathsf{M} = Sign_{BLS}(Hash_{Blake2B}(\upsilon_\mathsf{M}), sk),$$
 where $sk$ is the secret key paired with the message's $Signer$, and $\upsilon$ is the *signature value*, that is, the content of the message being signed[^1].
 Note that the signature value depends on the message type.
 
+***StepNumber***
+To distinguish Validation votes from Ratification votes, the step number (within the iteration) is included. In this respect we define the following parameters:
+
+| Parameter | Value |
+|-----------|--- ---|
+| $ValStep$ | 1     |
+| $RatStep$ | 2     |
+
 ***Procedures***
 With respect to message signatures, we also define the following procedures:
  - $SignMessage(\mathsf{M})$: takes a message $\mathsf{M}$ and outputs the message signature $\sigma_\mathsf{M}$;
  - $VerifyMessage(\mathsf{M})$: takes a message $\mathsf{M}$ and outputs $true$ if $\sigma_\mathsf{M}$ is a valid signature of $Signer$ over the signature value $\upsilon_\mathsf{M}$.
 
+#### SignInfo
+$\mathsf{SignInfo}$ contains the public key of the provisioner creating the message and its signature over the message.
 
-### Structures
+| Field       | Type              | Size      | Description                       |
+|-------------|-------------------|-----------|-----------------------------------|
+| $Signer$    | BLS Key           | 96 bytes  | Public Key of the message creator |
+| $Signature$ | BLS Signature     | 48 bytes  | Message signature                 |
+
+The $\mathsf{SignInfo}$ structure has a total size of 144 bytes.
+
+The $Signer$ field identifies the provisioner sending the message. For instance, in a $Candidate$ message, this field identifies the block generator, while, in a $\mathsf{Validation}$ message, it identifies the committee member who cast the vote.
+
+The $Signature$ field is not just the signature of the whole message but varies depending on the message type. This signature is used for the consensus protocol, especially for $\mathsf{Validation}$ and $\mathsf{Ratification}$ messages, whose signature is used to prove the vote and, if a quorum is reached, to certify the quorum in an iteration.
+
+
+### Messages
 
 #### Candidate
 The $\mathsf{Candidate}$ message is used by a block generator to broadcast a candidate block.
 
 The message has the following structure:
 
-| Field       | Type                  | Size      | Description           |
-|-------------|-----------------------|-----------|-----------------------|
-| $Header$    | [ConsensusHeader][ch] | 192 bytes | Message header        |
-| $Candidate$ | [Block][b]            |           | Candidate block       |
+| Field           | Type                  | Size      | Description     |
+|-----------------|-----------------------|-----------|-----------------|
+| $ConsensusInfo$ | [ConsensusInfo][cinf] | 48 bytes  | Consensus info  |
+| $Candidate$     | [Block][b]            |           | Candidate block |
+| $SignInfo$      | [SignInfo][sinf]      | 144 bytes | Signature info  |
 
 The $\mathsf{Candidate}$'s *signature value* $\upsilon_\mathcal{M^C}$ is:
 
-$$\upsilon_\mathcal{M^C} = (SAInfo || \eta_{Candidate})$$
+$$\upsilon_\mathcal{M^C} = (ConsensusInfo || \eta_{Candidate})$$
 
 The $\mathsf{Candidate}$ message has a variable size of 192 bytes plus the block size.
 
@@ -106,38 +133,36 @@ The $\mathsf{Validation}$ message is used by a member of a [Validation][val] com
 
 The message has the following structure:
 
-| Field           | Type                  | Size      | Description            |
-|-----------------|-----------------------|-----------|------------------------|
-| $Header$        | [ConsensusHeader][ch] | 192 bytes | Message header         |
-| $Vote$          | Integer               | 1 byte    | Validation vote        |
-| $CandidateHash$ | SHA3                  | 32 bytes  | Candidate block's hash |
+| Field           | Type                  | Size      | Description     |
+|-----------------|-----------------------|-----------|-----------------|
+| $ConsensusInfo$ | [ConsensusInfo][cinf] | 48 bytes  | Consensus info  |
+| $VoteInfo$      | [VoteInfo][vinf]      | 33 byte   | Validation vote |
+| $SignInfo$      | [SignInfo][sinf]      | 144 bytes | Signature info  |
 
-$Vote$ can be $Valid$, $Invalid$, or $NoCandidate$.
+In this message, $Vote$ (part of $VoteInfo$) can be $Valid$, $Invalid$, or $NoCandidate$.
 
 The $\mathsf{Validation}$'s *signature value* $\upsilon_\mathcal{M^V}$ is:
 
-$$\upsilon_\mathcal{M^V} = (SAInfo || Vote || CandidateHash)$$
-
+$$\upsilon_\mathcal{M^V} = (ConsensusInfo || VoteInfo || ValStep)$$
 
 The $\mathsf{Validation}$ message has a total size of 225 bytes.
 
 #### Ratification
-The $\mathsf{Ratification}$ message is used by a member of a [Ratification][rat] committee to cast a vote on a candidate block. The vote is expressed by the $Header$'s $BlockHash$ field: if containing a hash, the vote is in favor of the corresponding block; if empty ($NIL$), the vote is against the candidate block of the $Round$ and $Iteration$ specified in the $Header$.
-
+The $\mathsf{Ratification}$ message is used by a member of a [Ratification][rat] committee to cast a vote on a candidate block.
 
 The message has the following structure:
 | Field             | Type                  | Size      | Description                 |
 |-------------------|-----------------------|-----------|-----------------------------|
-| $Header$          | [ConsensusHeader][ch] | 192 bytes | Message header              |
-| $Vote$            | Integer               | 1 byte    | Ratification vote           |
-| $CandidateHash$   | SHA3                  | 32 bytes  | Candidate block's hash      |
+| $ConsensusInfo$   | [ConsensusInfo][cinf] | 48 bytes  | Consensus info              |
+| $VoteInfo$        | [VoteInfo][vinf]      | 33 byte   | Ratification vote           |
+| $SignInfo$        | [SignInfo][sinf]      | 144 bytes | Signature info              |
 | $ValidationVotes$ | [StepVotes][sv]       | 56 byte   | Aggregated Validation votes |
 
-$Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
+In this message, $Vote$ (part of $VoteInfo$) can be $NoCandidate$, $Valid$, $Invalid$, or $NoQuorum$.
 
 The $\mathsf{Ratification}$'s *signature value* $\upsilon_\mathcal{M^R}$ is:
 
-$$\upsilon_\mathcal{M^R} = (SAInfo || Vote || CandidateHash)$$
+$$\upsilon_\mathcal{M^R} = (ConsensusInfo || VoteInfo || RatStep)$$
 
 The $\mathsf{Ratification}$ message has a total size of 281 bytes.
 
@@ -145,13 +170,12 @@ The $\mathsf{Ratification}$ message has a total size of 281 bytes.
 The $\mathsf{Quorum}$ message is used at the end of a successful SA iteration to communicate to the network that a quorum of votes has been reached. The message is generated by any node collecting a quorum of votes for Ratification. The payload includes the $Certificate$ with votes from both Validation and Ratification steps.
 
 | Field           | Type                  | Size      | Description            |
-|-----------------|---------------------  |-----------|------------------------|
-| $Header$        | [ConsensusHeader][ch] | 192 bytes | Message header         |
-| $Vote$          | Integer               | 1 byte    | Winning vote           |
-| $CandidateHash$ | SHA3                  | 32 bytes  | Candidate block's hash |
+|-----------------|-----------------------|-----------|------------------------|
+| $ConsensusInfo$ | [ConsensusInfo][cinf] | 48 bytes  | Consensus info         |
+| $VoteInfo$      | [VoteInfo][vinf]      | 33 byte   | Quorum vote            |
 | $Certificate$   | [Certificate][cert]   | 112 bytes | Iteration certificate  |
 
-Note that the $\mathsf{Quorum}$ message is not signed, since the $Certificate$ is already made of signatures, which can be verified against the $SAInfo$ and the $Vote$
+Note that the $\mathsf{Quorum}$ message is not signed, since the $Certificate$ is already made of signatures, which can be verified against the $ConsensusInfo$ and the $VoteInfo$
 
 The $\mathsf{Quorum}$ message has a total size of 249 bytes.
 
@@ -160,29 +184,32 @@ The $\mathsf{Quorum}$ message has a total size of 249 bytes.
 The $\mathsf{Block}$ message is used to propagate a winning block to other peers.
 This message only contains a full block structure ([Block][b]) including a Certificate.
 
-#### Other messages
-TBD
-- $\mathsf{GetBlocks}$
-- $\mathsf{Inv}$
-- $\mathsf{GetData}$
-- $\mathsf{GetCandidate}$
-- $\mathsf{GetCandidateResp}$
+#### Sync messages
+The following messages are used to synchronize the node with other peers:
+
+- $\mathsf{GetBlocks}$: request blocks from a peer;
+- $\mathsf{Inv}$: advertises blocks or transactions by their hash
+- $\mathsf{GetData}$: request blocks or transactions by their hash
+- $\mathsf{GetCandidate}$: request a candidate block from its hash
+- $\mathsf{GetCandidateResp}$: transmit a candidate block in response to  $\mathsf{GetCandidate}$ message;
 
 
 ### Procedures
 While the underlying network protocol is described in the [Network][net] section, we here define some generic network procedures used in the SA protocol.
 
 #### *Msg*
-We define a common $Msg$ procedure, which is used to create a consensus message:
+We define a common *Msg* procedure, which is used to create a consensus message:
 
 $Msg(\mathsf{T}, f_1,\dots,f_2):$
-1. $`\mathsf{SAInfo} = (\eta_{Tip}, R, I)`$
-2. $`\sigma_{M^T} = Sign_{BLS}(\upsilon_\mathsf{M^T}, sk_\mathcal{N})`$
-3. $`\mathsf{H_M} = (\mathsf{SAInfo}, pk_\mathcal{\mathcal{N}}, \sigma_{M^T})`$
-4. $`\mathsf{M^T} = (\mathsf{H_M}, f_1, \dots, f_n)`$
+1. $ConsensusInfo = (\eta_{Tip}, R, I)$
+2. $\sigma_{M^T} = Sign_{BLS}(\upsilon_\mathsf{M^T}, sk_\mathcal{N})$
+3. $SignInfo = (pk_\mathcal{N}, \sigma_{M^T})$
+4. $\mathsf{M^T} = (ConsensusInfo, f_1, \dots, f_n, SignInfo)$
 5. $\texttt{output } \mathsf{M^T}$
 
-The procedure uses the local (to the node) consensus parameters ($Tip$, $R$, and $I$) and the node secret key $sk_\mathcal{N}$ to generate the message header and then builds the message with the other parameters $(f_1,\dots,f_2)$.
+The procedure uses the local consensus parameters ($Tip$, $R$, and $I$) and the node secret key $sk_\mathcal{N}$ to generate the message header and then builds the message with the other parameters $(f_1,\dots,f_2)$.
+
+We assume the procedure is able to automatically generate $\upsilon_\mathsf{M^T}$ based ont he message type and inputs.
 
 $\mathsf{T}$ indicates the message type: $\mathsf{Candidate}$, $\mathsf{Validation}$, $\mathsf{Ratification}$, or $\mathsf{Quorum}$.
 
@@ -216,21 +243,20 @@ The *Send* function represents a point-to-point message from the node to one of 
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md -->
-[ch]: #message-header
-[ms]: #signatures
-[mx]: #procedures
-[#info]: #sainfo
+[cinf]: #consensusinfo
+[vinf]: #voteinfo
+[sinf]: #signinfo
+[sigs]: #signatures
+[mx]:   #procedures
 
 <!-- Blockchain -->
 [b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
+
+<!-- Consensus -->
+[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
 
 <!-- Basics -->
 [certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificate
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
-
-<!-- Validation -->
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-
-<!-- Ratification -->
-[rat]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md

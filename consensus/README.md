@@ -50,21 +50,21 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 **Global Parameters**
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name                    | Value          | Description                                          |
-|-------------------------|----------------|------------------------------------------------------|
-| $GenesisBlock$          | $\mathsf{B_0}$ | Genesis block of the network                         |
-| $Version$               | 0              | Protocol version number                              |
-| $Dusk$                  | 1000000000  | Value of one unit of Dusk (in lux)                   |
-| $MinStake$              | 1000          | Minimum amount of a single stake (in Dusk)           |
-| $Epoch$                 | 2160           | Epoch duration in number of blocks                   |
-| $CommitteeCredits$      | 64             | Total credits in a voting committee                  |
-| $SMQuorum$              | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
-| $MQuorum$               | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
-| $MaxIterations$         | 255            | Maximum number of iterations for a single round      |
-| $RollingFinality$ | 5              | Number of Attested blocks for [Rolling Finality][rf] |
-| $InitTimeout$           | 5              | Initial step timeout (in seconds)                    |
-| $MaxTimeout$            | 60             | Maximum timeout for a single step (in seconds)       |
-| $BlockGas$              | 5.000.000.000  | Gas limit for a single block                         |
+| Name               | Value          | Description                                          |
+|--------------------|----------------|------------------------------------------------------|
+| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                         |
+| $Version$          | 0              | Protocol version number                              |
+| $Dusk$             | 1000000000     | Value of one unit of Dusk (in lux)                   |
+| $MinStake$         | 1000           | Minimum amount of a single stake (in Dusk)           |
+| $Epoch$            | 2160           | Epoch duration in number of blocks                   |
+| $CommitteeCredits$ | 64             | Total credits in a voting committee                  |
+| $SMQuorum$         | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
+| $MQuorum$          | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
+| $MaxIterations$    | 255            | Maximum number of iterations for a single round      |
+| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
+| $InitTimeout$      | 5              | Initial step timeout (in seconds)                    |
+| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)       |
+| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                         |
 
 
 **Chain State**
@@ -201,13 +201,14 @@ If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
-4. If Ratification reached a quorum: 
+4. If Ratification reached a quorum on $v$: 
    1. Create a certificate $\mathsf{C}$ with the Validation and Ratification votes
-   2. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$ with $\mathsf{C}$
-   3. Broadcast $\mathsf{M}^\mathsf{Q}$
-   4. If the Ratification result is $Success:
+   2. Set vote to $(v, \eta_{\mathsf{B}^c})$
+   3. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$
+   4. Broadcast $\mathsf{M}^\mathsf{Q}$
+   5. If the Ratification result is $Success:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
-   5. If the Ratification result is $Fail$
+   6. If the Ratification result is $Fail$
       1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
 
 ***Procedure***
@@ -218,19 +219,22 @@ $\textit{SAIteration}(R, I):$
 - $\texttt{set}:$
   - $ \_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V$
   - $ v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
-1. $\texttt{if } (v \ne NoQuorum):$
+4. $\texttt{if } (v \ne NoQuorum):$
    1. $\mathsf{C} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
-   2. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, v, \eta_{\mathsf{B}^c}, \mathsf{C})$
-      | Field           | Value                   |
-      |-----------------|-------------------------|
-      | $Header$        | $\mathsf{H}_\mathsf{M}$ |
-      | $Vote$          | $v$                     |
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$   |
-      | $Certificate$   | $\mathsf{C}$            |
-   3. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
-   4. $\texttt{if } (v = Success):$
+   2. $\mathsf{V} = (v, \eta_{\mathsf{B}^c})$
+   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{V}, \mathsf{C})$
+      | Field           | Value                 |
+      |-----------------|-----------------------|
+      | $PrevHash$      | $\eta_{Tip}$          |
+      | $Round$         | $R$                   |
+      | $Iteration$     | $I$                   |
+      | $Vote$          | $v$                   |
+      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
+      | $Certificate$   | $\mathsf{C}$          |
+   4. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
+   5. $\texttt{if } (v = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
-   5. $\texttt{else }:$
+   6. $\texttt{else }:$
       1. $\boldsymbol{FailedCertificates}[I] = {\mathsf{C}}$
 
 <p><br></p>
@@ -252,6 +256,13 @@ val: (Block.Iteration) \times 3 + 1
 rat: (Block.Iteration) \times 3 + 2
 -->
 
+### *GetQuorum*
+*GetQuorum* returns the quorum target depending on the vote $v$
+
+$\textit{GetQuorum}(v):$
+$\texttt{if } (v = Valid): \texttt{output} Supermajority$
+$\texttt{else}: \texttt{output} Majority$
+
 <!----------------------- FOOTNOTES ----------------------->
 
 [^1]: For the sake of simplicity, we assume the node handles a single provisioner identity.
@@ -265,6 +276,7 @@ rat: (Block.Iteration) \times 3 + 2
 [sai]:   #saiteration
 [sal]:   #saloop
 [it]:    #increasetimeout
+[gq]:    #getquorum
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 [not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation
