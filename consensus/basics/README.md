@@ -75,7 +75,7 @@ Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not 
 A candidate block that reaches an agreement is called a *winning* block.
 
 ## Voting Committees
-A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *influence* in the committee.
+A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *power* in the committee.
 
 Formally, a voting committee is defined as:
 
@@ -83,9 +83,9 @@ $`$ C_{R}^{S} = [m_0^C,\dots,m_n^C],$`$
 
 where $R$ and $S$ are the consensus round and step, respectively, $n$ is the number of members in the committee, and each member $m_i^C$ is defined as:
 
-$$ m_i^C = (pk_i, influence), $$ 
+$$ m_i^C = (pk_i, Power), $$ 
 
-where $pk_i$ is the public key of the $i\text{th}$ provisioner to be added to the committee by the $DS$ algorithm, and $influence$ is the number of credits it is assigned.
+where $pk_i$ is the public key of the $i\text{th}$ provisioner to be added to the committee by the $DS$ algorithm, and $Power$ is the number of credits it is assigned.
 
 Note that members are ordered by insertion (a provisioner is added to the committee when being assigned its first credit). That is, the first provisioner to be added to the list by $DS$ will have index $0$, and the last one will have index $n$.
 
@@ -102,7 +102,7 @@ For the sake of readability, in the rest of this documentation, we will use the 
 ### Step Committees
 Voting Committees in the [Validation][val] and [Ratification][rat] steps have a fixed number of credits that is defined by the global [consensus parameter][cenv] $CommitteeCredits$, currently set to $64$.
 
-When counting votes, each vote is multiplied by the influence of the voter in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
+When counting votes, each vote is multiplied by the power of the voter in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
 Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the voting process.
 
@@ -198,8 +198,8 @@ The procedure excludes the block generator $\mathcal{G}$ of the same iteration t
 $\textit{ExtractCommittee}(R,I, StepNum)$
 1. $S =$ [*GetStepNum*][gsn]$(I, StepNum)$
 2. $\mathcal{G}_{R,I} =$ [*ExtractGenerator*][eg]$(R,I)$
-3. $\boldsymbol{\mathcal{P}} = Provisioners - \mathcal{G}_{R,I}$
-4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{\mathcal{P}})$
+3. $\boldsymbol{P} = Provisioners - \mathcal{G}_{R,I}$
+4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{P})$
 5. $\texttt{output } \mathcal{C}$
 
 
@@ -243,7 +243,7 @@ $SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]
 $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 1. $\texttt{for } i=0 \dots CommitteeCredits{-}1 :$
    1. $\texttt{if } (\boldsymbol{bs}[i]=1):$
-   2. $credits = credits + \mathcal{C}[i].influence$
+   2. $credits = credits + \mathcal{C}[i].Power$
 2. $\texttt{output } credits$
 
 
