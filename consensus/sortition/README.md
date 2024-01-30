@@ -23,7 +23,7 @@ Each provisioner can be assigned one or more credits, depending on their *stakes
 
 To balance out this probability each provisioner weight is initially set to the value of its stake, and then reduced by 1 Dusk each time the provisioner is assigned a credit (if the weight is lower than 1 Dusk, it is set to 0). This way, the probability for a provisioner to be extracted diminishes with every assigned credit.
 
-As such, on average, eligible provisioners will participate in committees with a frequency and influence proportional to their stakes.
+As such, on average, eligible provisioners will participate in committees with a frequency and power proportional to their stakes.
 
 
 ### Score
@@ -66,7 +66,7 @@ We describe the *Deterministic Sortition* algorithm through the *DS* procedure, 
  - $R$: consensus round
  - $S$: consensus step
  - $Credits$: number of credits to assign
- - $\boldsymbol{P}_R = [P_0,\dots,P_n]$: provisioner set for round $R$
+ - $\boldsymbol{P} = [\mathcal{P}_0,\dots,\mathcal{P}_n]$: provisioner list
 
 ***Algorithm***
 
@@ -87,19 +87,19 @@ We describe the *Deterministic Sortition* algorithm through the *DS* procedure, 
 
 ***Procedure***
 
-$DS(R, S, Credits, \boldsymbol{P}_R)$:
+$DS(R, S, Credits, \boldsymbol{P})$:
 1. $\mathcal{C} = \emptyset$
-2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_R :$
+2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P} :$
    - $w_\mathcal{P} = S_\mathcal{P}.Amount$
-3. $`W = \sum_{i=0}^{|\boldsymbol{P}_R|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_R`$
+3. $`W = \sum_{i=0}^{|\boldsymbol{P}|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}`$
 4. $\texttt{for } c = 0\text{ }\dots\text{ }credits{-}1$:
-   1. $Score_c^{R,S} = Int(Hash_{SHA3}( Seed_{R-1}||R||S||c)) \mod W$
-   2. $\boldsymbol{P}_R' = SortByPK(\boldsymbol{P}_R)$
-   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{R,S}, \boldsymbol{P}_R')$
+   1. $Score_c^{R,S} = Int(Hash_{SHA3}( Seed_{R-1}||S||c)) \mod W$
+   2. $\boldsymbol{P}' = SortByPK(\boldsymbol{P})$
+   3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{R,S}, \boldsymbol{P}')$
    4. $\texttt{if } \mathcal{P}_c \notin \mathcal{C}$ : 
        - $m_{\mathcal{P}_c}^\mathcal{C} = (\mathcal{P}_c,0)$ 
        - $\mathcal{C} = \mathcal{C} \cup m_{\mathcal{P}_c}^\mathcal{C}$
-   5. $`m_{\mathcal{P}_c}^\mathcal{C}.influence = m_{\mathcal{P}_c}^\mathcal{C}.influence+1`$
+   5. $`m_{\mathcal{P}_c}^\mathcal{C}.Power = m_{\mathcal{P}_c}^\mathcal{C}.Power+1`$
    6. $d = min(w_{P},1)$
    7. $`w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d`$
    8. $W = W - d$
