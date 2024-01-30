@@ -10,27 +10,30 @@ In particular, this section describes how new blocks are accepted to the local b
     - [Rolling Finality](#rolling-finality)
   - [Environment](#environment)
   - [Block Verification](#block-verification)
-    - [VerifyBlock](#verifyblock)
-    - [VerifyBlockHeader](#verifyblockheader)
+    - [*VerifyBlock*](#verifyblock)
+    - [*VerifyBlockHeader*](#verifyblockheader)
     - [*VerifyCertificate*](#verifycertificate)
     - [*VerifyVotes*](#verifyvotes)
   - [Block Management](#block-management)
     - [*HandleQuorum*](#handlequorum)
     - [*MakeWinning*](#makewinning)
     - [*AcceptBlock*](#acceptblock)
-    - [GetBlockState](#getblockstate)
-    - [CheckRollingFinality](#checkrollingfinality)
-      - [HasRollingFinality](#hasrollingfinality)
-      - [MakeChainFinal](#makechainfinal)
-    - [HandleBlock](#handleblock)
+    - [*GetBlockState*](#getblockstate)
+    - [*CheckRollingFinality*](#checkrollingfinality)
+      - [*HasRollingFinality*](#hasrollingfinality)
+      - [*MakeChainFinal*](#makechainfinal)
+    - [*HandleBlock*](#handleblock)
   - [Fallback](#fallback)
-    - [Fallback Procedure](#fallback-procedure)
-  - [Synchronization](#synchronization)
     - [Procedures](#procedures)
+      - [*Fallback*](#fallback-1)
+  - [Synchronization](#synchronization)
+    - [Procedures](#procedures-1)
       - [*SyncBlock*](#syncblock)
+      - [*PreSync*](#presync)
       - [*StartSync*](#startsync)
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
+
 
 
 ## Overview
@@ -119,7 +122,7 @@ The environment for the block-processing procedures includes node-level paramete
 ## Block Verification
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyCertificate*][vc], and [*VerifyVotes*][vv].
 
-### VerifyBlock
+### *VerifyBlock*
 The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid certificate. If both conditions are met, it returns $true$, otherwise, it returns $false$.
 
 ***Parameters***
@@ -159,7 +162,7 @@ $\textit{VerifyBlock}(\mathsf{B}):$
       - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
 
-### VerifyBlockHeader
+### *VerifyBlockHeader*
 <!-- TODO: rename to VerifyCandidate ? -->
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
@@ -374,7 +377,7 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
 7. [*CheckRollingFinality*][crf]$()$
 
-### GetBlockState
+### *GetBlockState*
 The block state is computed according to the [Finality][fin] rules.
 
 ***Parameters***
@@ -401,7 +404,7 @@ $\textit{GetBlockState}(\mathsf{B}):$
 3. $\texttt{output } cstate$
 
 
-### CheckRollingFinality
+### *CheckRollingFinality*
 *CheckRollingFinality* checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
 
 ***Procedure***
@@ -426,7 +429,7 @@ $\textit{HasRollingFinality}():$
 
 ### *HandleBlock*
 The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
-The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
+The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][falp] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
 
 ***Parameters*** 
 - $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
@@ -442,7 +445,7 @@ The procedure acts depending on the block's height: if the block has the same he
          2. If the block is valid
          3. And block's iteration is lower than $Tip$
          4. And block is not $Tip$
-            1. Start *fallback* procedure ([*Fallback*][fal])
+            1. Start *fallback* procedure ([*Fallback*][falp])
       4. If block height is lower than $Tip$
          1. Discard block 
       5. If block height is higher than $Tip$
@@ -462,7 +465,7 @@ $\textit{HandleBlock}():$
           2. $\texttt{if } (isValid = true)$
           3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
           4. $\texttt{and } (\mathsf{B} \ne Tip) :$
-             1. [*Fallback*][fal]$()$
+             1. [*Fallback*][falp]$()$
           <!-- B.Height < Tip.Height -->
        4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
           1. $\texttt{stop}$
@@ -476,7 +479,9 @@ The *Fallback* procedure reverts the local state to the last [finalized][fin] bl
 
 In fact, this event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
-### Fallback Procedure
+### Procedures
+
+#### *Fallback*
 The *Fallback* procedure first retrieves the last finalized block  $\mathsf{B}^f$ in the local chain; than it deletes all blocks from $Tip$ to $\mathsf{B}^f$ (excluded), pushing all their transactions back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
 
 After reverting, the synchronization procedure is triggered to catch up with the main chain.
@@ -716,10 +721,12 @@ $\textit{AcceptPoolBlocks}():$
 [rf]:  #rolling-finality
 [crf]: #checkrollingfinality
 [fal]: #fallback
+[falp]: #fallback-1
 [hst]: #handlesynctimeout
 [hb]:  #HandleBlock
 [syn]: #synchronization
 [sb]:  #syncblock
+[ps]:  #presync
 [ss]:  #startsync
 [vb]:  #verifyblock
 [vbh]: #verifyblockheader
