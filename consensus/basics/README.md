@@ -13,6 +13,8 @@ In this section, we describe the building blocks of the SA consensus protocol, s
     - [Subcommittees](#subcommittees)
       - [Bitsets](#bitsets)
     - [Procedures](#procedures)
+      - [*ExtractGenerator*](#extractgenerator)
+      - [*ExtractCommittee*](#extractcommittee)
       - [*BitSet*](#bitset)
       - [*SetBit*](#setbit)
       - [*CountSetBits*](#countsetbits)
@@ -25,7 +27,6 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [StepResult](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
-
 
 
 ## Provisioners and Stakes
