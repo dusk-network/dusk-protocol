@@ -149,8 +149,8 @@
 					& \multicolumn{2}{c|}{\textbf{Insufficient gas}}
 					\\ \cline{2-6}
 					%
-					& \gasconsumed
-					& \multicolumn{1}{c}\gasunspent
+					& \gasunspent
+					& \multicolumn{1}{c}\gasconsumed
 					& \fee
 					& \gasconsumed
 					& \fee
@@ -163,13 +163,13 @@
 					&
 					& \multirow{4}{*}{no fee}
 					\\
-					& 100\% to \blockgenerator
+					& 100\% reverts to the \user
 					& $\bullet$ 30\% paid to executed contracts
 					&
 					& 100\% to \blockgenerator
 					&
 					\\
-					& (paid by \user)
+					& (as change)
 					& \hspace{0.2cm} depending on the \gaslimit
 					&
 					& (paid by \user)
@@ -189,14 +189,14 @@
 					& \multirow{4}{*}{returned to \user}
 					\\
 					2. User pays gas,
-					& 100\% to \blockgenerator
+					& 100\% reverts to the \user
 					& $\bullet$ 30\% paid to executed contracts
 					& paid to
 					& 100\% to \blockgenerator
 					&
 					\\
 					contract applies fee
-					& (paid by \user)
+					& (as change)
 					& \hspace{0.2cm} depending on the \gaslimit
 					& charging contract
 					& (paid by \user)
@@ -216,14 +216,14 @@
 					& \multirow{4}{*}{returned to \user}
 					\\
 					3. Contract pays gas,
-					& 100\% to \blockgenerator
+					& 100\% reverts to the \contract
 					& $\bullet$ 30\% paid to executed contracts
 					& paid to
 					& 100\% locked for
 					&
 					\\
 					contract applies fee
-					& (charged to \contract)
+					& (as change)
 					& \hspace{0.2cm} depending on the \gaslimit
 					& charging contract
 					& a number of epochs
