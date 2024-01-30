@@ -53,7 +53,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 - $\mathsf{SR}^V = (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$ Validation result ([`StepResult`][sr])
 
 ***Algorithm***
-1. Extract committee $\mathcal{C}$ for the step
+1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
 2. Start step timeout $\tau_{Ratification}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. Create a $\mathsf{Ratification}$ message $\mathsf{M}$ for vote $v^V$
@@ -81,9 +81,8 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
-  - $S =$ [*GetStepNum*][gsn]$(I, RatStep)$
   - $v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V} \leftarrow \mathsf{SR}^V$
-1. $\mathcal{C}$ = [*DS*][dsp]$(R,S,CommitteeCredits)$
+1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
@@ -136,6 +135,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 
 <!-- Basics -->
 [vc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
+[ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittees
 [cb]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countsetbits
 [sr]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepresult

@@ -216,11 +216,9 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 - $\texttt{set}:$
    - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
    - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
-   - $S^V =$ [*GetStepNum*][gsn]$(I, ValStep)$
-   - $\mathcal{C}^V =$ [*DS*][dsp]$(R,S^V,CommitteeCredits)$
+   - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
    - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
-   - $S^V =$ [*GetStepNum*][gsn]$(I, RatStep)$
-   - $\mathcal{C}^R =$ [*DS*][dsp]$(R,S^R,CommitteeCredits)$
+   - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
    - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
    - $Q =$ [*GetQuorum*][gq]$(v)$
 1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
@@ -714,6 +712,7 @@ $\textit{AcceptPoolBlocks}():$
 [certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
 [cc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
+[ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 
 <!-- Consensus -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment

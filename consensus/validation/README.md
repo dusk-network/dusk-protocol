@@ -50,7 +50,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 - $\mathsf{B}^c$: candidate block
 
 ***Algorithm***
-1. Extract committee $\mathcal{C}$ for the step
+1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
 2. Start step timeout $\tau_{Validation}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. If candidate $\mathsf{B}^c$ is empty:
@@ -83,9 +83,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 ***Procedure***
 
 $ValidationStep( R, I, \mathsf{B}^c ) :$
-- $\texttt{set}:$ 
-  - $S =$ [*GetStepNum*][gsn]$(I, ValStep)$
-1. $\mathcal{C}$ = [*DS*][dsp]$(R,S,CommitteeCredits)$
+1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $\texttt{if } (\mathsf{B}^c = NIL):$
@@ -155,6 +153,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 <!-- Basics -->
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#provisioners-and-stakes
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
+[ec]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittees
 [cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countsetbits
 [sv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
