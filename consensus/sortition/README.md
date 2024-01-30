@@ -59,7 +59,7 @@ Note that $Seed_0$ is a randomly-generated value contained in the genesis block 
 <p><br></p>
 
 ## Procedures
-We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, $DS$ uses the *Deterministic Extraction* algorithm, described through the $DE$ procedure.
+We describe the *Deterministic Sortition* algorithm through the *DS* procedure, which creates a *Voting Committee* by pseudo-randomly assigning *credits* to eligible provisioners. In turn, *DS* uses the *Deterministic Extraction* (*DE*) procedure, which performs a single extraction.
 
 ### Deterministic Sortition (*DS*)
 
@@ -90,7 +90,7 @@ We describe the *Deterministic Sortition* algorithm through the $DS$ procedure, 
 ***Procedure***
 
 $DS(R, S, Credits, \boldsymbol{P}_R)$:
-1. $C = \emptyset$
+1. $\mathcal{C} = \emptyset$
 2. $\texttt{for } \mathcal{P} \texttt{ in } \boldsymbol{P}_R :$
    - $w_\mathcal{P} = S_\mathcal{P}.Amount$
 3. $`W = \sum_{i=0}^{|\boldsymbol{P}_R|-1} w_{\mathcal{P}_i} : \mathcal{P}_i \in \boldsymbol{P}_R`$
@@ -98,16 +98,16 @@ $DS(R, S, Credits, \boldsymbol{P}_R)$:
    1. $Score_c^{R,S} = Int(Hash_{SHA3}( Seed_{R-1}||R||S||c)) \mod W$
    2. $\boldsymbol{P}_R' = SortByPK(\boldsymbol{P}_R)$
    3. $\mathcal{P}_c = \text{ }$[*DE*][de]$(Score_c^{R,S}, \boldsymbol{P}_R')$
-   4. $\texttt{if } \mathcal{P}_c \notin C$ : 
-       - $m_{\mathcal{P}_c}^C = (\mathcal{P}_c,0)$ 
-       - $C = C \cup m_{\mathcal{P}_c}^C$
-   5. $`m_{\mathcal{P}_c}^C.influence = m_{\mathcal{P}_c}^C.influence+1`$
+   4. $\texttt{if } \mathcal{P}_c \notin \mathcal{C}$ : 
+       - $m_{\mathcal{P}_c}^\mathcal{C} = (\mathcal{P}_c,0)$ 
+       - $\mathcal{C} = \mathcal{C} \cup m_{\mathcal{P}_c}^\mathcal{C}$
+   5. $`m_{\mathcal{P}_c}^\mathcal{C}.influence = m_{\mathcal{P}_c}^\mathcal{C}.influence+1`$
    6. $d = min(w_{P},1)$
    7. $`w_{\mathcal{P}_c} = w_{\mathcal{P}_c} - d`$
    8. $W = W - d$
    9.  $\texttt{if } W \le 0$
-       - $\texttt{output } C$
-5. $\texttt{output } C$
+       - $\texttt{output } \mathcal{C}$
+5. $\texttt{output } \mathcal{C}$
 
 <p><br></p>
 
