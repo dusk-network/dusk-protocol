@@ -37,6 +37,7 @@ In particular, this section describes how new blocks are accepted to the local b
 
 
 ## Overview
+<!-- TODO: Add Finality/Block management -->
 At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
 In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][certs]). 
 
@@ -49,7 +50,7 @@ There are two main reasons a network block is not in the chain:
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
-<!-- TODO: mv to Basics ? -->
+<!-- TODO: mv to Block Management -->
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
 
 When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
@@ -120,6 +121,7 @@ The environment for the block-processing procedures includes node-level paramete
 
 
 ## Block Verification
+<!-- TODO: mv to Blockchain or Basics -->
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyCertificate*][vc], and [*VerifyVotes*][vv].
 
 ### *VerifyBlock*
