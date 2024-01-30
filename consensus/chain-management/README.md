@@ -96,10 +96,11 @@ The environment for the block-processing procedures includes node-level paramete
 
 **Parameters**
 
-| Name            | Value | Description                                     |
-|-----------------|-------|-------------------------------------------------|
-| $SyncTimeout$   | $5$   | Synchronization procedure timeout (in seconds)  |
-| $MaxSyncBlocks$ | $50$  | Maximum number of blocks in a sync session      |
+| Name             | Value | Description                                        |
+|------------------|-------|----------------------------------------------------|
+| $PreSyncTimeout$ | $10$  | Pre-Synchronization procedure timeout (in seconds) |
+| $SyncTimeout$    | $5$   | Synchronization procedure timeout (in seconds)     |
+| $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
 
 **State**
 <!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
@@ -618,53 +619,54 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
 #### *PreSync*
 *PreSync* requests to a peer the successor of $Tip$ to ensure it knows it before starting the synchronization process. This is done to prevent a peer from stopping our consensus loop just by sending a block in the future. When $Tip+1$ is received from $\mathcal{S}$, the synchronization will start ([*StartSync*][ss]).
 
-*Parameters*
+A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with sync. $syncPeer$ has maximum $PreSyncTimeout$ to send the first block, and $SyncTimeout$ time to send the following ones. With each valid block the timeout is reset (that is, the peer has $SyncTimeout$ time to send each block).
+
+***Parameters***
 
 - $\mathsf{B}$: the block received
 - $\mathcal{S}$: sender peer
  
-*Algorithm*
+***Algorithm***
 
 1. Set $syncFrom$ to $Tip$
 2. Set $syncTo$ to $\mathsf{B}$'s height or $Tip + MaxSyncBlocks$
 3. Set $syncPeer$ to $\mathcal{S}$
 4. Send $\mathsf{GetData}$ requesting $Tip$'s successor
+5. Start the sync timeout $\tau_{Sync}$
+6. Start the sync timeout handler ([*HandleSyncTimeout*][hst])
 
-*Procedure*
+***Procedure***
 
 $\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
 1. $syncFrom = Tip.Height$
 2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
 3. $syncPeer = \mathcal{S}$
 4. [*Send*][mx]$(\mathcal{S}, \mathsf{GetData}(BlockFromHeight, Tip.Height+1))$
+5. $\tau_{Sync} = \tau_{Now}$
+6. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
 
 #### *StartSync*
 The *StartSync* procedure initiates the synchronization protocol with $syncPeer$ on the base of the block $syncTo$ previously received from this peer.
 While syncing, the [*SALoop*][sl] is stopped to improve performance.
 
-A timeout $\tau_{Sync}$ is setup to prevent a peer from stalling our node with sync. $syncPeer$ has maximum $SyncTimeout$ time to send us a valid successor of our current $Tip$. When this occurs, the timeout is restarted.
-
 
 ***Algorithm***
 1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
-2. Start the sync timeout $\tau_{Sync}$
-3. Start the sync timeout handler ([*HandleSyncTimeout*][hst])
-4. Stop [*SALoop*][sl]
-5. Set as "syncing" ($inSync = false$)
+2. Stop [*SALoop*][sl]
+3. Set as "syncing" ($inSync = false$)
 
 ***Procedure***
 
 $\textit{StartSync}():$
 1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
-2. $\tau_{Sync} = \tau_{Now}$
-3. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
-4. $\texttt{stop}$([*SALoop*][sl])
-5. $inSync = false$
+2. $\texttt{stop}$([*SALoop*][sl])
+3. $inSync = false$
 
 #### *HandleSyncTimeout*
-The *HandleSyncTimeout* procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing with a peer.
+The *HandleSyncTimeout* procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing or pre-synchronizing with a peer.
+If the timeout expires while synchronizing, the synchronization is ended and the [*SALoop*][sl] restarted, if needed. If it expires when pre-syncing, the sync information is reset.
+
 Only a single synchronization process is done at a time, so $\tau_{Sync}$ is unique.
-If the timeout expires. the synchronization is ended and the [*SALoop*][sl] restarted, if needed.
 
 ***Procedure***
 $\textit{HandleSyncTimeout}():$
@@ -674,7 +676,13 @@ $\textit{HandleSyncTimeout}():$
       1. $inSync = true$
       2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
-2. $\texttt{else}: \texttt{stop}$
+     1. $\texttt{stop}$
+2. $\texttt{else}:$
+   1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + PreSyncTimeout):$
+      1. $syncPeer = NIL$
+      2. $syncFrom = NIL$
+      3. $syncTo = NIL$
+     1. $\texttt{stop}$
 
 
 #### *AcceptPoolBlocks*
