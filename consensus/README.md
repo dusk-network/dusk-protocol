@@ -266,7 +266,7 @@ $\textit{GetQuorum}(v):$
 - $\texttt{else}: \texttt{output } Majority$
 
 ### *GetStepNum*
-*GetStepNum* returns the absolute step number (since the first round) of a step. It is used for the [*DS*][ds] procedure.
+*GetStepNum* returns the absolute step number (within a round) of a step. It is used for the [*DS*][ds] procedure.
 
 ***Parameters***
 - $I$: the iteration number
