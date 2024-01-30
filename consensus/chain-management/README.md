@@ -254,7 +254,7 @@ $\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
 $VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 - $\texttt{set}:$
   - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
-1. $\mathcal{C}^\boldsymbol{bs} =$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
+1. $\mathcal{C}^{\boldsymbol{bs}}=$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
 2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
    1. $\texttt{output } false$
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
@@ -263,27 +263,58 @@ $VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 
 ## Block Management
 We here define block-management procedures: 
+  - *HandleBlock*: process a block from the network
   - *HandleQuorum*: process a $\mathsf{Quorum}$ message from the network
   - *MakeWinning*: sets a candidate block as the winning block of the round
   - *AcceptBlock*: accept a block as the new tip
-  - *HandleBlock*: process a block from the network
+
+### *HandleBlock*
+The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
+The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][falp] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
+
+***Parameters*** 
+- $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
+
+***Algorithm***
+1. Loop:
+   1. If a $\mathsf{Block}$ message $\mathsf{M}^B$:
+      - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
+      1. Check block hash is valid
+      2. Check if block is blacklisted
+      3. If block height is same as $Tip$
+         1. Check block's validity as successor of the $Tip$'s predecessor
+         2. If the block is valid
+         3. And block's iteration is lower than $Tip$
+         4. And block is not $Tip$
+            1. Start *fallback* procedure ([*Fallback*][falp])
+      4. If block height is lower than $Tip$
+         1. Discard block 
+      5. If block height is higher than $Tip$
+         1. Start *synchronization* ([*SyncBlock*][sb])
+
+***Procedure***
+
+$\textit{HandleBlock}():$
+1. $\texttt{loop}$:   
+   1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
+       - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
+       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{stop}`$
+       2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
+          <!-- B.Height = Tip.Height -->
+       3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
+          1. $isValid = $[*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{Tip.Height-1})$
+          2. $\texttt{if } (isValid = true)$
+          3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
+          4. $\texttt{and } (\mathsf{B} \ne Tip) :$
+             1. [*Fallback*][falp]$()$
+          <!-- B.Height < Tip.Height -->
+       4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
+          1. $\texttt{stop}$
+          <!-- B.Height > Tip.Height -->
+       5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
+          1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
 ### *HandleQuorum*
-<!-- TODO: check if this is explained somewhere
-# Quorum Handler
-When the [Validation][val] and [Ratification][rat] steps reach a quorum, a [Quorum][qmsg] message is produced, which contains a [Certificate][cert] with the aggregated votes of the two quorum committees.
-Since the certificate proves a candidate reached a quorum, receiving this message is sufficient to accept the candidate into the local chain.
-
-The Quorum handler task manages [Quorum][qmsg] messages produced by the node or received from the network. In particular, when such a message is received (or produced), the corresponding candidate block is accepted.
-
-## Overview
-When a node generates or receives a $\mathsf{Quorum}$ message, it adds the included $\mathsf{Certificate}$ to the corresponding candidate block and makes it a *winning block* for the corresponding round and iteration.
-
-If the $\mathsf{Quorum}$ message was received from the network, the aggregated votes (see [`StepVotes`][sv]) are verified against the generator and committee members of the corresponding round and iteration. Both the validity of the votes and the quorum quota are verified.
-
-The winning block will then be accepted as the new tip of the local chain.
- -->
-
 *HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
@@ -427,51 +458,7 @@ $\textit{HasRollingFinality}():$
 #### *MakeChainFinal*
 *MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
 
-### *HandleBlock*
-The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
-The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][falp] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
 
-***Parameters*** 
-- $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
-
-***Algorithm***
-1. Loop:
-   1. If a $\mathsf{Block}$ message $\mathsf{M}^B$:
-      - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
-      1. Check block hash is valid
-      2. Check if block is blacklisted
-      3. If block height is same as $Tip$
-         1. Check block's validity as successor of the $Tip$'s predecessor
-         2. If the block is valid
-         3. And block's iteration is lower than $Tip$
-         4. And block is not $Tip$
-            1. Start *fallback* procedure ([*Fallback*][falp])
-      4. If block height is lower than $Tip$
-         1. Discard block 
-      5. If block height is higher than $Tip$
-         1. Start *synchronization* ([*SyncBlock*][sb])
-
-***Procedure***
-
-$\textit{HandleBlock}():$
-1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
-       - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
-       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{stop}`$
-       2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
-          <!-- B.Height = Tip.Height -->
-       3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
-          1. $isValid = $[*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{Tip.Height-1})$
-          2. $\texttt{if } (isValid = true)$
-          3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
-          4. $\texttt{and } (\mathsf{B} \ne Tip) :$
-             1. [*Fallback*][falp]$()$
-          <!-- B.Height < Tip.Height -->
-       4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
-          1. $\texttt{stop}$
-          <!-- B.Height > Tip.Height -->
-       5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
-          1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
 
 ## Fallback
