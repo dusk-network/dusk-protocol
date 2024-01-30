@@ -178,7 +178,8 @@ The following messages are used to synchronize the node with other peers:
 
 - $\mathsf{GetBlocks}$: request blocks from a peer;
 - $\mathsf{Inv}$: advertises blocks or transactions by their hash
-- $\mathsf{GetData}$: request blocks or transactions by their hash
+- $\mathsf{GetData}(T, data)$: request blocks by their hash or height, or transactions by their hash
+  - The payload type $T$ can be: $BlockFromHeight$, $BlockFromHash$, or $MempoolTx$
 - $\mathsf{GetCandidate}$: request a candidate block from its hash
 - $\mathsf{GetCandidateResp}$: transmit a candidate block in response to  $\mathsf{GetCandidate}$ message;
 
@@ -238,6 +239,7 @@ The *Send* function represents a point-to-point message from the node to one of 
 [sigs]: #signatures
 [mx]:   #procedures
 [msg]:  #msg
+[sm]:   #sync-messages
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md
 

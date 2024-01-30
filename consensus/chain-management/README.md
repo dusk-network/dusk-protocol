@@ -99,7 +99,7 @@ The environment for the block-processing procedures includes node-level paramete
 | Name            | Value | Description                                     |
 |-----------------|-------|-------------------------------------------------|
 | $SyncTimeout$   | $5$   | Synchronization procedure timeout (in seconds)  |
-| $MaxSyncBlocks$ | $500$ | Maximum number of blocks in a sync session      |
+| $MaxSyncBlocks$ | $50$  | Maximum number of blocks in a sync session      |
 
 **State**
 <!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
@@ -409,7 +409,7 @@ $\textit{CheckRollingFinality}():$
 2. $\texttt{if } (rf = true) :$
    1. *MakeChainFinal*$()$
 
-#### HasRollingFinality
+#### *HasRollingFinality*
 *HasRollingFinality* outputs true if the last $RollingFinality$ are all Attested and false otherwise.
 
 ***Procedure***
@@ -420,10 +420,10 @@ $\textit{HasRollingFinality}():$
       1. $\texttt{output } false$
 2. $\texttt{output } true$ 
 
-#### MakeChainFinal
+#### *MakeChainFinal*
 *MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
 
-### HandleBlock
+### *HandleBlock*
 The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
 The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
 
@@ -432,9 +432,9 @@ The procedure acts depending on the block's height: if the block has the same he
 
 ***Algorithm***
 1. Loop:
-   1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
+   1. If a $\mathsf{Block}$ message $\mathsf{M}^B$:
       - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
-      1. Check block hash $\mathsf{H_B}$
+      1. Check block hash is valid
       2. Check if block is blacklisted
       3. If block height is same as $Tip$
          1. Check block's validity as successor of the $Tip$'s predecessor
@@ -453,8 +453,7 @@ $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
        - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
-       1. $isValidHash = (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B}))`$ \
-          $\texttt{if } (isValidHash = false) : \texttt{stop}$
+       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{stop}`$
        2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
           <!-- B.Height = Tip.Height -->
        3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
@@ -486,8 +485,8 @@ Note that the previous $Tip$ is added to the *Blacklist* because we are choosing
 ***Algorithm***
 1. Retrieve last final block $\mathsf{B}^f$
 2. For each block between $Tip$ and $\mathsf{B}^f$
-  1. Push $\mathsf{B}^f$'s transactions back to mempool
-  2. Delete block $\mathsf{B}^f$
+   1. Push $\mathsf{B}^f$'s transactions back to mempool
+   2. Delete block $\mathsf{B}^f$
 3. Blacklist $Tip$
 4. Set $Tip$ to $\mathsf{B}^f$
 5. Revert VM state to $\mathsf{B}^f$'s state
@@ -499,8 +498,8 @@ Note that the previous $Tip$ is added to the *Blacklist* because we are choosing
 $\textit{Fallback}():$
 1. $\mathsf{B}^f =$ *GetLastFinal*$()$
 2. $\texttt{for } i = Tip.Height \dots \mathsf{B}^f.Height :$
-  1. $Mempool = Mempool \cup \{ \mathsf{B}_i.Transactions \}$
-  2. $Delete(\mathsf{B}_i)$
+   1. $Mempool = Mempool \cup \{ \mathsf{B}_i.Transactions \}$
+   2. $\texttt{delete}(\mathsf{B}_i)$
 3. $Blacklist = Blacklist \cup Tip$
 4. $Tip = \mathsf{B}^f$
 5. $VM.Revert(\mathsf{B}^f)$
@@ -513,18 +512,21 @@ The *synchronization* process allows a node to catch up with a peer's chain. The
 
 If the triggering block is a valid $Tip$'s successor, it is accepted as the new tip, and the SA loop ([*SALoop*][sl]) is restarted (to sync up the consensus protocol).
 
-Instead, if the triggering block has height higher than the $Tip$'s successor, a protocol is initiated to request to the peer that sent the block all missing blocks. This protocol aims at making the node catch up with the chain of the chosen peer, referred to as *sync peer*.
-The process consists in requesting the missing block to the sync peer and waiting for such blocks to be received. When received, each block, in the proper order, is verified and, if valid, accepted to the local chain.
+Instead, if the triggering block has height higher than the $Tip$'s successor, a protocol is initiated to request to the peer that sent the block all missing blocks. This protocol aims at making the node catch up with the chain of the chosen peer, referred to as *sync peer* (stored by the $syncPeer$ state variable).
+The process consists in requesting the missing blocks to the sync peer and waiting for such blocks to be received. When received, each block, in the proper order, is verified and, if valid, accepted to the local chain.
 
 More specifically, the protocol works as follows:
-1. The node sends a $\mathsf{GetBlocks}$ message to $\mathcal{S}$ containing its local $Tip$;
-2. The sync peer $\mathcal{S}$ replies with an $\mathsf{Inv}$ message containing the hashes of the blocks from the received $Tip$ and its current tip;
-3. When the $\mathsf{Inv}$ message is received, the node requests unknown blocks with a $\mathsf{GetData}$ message;
-4. The peer responds to the $\mathsf{GetData}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
+1. PreSync phase ([*PreSync*][ps]):
+   1. The node sends a $\mathsf{GetData}$ message (see [Sync Messages][sm]) of type $BlockFromHeight$ requesting the $Tip$'s successor
+2. Sync phase ([*StartSync*][ss]):
+   1. If the $Tip$'s successor is received:
+      1. The node sends a $\mathsf{GetBlocks}$ message to $\mathcal{S}$ containing its local $Tip$;
+      2. The sync peer $\mathcal{S}$ replies with an $\mathsf{Inv}$ message containing the hashes of the blocks from the received $Tip$ and its current tip;
+      3. When the $\mathsf{Inv}$ message is received, the node requests unknown blocks with a $\mathsf{GetData}$ message;
+      4. The peer responds to the $\mathsf{GetData}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
 
-During the protocol, if the sync peer sends a valid $Tip$'s successor, the node considers such peer as trustworthy and stops the SA loop ([*SALoop*][sl]) for efficiency purposes. 
-
-Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the protocol is ended (see [*HandleSyncTimeout*][hst]) and consensus restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided by the syncpeer.
+In the sync phase, the node stops the SA loop ([*SALoop*][sl]) for efficiency purposes. Note that this is done after receiving a valid $Tip+1$, which is a sign of trustworthiness from the $syncPeer$.
+Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the synchronization is stopped (see [*HandleSyncTimeout*][hst]) and [*SALoop*][sl] is restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided.
 
 ### Procedures
 
@@ -540,106 +542,129 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
 - $\mathcal{S}$: sender peer
 
 ***Algorithm***
-<!-- inSync -->
-1. If not synchronizing with any peer ($inSync = true$) :
-   <!-- B > Tip+1 -->
-   1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
+<!-- B > Tip+1 -->
+1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
+   1. If $BlockPool$ has less than $MaxSyncBlocks$
       1. Add $\mathsf{B}$ to the $BlockPool$
-      2. Start synchronization protocol ([*StartSync*][ss]) with peer $\mathcal{S}$
-   <!-- B = Tip+1 -->
-   2. If $\mathsf{B}$ is the $Tip$'s successor:
-      1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
-      2. If not valid failed, stop
-      3. Accept $\mathsf{B}$ to the chain
-      4. Propagate $\mathsf{B}$ to other peers
-      5. Restart the consensus loop ([*SALoop*][sl])
+   2. If not synchronizing with any peer ($inSync = true$):
+      1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
+<!-- B = Tip+1 -->
+2. Otherwise (if $\mathsf{B}$ is the $Tip$'s successor):
+   <!-- inSync -->
+   1. If not synchronizing with any peer ($inSync = true$) :
+      1. If $\mathsf{B}$ is the $Tip$'s successor:
+         1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
+         2. If not valid failed, stop
+         3. Accept $\mathsf{B}$ to the chain
+         4. If $\mathcal{S}$ is $syncPeer$
+            1. Start synchronization process ([*StartSync*][ss])
+         5. Otherwise:
+            1. Propagate $\mathsf{B}$ to other peers
+            2. Restart the consensus loop ([*SALoop*][sl])
 
-<!-- outSync -->
-1. If synchronizing with a peer ($inSync = false$) :
-   <!-- B > Tip+1 -->
-   1. If $\mathsf{B}$ is higher than the $Tip$'s successor :
-      1. $BlockPool = BlockPool \cup \mathsf{B}$
-
-   <!-- B = Tip+1 -->
-   2. If $\mathsf{B}$ is the $Tip$'s successor :
-      1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
-      2. If $\mathsf{B}$ is valid :
-         1. Accept $\mathsf{B}$ to the chain ([*AcceptBlock*][ab])
-         2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
-         3. If $Tip$'height is $syncFrom$ :
-            1. Stop the consensus loop ([*SALoop*][sl])
-      3. If $\mathsf{B}$ is not valid :
-         1. If $Tip$'height is $syncFrom$
-         2. And the sender $\mathcal{S}$ is the sync peer ($syncPeer$)
-            1. Stop syncing ($inSync = true$)
+   <!-- outSync -->
+   2. Otherwise (If synchronizing with a peer ($inSync = false$)) :
+      1. If $\mathsf{B}$ is the $Tip$'s successor :
+         1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
+         2. If $\mathsf{B}$ is valid :
+            1. Accept $\mathsf{B}$ to the chain ([*AcceptBlock*][ab])
+            2. Reset sync timeout $\tau_{Sync}$
+            3. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
+            4. If the new $Tip$ is $syncTo$
+               1. Stop syncing ($inSync = true$)
+               2. Restart [*SALoop*][sl]
+         3. Otherwise (if $\mathsf{B}$ is not valid):
+            1. If $\mathcal{S}$ is $syncPeer$
+                1. Stop syncing ($inSync = true$)
 
 ***Procedure***
 
 $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
-<!-- inSync -->
-1. $\texttt{if } (inSync = true) :$
-   <!-- B > Tip+1 -->
-   1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
+<!-- B > Tip+1 -->
+1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
+   1. $\texttt{if } (|BlockPool| < MaxSyncBlocks):$
       1. $BlockPool = BlockPool \cup \mathsf{B}$
-      2. [*StartSync*][ss]$(\mathsf{B}, \mathcal{S})$
-   <!-- B = Tip+1 -->
-   2. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
-      1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
-      2. $\texttt{if } (isValid = false): \texttt{stop}$
-      3. [*AcceptBlock*][ab]$(\mathsf{B})$
-      4. [*Propagate*][mx]$(\mathsf{B})$
-      5. $\texttt{restart}$([*SALoop*][sl])
+   2. $\texttt{if } (inSync = true):$
+      1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
+<!-- B = Tip+1 -->
+2. $\texttt{else}:$
+    <!-- inSync -->
+   1. $\texttt{if } (inSync = true) :$
+      1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
+         1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
+         2. $\texttt{if } (isValid = false): \texttt{stop}$
+         3. [*AcceptBlock*][ab]$(\mathsf{B})$
+         4. $\texttt{if } (\mathcal{S} = syncPeer):$
+            1. [*StartSync*][ss]$()$
+         5. $\texttt{else}:$
+            1. [*Propagate*][mx]$(\mathsf{B})$
+            2. $\texttt{restart}$([*SALoop*][sl])
+    <!-- outSync -->
+   2. $\texttt{else }:$      
+      1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
+         1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
+         2. $\texttt{if } (isValid = true):$
+            1. [*AcceptBlock*][ab]$(\mathsf{B})$
+            2. $\tau_{Sync} = \tau_{Now}$
+            3. [*AcceptPoolBlocks*][apb]$()$
+            4. $\texttt{if } (Tip.Height = syncTo):$
+               1. $inSync = true$
+               2. $\texttt{start}$([*SALoop*][sl])
+         3. $\texttt{else}:$
+            1. $\texttt{if } (\mathcal{S} = syncPeer):$
+                1. $inSync = true$
 
-<!-- outSync -->
-2. $\texttt{if } (inSync = false) :$
-   <!-- B > Tip+1 -->
-   1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
-      1. $BlockPool = BlockPool \cup \mathsf{B}$
-   
-   <!-- B = Tip+1 -->
-   2. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
-      1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
-      2. $\texttt{if } (isValid = true):$
-         1. [*AcceptBlock*][ab]$(\mathsf{B})$
-         2. [*AcceptPoolBlocks*][apb]$()$
-         3. $\texttt{if } (Tip.Height = syncFrom) :$
-            1. $\texttt{stop}$([*SALoop*][sl])
-      3. $\texttt{else}:$
-         1. $\texttt{if } (Tip.Height = syncFrom)$
-         2. $\texttt{and } (\mathcal{S} = syncPeer) :$
-            1. $inSync = true$
 
-<!-- TODO: in outSync, the condition (Tip.Height = syncFrom) could be removed: we stop SALoop only if active, and we stop syncing if S provides any invalid block at height tip+1 -->
+#### *PreSync*
+*PreSync* requests to a peer the successor of $Tip$ to ensure it knows it before starting the synchronization process. This is done to prevent a peer from stopping our consensus loop just by sending a block in the future. When $Tip+1$ is received from $\mathcal{S}$, the synchronization will start ([*StartSync*][ss]).
+
+*Parameters*
+
+- $\mathsf{B}$: the block received
+- $\mathcal{S}$: sender peer
+ 
+*Algorithm*
+
+1. Set $syncFrom$ to $Tip$
+2. Set $syncTo$ to $\mathsf{B}$'s height or $Tip + MaxSyncBlocks$
+3. Set $syncPeer$ to $\mathcal{S}$
+4. Send $\mathsf{GetData}$ requesting $Tip$'s successor
+
+*Procedure*
+
+$\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
+1. $syncFrom = Tip.Height$
+2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
+3. $syncPeer = \mathcal{S}$
+4. [*Send*][mx]$(\mathcal{S}, \mathsf{GetData}(BlockFromHeight, Tip.Height+1))$
 
 #### *StartSync*
-The *StartSync* procedure initiates the synchronization protocol with a sync peer ($\mathcal{S}$) on the base of a block $\mathsf{B}$ received from such peer.
+The *StartSync* procedure initiates the synchronization protocol with $syncPeer$ on the base of the block $syncTo$ previously received from this peer.
+While syncing, the [*SALoop*][sl] is stopped to improve performance.
 
-***Parameters***
-- $\mathsf{B}$: received block
-- $\mathcal{S}$: sender peer
+A timeout $\tau_{Sync}$ is setup to prevent a peer from stalling our node with sync. $syncPeer$ has maximum $SyncTimeout$ time to send us a valid successor of our current $Tip$. When this occurs, the timeout is restarted.
+
 
 ***Algorithm***
-1. Set $syncFrom$ to $Tip$'s height
-2. Set $syncTo$ to $\mathsf{B}$ (or $Tip$'s height plus $MaxSyncBlocks$)
-3. Send a $\mathsf{GetBlocks}$ message to $\mathcal{S}$ to request missing blocks
-4. Set $\mathcal{S}$ as the sync peer ($syncPeer$)
-5. Start the sync timer
-6. Start the sync timeout handler
-7. Set as "syncing" ($inSync = false$)
+1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
+2. Start the sync timeout $\tau_{Sync}$
+3. Start the sync timeout handler ([*HandleSyncTimeout*][hst])
+4. Stop [*SALoop*][sl]
+5. Set as "syncing" ($inSync = false$)
 
 ***Procedure***
 
-$\textit{StartSync}(\mathsf{B}, \mathcal{S}):$
-1. $syncFrom = Tip.Height$
-2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
-3. [*Send*][mx]$(\mathsf{GetBlocks}(Tip.Hash))$
-4. $syncPeer = \mathcal{S}$
-5. $\tau_{Sync} = \tau_{Now}$
-6. [*HandleSyncTimeout*][hst]$()$
-7. $inSync = false$
+$\textit{StartSync}():$
+1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
+2. $\tau_{Sync} = \tau_{Now}$
+3. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
+4. $\texttt{stop}$([*SALoop*][sl])
+5. $inSync = false$
 
 #### *HandleSyncTimeout*
-The *HandleSyncTimeout* procedure is executed when the node is running a synchronization protocol with a peer and the corresponding sync timeout expires. When this occurs, the sync protocol is ended and the SA loop restarted, if needed.
+The *HandleSyncTimeout* procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing with a peer.
+Only a single synchronization process is done at a time, so $\tau_{Sync}$ is unique.
+If the timeout expires. the synchronization is ended and the [*SALoop*][sl] restarted, if needed.
 
 ***Procedure***
 $\textit{HandleSyncTimeout}():$
@@ -653,7 +678,7 @@ $\textit{HandleSyncTimeout}():$
 
 
 #### *AcceptPoolBlocks*
-The *AcceptPoolBlocks* procedure accepts all successive blocks in $BlockPool$ from height $Tip.Height+1$ until no successor is available. It is called after receiving a valid block at height $Tip.Height+1$ (which updates the $Tip$) to accept previously-collected blocks.
+*AcceptPoolBlocks* accepts all successive blocks in $BlockPool$ from height $Tip.Height+1$ until no successor is available. It is called after receiving a valid block at height $Tip.Height+1$ (which updates the $Tip$) to accept previously-collected blocks.
 
 ***Algorithm***
 1. Get all successive blocks in $BlockPool$ starting from $Tip$'s successor
@@ -661,10 +686,7 @@ The *AcceptPoolBlocks* procedure accepts all successive blocks in $BlockPool$ fr
    1. Verify $\mathsf{B}_i$ ([*VerifyBlock*][vb])
       1. If verification fails, stop
    2. Accept $\mathsf{B}_i$ to the chain
-   3. Reset sync timer $\tau_{Sync}$
-   4. If $\mathsf{B}_i$'s height is $syncTo$
-      1. Stop syncing ($inSync = true$)
-      2. Restart consensus loop ([*SALoop*][sl])
+   3. Reset sync timeout $\tau_{Sync}$
 
 ***Procedure***
 
@@ -675,10 +697,6 @@ $\textit{AcceptPoolBlocks}():$
       1. $\texttt{if } (isValid = false): \texttt{stop}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
    3. $\tau_{Sync} = \tau_{Now}$
-   4. $\texttt{if } (\mathsf{B}_i.Height = syncTo):$
-      1. $inSync = true$
-      2. $\texttt{start}$([*SALoop*][sl])
-
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
@@ -734,3 +752,4 @@ $\textit{AcceptPoolBlocks}():$
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
+[sm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#sync-messages
