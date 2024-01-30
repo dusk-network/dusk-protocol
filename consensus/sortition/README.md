@@ -1,5 +1,3 @@
-<!-- TODO: Define BlockGenerator() and Committee() procedures -->
-
 # Deterministic Sortition
 *Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation][sa] protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
