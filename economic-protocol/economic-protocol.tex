@@ -53,7 +53,7 @@
 %    \end{abstract}
 
     \maketitle
-    
+
 %    \tableofcontents
 
 	\section{Introduction}\label{sec:introduction}
@@ -68,7 +68,7 @@
     \section{Terminology}\label{sec:terminology}
     Throughout this document, we use the following terms.
     \mbi{I added two terms that were used across the doc: \transfercontract,
-    \blockgenerator.}    
+    \blockgenerator.}
     \begin{itemize}
         \item \contract: smart contract method activated by the user
               through a transaction.
@@ -125,22 +125,22 @@
         \item \provider: intermediary service entity between a
               \user and a \contract.
     	\item \transfercontract: smart contract responsible for handling \dusk.
-    	\item \blockgenerator: full-node eligible to propose a candidate block to the network. 
+    	\item \blockgenerator: full-node eligible to propose a candidate block to the network.
     \end{itemize}
 
 	\mbi{In the following section, I removed the bullets and wrote the specs in words, since
 		the table already summarizes the flow in each scenario. I also made some changes to
 		the table.}
-		
+
     \section{Specification}\label{sec:specifications}
-	
+
 	In this section, we describe how gas is handled in different scenarios. We summarize all cases in Table~\ref{tab:gas}.
 
-	\begin{table*}[t] 
+	\begin{table*}[t]
 		\vspace{0.3cm}
 		\begin{spacing}{1.1}
 			\centering
-			\scalebox{0.75}{	
+			\scalebox{0.75}{
 				\begin{tabular}{| c | c | l | c | c | c |}
 					\hline
 					%
@@ -157,84 +157,84 @@
 					\\ \hline
 					% SCENARIO 1
 					\multirow{4}{*}{1. User pays gas}
-					& 
+					&
 					& $\bullet$ 70\% returned to \user
 					& \multirow{4}{*}{no fee}
-					& 
+					&
 					& \multirow{4}{*}{no fee}
 					\\
 					& 100\% to \blockgenerator
 					& $\bullet$ 30\% paid to executed contracts
-					& 
+					&
 					& 100\% to \blockgenerator
-					& 	
+					&
 					\\
 					& (paid by \user)
 					& \hspace{0.2cm} depending on the \gaslimit
-					& 
+					&
 					& (paid by \user)
-					& 		
+					&
 					\\
-					& 
+					&
 					& \hspace{0.2cm} allocated across \icc
-					& 
-					& 
-					& 		
-					\\ \hline	
+					&
+					&
+					&
+					\\ \hline
 					% SCENARIO 2
-					& 
+					&
 					& $\bullet$ 70\% returned to \user
-					& 
-					& 
+					&
+					&
 					& \multirow{4}{*}{returned to \user}
 					\\
 					2. User pays gas,
 					& 100\% to \blockgenerator
-					& $\bullet$ 30\% paid to executed contracts 
+					& $\bullet$ 30\% paid to executed contracts
 					& paid to
 					& 100\% to \blockgenerator
-					& 	
+					&
 					\\
 					contract applies fee
 					& (paid by \user)
 					& \hspace{0.2cm} depending on the \gaslimit
 					& charging contract
 					& (paid by \user)
-					& 	
+					&
 					\\
-					& 
+					&
 					& \hspace{0.2cm} allocated across \icc
-					& 
-					& 
-					& 		
-					\\ \hline	
+					&
+					&
+					&
+					\\ \hline
 					% SCENARIO 3
-					& 
+					&
 					& $\bullet$ 70\% returned to \contract
-					& 
-					& 
+					&
+					&
 					& \multirow{4}{*}{returned to \user}
 					\\
 					3. Contract pays gas,
 					& 100\% to \blockgenerator
-					& $\bullet$ 30\% paid to executed contracts 
+					& $\bullet$ 30\% paid to executed contracts
 					& paid to
 					& 100\% locked for
-					& 	
+					&
 					\\
 					contract applies fee
 					& (charged to \contract)
 					& \hspace{0.2cm} depending on the \gaslimit
 					& charging contract
 					& a number of epochs
-					& 	
+					&
 					\\
-					& 
+					&
 					& \hspace{0.2cm} allocated across \icc
-					& 
-					& 
-					& 		
-					\\ \hline	
+					&
+					&
+					&
+					\\ \hline
 					% SCENARIO 4
 					\multirow{2}{*}{4. Obfuscated transactions}
 					& \multirow{2}{*}{TBD}
@@ -243,14 +243,14 @@
 					& \multirow{2}{*}{TBD}
 					& \multirow{2}{*}{TBD}
 					\\
-					
-					& 
-					&  
+
+					&
+					&
 					& transacted amount
-					& 
-					& 	
+					&
+					&
 					\\
-					\hline											
+					\hline
 					% SCENARIO 5
 					5. Autocontracts
 					& TBD
@@ -259,7 +259,7 @@
 					& TBD
 					& TBD
 					\\
-					\hline		
+					\hline
 				\end{tabular}
 			}
 			\caption{Summary of how gas and fees are handled in each scenario.}
@@ -271,14 +271,14 @@
     This case mirrors the conventional gas expenditure method in most
     blockchains.
     The \user specifies a \gaslimit and a \gasprice.
-    
+
     \subsubsection{Normal flow}\label{sec:specifications:scenario-1:normal-flow}
-    
+
     In this case, all \gasconsumed is transferred to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of its own \gasunspent.
 
 	\mbi{I have an observation for this scenario that also applies to Scenario~2. \\
 	At first I thought that from the total \gasunspent, 70\% is paid back to the user
-	and the remaining 30\% is split between the \direct contract and the \icc. However, 
+	and the remaining 30\% is split between the \direct contract and the \icc. However,
 	Ed explained to me that this is not what this means, but rather the \direct contract gets
 	30\% from the total \gasunspent, and then each \icc 30\% of the gas designated for it.\\
 	In this case, consider this scenario: contract A gets called with 1000 gas limit,
@@ -292,7 +292,7 @@
 	gas limit, spent 600, and received 430 instead of 400. So, the user is making \dusk
 	out of the blue. Is this how this works or am I missing something here? If so, I
 	can't see why we want to incentivize this.
-	} 
+	}
     The most notable contract that uses this kind of strategy is perhaps the
     \transfercontract, which (according to the current configuration)
     will accrue  30\% of the gas spent per transaction.
@@ -310,25 +310,25 @@
     It might make sense to let the contracts establish what they want to be
     paid (with a maximum amount) and communicate this information during the
     calculation of the reward.
-    \mbi{\textit{Rewards} are not defined anywhere. Is this an extra amount of \dusk paid by 
-   		the user?}     
+    \mbi{\textit{Rewards} are not defined anywhere. Is this an extra amount of \dusk paid by
+   		the user?}
 	\mbi{\textit{Crossover} is a technical detail that it is also not defined and maybe adds too much
 		noise to this section.}
-	
+
     \subsection{Scenario 2: User pays gas, contract applies fee}\label{subsec:scenario-2}
     This scenario mirrors the previous one, but with an additional \fee
     that the \user must add to the transaction.
     The \user sets \gaslimit, \gasprice, and \fee.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-2:normal-flow}
-	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, all \gasconsumed is transferred 
-	to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user. 
+	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, all \gasconsumed is transferred
+	to the \blockgenerator. From the remaining \gasunspent, 70\% reverts to the \user.
 	Then, the \direct contract keeps 30\% of \gasunspent and each \icc receives 30\% of
 	its own \gasunspent.
 	\mbi{I have the same observation as before.}
-    
+
     \subsubsection{Insufficient gas}\label{sec:specifications:scenario-2:insufficient-gas}
-    In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator and 
+    In this case, 100\% of \gasconsumed (all gas) is transferred to the \blockgenerator and
     the \fee is refunded to the \user.
 
     \subsection{Scenario 3: Contract pays gas, contract applies fee}\label{sec:specifications:scenario-3}
@@ -338,8 +338,8 @@
     is described in Section~\ref{sec:specifications:scenario-3:user-pays-fees-lesser}.
 
     \subsubsection{Normal flow}\label{sec:specifications:scenario-3:normal-flow}
-    In this case, the \direct contract pays for \gas by setting \gaslimit and \gasprice. 
-    The \direct contract earns the \fee paid by the \user, and each \icc is paid 30\% of 
+    In this case, the \direct contract pays for \gas by setting \gaslimit and \gasprice.
+    The \direct contract earns the \fee paid by the \user, and each \icc is paid 30\% of
     its own \gasunspent.
     As before, all \gasconsumed is transferred to the \blockgenerator.
 
@@ -576,7 +576,7 @@
     \subsection{Gas and mint subsidized contracts}\label{sec:innovative-cost-management-approach:gas-and-mint-subsidized-contracts}
     Here we follow the same approach as before, but with the addition of a percentile of the inflation going to
     owners.
-    
+
 %    \begin{thebibliography}{99}
 %    	\bibitem{item} Author et al., {\it Title of the paper}. 3d ed. Editorial, Place: year. Link: (date of consultation). 
 %   	\end{thebibliography}
