@@ -38,6 +38,7 @@
 \newcommand{\transfercontract}{\emphasize{transfer contract}}
 \newcommand{\user}{\emphasize{user}}
 \newcommand{\users}{\emphasize{users}}
+\newcommand{\emphp}{\emphasize{p}}
 
 \begin{document}
     \title{Dusk Economic Model}
@@ -158,79 +159,79 @@
 					% SCENARIO 1
 					\multirow{4}{*}{1. User pays gas}
 					&
-					& $\bullet$ 70\% returned to \user
+					& $\bullet$ (100-\emphp)\% awarded to \blockgenerator
 					& \multirow{4}{*}{no fee}
 					&
 					& \multirow{4}{*}{no fee}
 					\\
 					& 100\% reverts to the \user
-					& $\bullet$ 30\% paid to executed contracts
+					& $\bullet$ \emphp\% paid to executed contracts
 					&
 					& 100\% to \blockgenerator
 					&
 					\\
 					& (as change)
-					& \hspace{0.2cm} depending on the \gaslimit
+					& \hspace{0.2cm} distributed according to \gasconsumed
 					&
 					& (paid by \user)
 					&
 					\\
 					&
-					& \hspace{0.2cm} allocated across \icc
+					& \hspace{0.2cm} by each \icc
 					&
 					&
 					&
 					\\ \hline
 					% SCENARIO 2
 					&
-					& $\bullet$ 70\% returned to \user
+					& $\bullet$ (100-\emphp)\% awarded to \blockgenerator
 					&
 					&
 					& \multirow{4}{*}{returned to \user}
 					\\
 					2. User pays gas,
 					& 100\% reverts to the \user
-					& $\bullet$ 30\% paid to executed contracts
+					& $\bullet$ \emphp\% paid to executed contracts
 					& paid to
 					& 100\% to \blockgenerator
 					&
 					\\
 					contract applies fee
 					& (as change)
-					& \hspace{0.2cm} depending on the \gaslimit
+					& \hspace{0.2cm} distributed according to \gasconsumed
 					& charging contract
 					& (paid by \user)
 					&
 					\\
 					&
-					& \hspace{0.2cm} allocated across \icc
+					& \hspace{0.2cm} by each \icc
 					&
 					&
 					&
 					\\ \hline
 					% SCENARIO 3
 					&
-					& $\bullet$ 70\% returned to \contract
+                    & $\bullet$ (100-\emphp)\% awarded to \blockgenerator
 					&
 					&
 					& \multirow{4}{*}{returned to \user}
 					\\
 					3. Contract pays gas,
 					& 100\% reverts to the \contract
-					& $\bullet$ 30\% paid to executed contracts
+                    & $\bullet$ \emphp\% paid to executed contracts
 					& paid to
 					& 100\% locked for
 					&
 					\\
 					contract applies fee
 					& (as change)
-					& \hspace{0.2cm} depending on the \gaslimit
+                    & \hspace{0.2cm} distributed according to \gasconsumed
 					& charging contract
 					& a number of epochs
 					&
 					\\
 					&
-					& \hspace{0.2cm} allocated across \icc
+                    & \hspace{0.2cm} by each \icc
 					&
 					&
 					&
