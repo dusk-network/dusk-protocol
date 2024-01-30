@@ -21,7 +21,7 @@ If it was generated or received from the network, the step returns the candidate
 *ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
 It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
-In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*DS*][dsp]. If the node's extracted, it generates the candidate $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits $\tau_{Proposal}$ (the Proposal timeout) to receive the candidate block from the network. If the block is received, it outputs it, otherwise, it outputs $NIL$.
+In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Proposal}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
 
 ***Parameters*** 
 - [SA Environment][env]
@@ -29,8 +29,8 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 - $I$: iteration number
 
 ***Algorithm***
-1. Extract the block generator ($\mathcal{G}$) [*DS*][dsp]$(R,S,1)$
-2. If this node's provisioner is the block generator:
+1. Extract the block generator $\mathcal{G}$ ([*ExtractGenerator*][eg])
+2. If this node's provisioner is $\mathcal{G}$:
    1. Generate candidate block $\mathsf{B}^c$
    2. Create $\mathsf{Candidate}$ message $\mathsf{M}$ containing $\mathsf{B}^c$
    3. Broadcast $\mathsf{M}$
@@ -51,10 +51,8 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ using [*
 ***Procedure***
 
 $\textit{Proposal}(R, I)$:
-1. $\texttt{set}$:
-   - $S =$ [*GetStepNum*][gsn]$(I, PropStep)$
-2. $pk_{\mathcal{G}} =$ [*DS*][dsp]$(R,S,1)$
-3. $\texttt{if } (pk_\mathcal{N} = pk_{\mathcal{G}}):$
+1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
+2. $\texttt{if } (pk_\mathcal{N} = \mathcal{G}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
    2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
       | Field       | Value               | 
@@ -68,7 +66,7 @@ $\textit{Proposal}(R, I)$:
 
    3. [*Broadcast*][mx]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
-4. $\texttt{else}:$
+3. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
    2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
       1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
@@ -151,6 +149,9 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [props]: #proposalstep
 [gb]:    #generateblock
 [st]:    #selecttransactions
+
+<!-- Basics -->
+[eg]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#extractgenerator
 
 <!-- Consensus -->
 [env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment

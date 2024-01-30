@@ -155,19 +155,70 @@ Note that a 64-bit bitset is enough to represent the maximum number of members i
 
 ### Procedures
 
+#### *ExtractGenerator*
+*ExtractGenerator* extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+
+***Parameters***
+- $R$: round number
+- $I$: iteration number
+
+***Algorithm***
+
+1. Get absolute step number $S$ for Proposal at iteration $I$
+2. Execute Deterministic Sortition [*DS*][dsp] to extract the generator $\mathcal{G}$
+3. Output $\mathcal{G}$
+
+***Procedure***
+$\textit{ExtractGenerator}(R,I)$
+1. $S =$ [*GetStepNum*][gsn]$(I, PropStep)$
+2. $\mathcal{G}=$ [*DS*][dsp]$(R, S, 1, Provisioners)$
+3. $\texttt{output }\mathcal{G}$
+
+
+#### *ExtractCommittee*
+*ExtractGenerator* extracts the voting committee for the [Validation][val] or the [Ratification][rat] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+
+The procedure excludes the block generator $\mathcal{G}$ of the same iteration to prevent it from being part of the committee. In other words, a candidate generator cannot vote over its own block.
+
+***Parameters***
+- $R$: round number
+- $I$: iteration number
+- $StepNum$: the step number ($ValStep$ or $RatStep$)
+
+***Algorithm***
+
+1. Get absolute step number $S$ for $StepNum$ at iteration $I$
+2. Extract iteration generator $\mathcal{G}$ for iteration $I$
+3. Exclude the generator $\mathcal{G}$ from the provisioner list
+4. Execute Deterministic Sortition [*DS*][dsp] to extract the committee $\mathcal{C}$
+5. Output $\mathcal{C}$
+
+***Procedure***
+$\textit{ExtractCommittee}(R,I, StepNum)$
+1. $S =$ [*GetStepNum*][gsn]$(I, StepNum)$
+2. $\mathcal{G}_{R,I} =$ [*ExtractGenerator*][eg]$(R,I)$
+3. $\boldsymbol{\mathcal{P}} = Provisioners - \mathcal{G}_{R,I}$
+4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{\mathcal{P}})$
+5. $\texttt{output } \mathcal{C}$
+
+
 #### *BitSet*
 *BitSet* takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
 
-$BitSet(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
+$\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
 
 #### *SetBit*
 *SetBit* sets a committee member's bit in a subcommittee bitset.
 
-<!-- TODO: SetBit
-  $\boldsymbol{bs}^{v}[i_m^C] = 1$
- -->
+***Parameters***
+- $\boldsymbol{bs}$: the subcommittee bitset
+- $\mathcal{C}$: the committee
+- $M$: the public key of the committee member
 
- $\textit{SetBit}(\boldsymbol{bs}, \mathcal{C}, pk)$
+***Procedure***
+
+ $\textit{SetBit}(\boldsymbol{bs}, \mathcal{C}, M)$
+ - $\boldsymbol{bs}[i_M^\mathcal{C}] = 1$
 
 #### *CountSetBits*
 *CountSetBits* returns the amount of set bits in a bitset.
@@ -277,6 +328,8 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 [sr]:    #stepresult
 [av]:    #aggregatevote
 [pro]:   #provisioners-and-stakes
+[eg]:    #extractgenerator
+[ec]:    #ExtractCommittee
 [cc]:    #countcredits
 [sc]:    #subcommittee
 [cb]:    #countsetbits
@@ -288,9 +341,11 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
+[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
 
 <!-- TODO: link to Stake Contract -->
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
