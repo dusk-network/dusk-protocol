@@ -14,10 +14,17 @@ Before reading, please make sure you are familiar with the system [Basics][bas] 
     - [*SALoop*](#saloop)
     - [*SARound*](#saround)
     - [*SAIteration*](#saiteration)
-    - [*IncreaseTimeout*](#increasetimeout)
     - [*GetQuorum*](#getquorum)
     - [*GetStepNum*](#getstepnum)
-
+  - [Step Timeouts](#step-timeouts)
+    - [Adaptive Timeout](#adaptive-timeout)
+    - [Design](#design)
+      - [Environment](#environment-1)
+    - [Procedures](#procedures-1)
+      - [*SetRoundTimeouts*](#setroundtimeouts)
+      - [*StoreElapsedTime*](#storeelapsedtime)
+      - [*AdjustBaseTimeout*](#adjustbasetimeout)
+      - [*IncreaseTimeout*](#increasetimeout)
 
 
 ## Overview
@@ -66,7 +73,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $MaxIterations$    | 255            | Maximum number of iterations for a single round      |
 | $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)                    |
-| $MaxTimeout$       | 60             | Maximum timeout for a single step (in seconds)       |
+| $MaxStepTimeout$       | 60             | Maximum timeout for a single step (in seconds)       |
 | $BlockGas$         | 5.000.000.000  | Gas limit for a single block                         |
 
 
@@ -85,9 +92,6 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Iteration$                       | Current iteration number             |
 | $\mathsf{B}^c$                    | Candidate block                      |
 | $\mathsf{B}^w$                    | Winning block                        |
-| $\tau_{Proposal}$                 | Current Proposal timeout             |
-| $\tau_{Validation}$               | Current Validation timeout           |
-| $\tau_{Ratification}$             | Current Ratification timeout         |
 | $\boldsymbol{FailedAttestations}$ | Attestations of failed iterations    |
 
 <p><br></p>
@@ -166,31 +170,32 @@ If, at any time, a winning block is produced, as the result of a successful iter
 ***Algorithm***
 
 1. Set variables:
-   - Initialize Proposal, Validation, and Ratification timeouts ($\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification}$)
    - Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
    - Set iteration $Iteration$ to 0
-2. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-3. While $Iteration$ is less than $MaxIterations$ and no winning block has been produced
+2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
+3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
+4. While $Iteration$ is less than $MaxIterations$ and no winning block has been produced
    1. Execute SA iteration ([*SAIteration*][sai])
-4. If we reached $MaxIterations$ without a winning block
+5. If we reached $MaxIterations$ without a winning block
    1. Output $NIL$
-5. Otherwise, broadcast the winning block $\mathsf{B}^w$ <!-- TODO: move this to SALoop ? -->
-6. Output $\mathsf{B}^w$
+6. Otherwise, broadcast the winning block $\mathsf{B}^w$
+7. Output $\mathsf{B}^w$
 
 ***Procedure***
+<!-- TODO: use for Iteration from 0 to MaxIterations{ if B^w != NIL, break} -->
 
 $\textit{SARound}():$
 1. $\texttt{set }$:
-   - $\tau_{Proposal}, \tau_{Validation}, \tau_{Ratification} = InitTimeout$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration = 0$
-2. $\texttt{start}$([*HandleQuorum*][hq]$(Round))$
-3. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
+2. [*SetRoundTimeouts*][srt]$()$
+3. $\texttt{start}$([*HandleQuorum*][hq]$(Round))$
+4. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
    1. [*SAIteration*][sai]$(Round, Iteration)$
-4. $\texttt{if } (\mathsf{B}^w = NIL)$
+5. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\texttt{output } NIL$
-5. [*Broadcast*][mx]$(\mathsf{B}^w)$
-6. $\texttt{output } \mathsf{B}^w$
+6. [*Broadcast*][mx]$(\mathsf{B}^w)$
+7. $\texttt{output } \mathsf{B}^w$
 
 <p><br></p>
 
@@ -242,17 +247,6 @@ $\textit{SAIteration}(R, I):$
 
 <p><br></p>
 
-### *IncreaseTimeout*
-*IncreaseTimeout* doubles a step timeout up to $MaxTimeout$.
-
-***Parameters***
-- $\tau_{Step}$: $Step$ timeout to increase (where $Step$ can be $Proposal$, $Validation$, or $Ratification$)
-
-***Procedure***
-
-$\textit{IncreaseTimeout}(\tau_{Step}):$
-- $\tau_{Step} =$ *Max*$(\tau_{Step} \times 2, MaxTimeout)$
-
 ### *GetQuorum*
 *GetQuorum* returns the quorum target depending on the vote $v$
 
@@ -277,6 +271,98 @@ $\textit{GetQuorum}(v):$
 $\textit{GetStepNum}(I, Step):$
 - $\texttt{output } I \times + StepNum$ 
 
+## Step Timeouts
+Each step of the [SA iteration][sai] has a limited timeout, within which the step can succeed. If the timeout expires, the step fails.
+
+Step timeouts serve various purposes. First of all, they are used to keep provisioners aligned with each other: to reach consensus on a candidate block, provisioners need to run the same round and iteration at approximately the same time. Timeouts force the consensus loop to run on a fast pace, without indefinite waits for steps to end. For instance, if the provisioner node gets isolated from the network, it won't get stuck at the same round, but will move on until either an iteration succeeds or a full block is received.
+
+Timeouts are also functional to avoid forks. Without timeouts, a step could run indefinitely until some result is obtained (e.g., a candidate block is received, or a quorum of votes is reached). Dealing with this would require iterations to run in parallel, leading to blocks that could be replaced at any moment by lower-iteration ones. Instead, by having a limited time on each step, provisioners always act in a finite time, allowing iterations to move on. For instance, if the candidate block does not arrive in time, the provisioner votes $NoCandidate$ in the Validation step. Similarly, if the Validation step does not reach any quorum within the timeout, the provisioner votes $NoQuorum$. Moreover, once a vote is cast, no other vote is allowed from the same provisioner (this behavior will be slashed in the future). These timeout-induced votes enable blocks that are not produced at the first iteration to be [finalized][fin]. This is because a quorum of negative votes can be used to produce a [Failed Attestation][atts] that proves the iteration failed and can't reach any valid quorum.
+
+Another effect of timeouts is enabling [slashing][sla] a provisioner for not producing a block. While timeouts cannot ensure a block was not produced at all (which is impossible, since the generator could create the block and then postpone its broadcast indefinitely) they allow provisioners to agree on the fact that a majority did not receive such a block.
+
+### Adaptive Timeout
+To cope with changes in the network latency, step timeouts are designed to self-adjust based on previous events.
+
+Two mechanisms determine the timeout for a specific step execution:
+  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($INCREASE_AMOUNT$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
+  <!-- If our timeout is too low, and other provisioners reach consensus, we would receive the Quorum/Block message before succeeding. We should consider this for the next round.  -->
+  - round adjustment: at each round, the timeout for the first iteration is given by the average of the past rounds; this mechanism allows to adjust the timeout to the actual time needed by the step: if the last executions of the step succeeded within X seconds, it means X seconds are sufficient for the step to complete. This also allows the timeout to be reduced if the network latency decreases.
+
+### Design
+
+There are three timeouts, one for each step:
+- $\tau_{Proposal}$
+- $\tau_{Validation}$
+- $\tau_{Ratification}$
+
+When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $DefaultStepTimeout$.
+
+At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. Then, while executing iterations, if the step is successful, its elapsed time is stored in $ElapsedTimes_{Step}$; if the timeout expires, it is increased by $TimeoutIncrease$ for the next iteration.
+
+#### Environment
+
+**Parameters**
+
+| Name                 | Value  | Description                                  |
+|----------------------|--------|----------------------------------------------|
+| $DefaultStepTimeout$ | 5  sec | Default step timeout                         |
+| $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
+| $MinStepTimeout$     | 1 sec  | Minimum timeout for a single step            |
+| $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
+| $MaxElapsedTimes$ | 5      | Maximum number of elapsed time values stored |
+
+**State Variables**
+
+| Name                  | Description                         |
+|-----------------------|-------------------------------------|
+| $\tau_{Step}$         | Current $Step$ timeout              |
+| $BaseTimeout_{Step}$  | Current $Step$ base timeout         |
+| $ElapsedTimes_{Step}$ | Stored $Step$ timeout elapsed times |
+
+With $Step = Proposal, Validation, Ratification$
+
+### Procedures
+
+#### *SetRoundTimeouts*
+Set the initial step timeout for all steps
+
+$\textit{SetRoundTimeouts}()$
+- $\texttt{for } Step \texttt{ in } [Proposal, Validation, Ratification] :$
+  - [*AdjustBaseTimeout*][abt]$(Step)$
+  - $\tau_{Step} = BaseTimeout_{Step}$
+
+#### *StoreElapsedTime*
+*StoreElapsedTime* adds a new elapsed time to $ElapsedTimes_{Step}$. 
+$ElapsedTimes$ storage is a queue structure with a max capacity of $MaxElapsedTimes$. As such, if there are $MaxElapsedTimes$ values stored, when a new value is inserted, the oldest one is removed.
+
+$\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
+- $\texttt{if } (|ElapsedTimes_{Step}| = MaxElapsedTimes):$
+  - $ElapsedTimes_{Step}.pop()$
+- $ElapsedTimes_{Step}.push(\tau_{Elapsed})$
+
+#### *AdjustBaseTimeout*
+*AdjustBaseTimeout* adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
+The new timeout is the rounded-up average value of the stored elapsed times.
+
+***Parameters***
+- $Step$: the step name
+
+***Procedure***
+
+$\textit{AdjustBaseTimeout}(Step):$
+- $AvgElapsed =$ *RoundUp*$($*Sum*$(ElapsedTimes_{Step}) / |ElapsedTimes_{Step}|)$
+- $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
+
+#### *IncreaseTimeout*
+*IncreaseTimeout* increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
+
+***Parameters***
+- $Step$: the step timeout
+
+***Procedure***
+
+$\textit{IncreaseTimeout}(Step):$
+- $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
 
 <!----------------------- FOOTNOTES ----------------------->
 
@@ -284,15 +370,22 @@ $\textit{GetStepNum}(I, Step):$
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
-[sa]:    #overview
+[sa]:   #overview
 [cenv]: #environment
-[init]:  #sainit
-[sar]:   #saround
-[sai]:   #saiteration
-[sal]:   #saloop
-[it]:    #increasetimeout
-[gq]:    #getquorum
-[gsn]:   #getstepnum
+[init]: #sainit
+[sal]:  #saloop
+[sar]:  #saround
+[sai]:  #saiteration
+
+[tim]:  #step-timeouts
+[tenv]: #environment-1
+[set]:  #StoreElapsedTime
+[srt]:  #SetRoundTimeouts
+[abt]:  #adjustbasetimeout
+[it]:   #increasetimeout
+
+[gq]:   #getquorum
+[gsn]:  #getstepnum
 
 [net]: https://github.com/dusk-network/dusk-protocol/tree/main/network
 [not]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation/README.md
@@ -305,6 +398,7 @@ $\textit{GetStepNum}(I, Step):$
 [ab]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [hb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#handleblock
 [hq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#handlequorum
+[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 [rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 [mw]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#makewinning
 
@@ -312,6 +406,7 @@ $\textit{GetStepNum}(I, Step):$
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
 
 <!-- Basics -->
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestations
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
 [sb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#setbit
 
@@ -331,3 +426,6 @@ $\textit{GetStepNum}(I, Step):$
 [qmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#quorum
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate
+
+<!-- TODO -->
+[sla]: #slashing

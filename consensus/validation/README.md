@@ -74,10 +74,11 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
          2. Collect $\mathsf{M^V}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
          3. Set the target quorum $Q$ to $Supermajority$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
          4. If votes in $\mathsf{SV}_{v^V}$ reach $Q$
-            1. Output $(v^V, \mathsf{SV}_{v^V})$
+            1. Store elapsed time
+            2. Output $(v^V, \mathsf{SV}_{v^V})$
 
  6. If timeout $\tau_{Validation}$ expired:
-    1. Increase Validation timeout
+    1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
 ***Procedure***
@@ -123,10 +124,11 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
          2. $`\mathsf{SV}_{v^V} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^V}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
          3. $Q =$ [*GetQuorum*][gq]$(v^V)$
          4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
-            1. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
+            1. [*StoreElapsedTime*][set]$(Validation, \tau_{Now}-\tau_{Start})$
+            2. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
-    1. [*IncreaseTimeout*][it]$(\tau_{Validation})$
+    1. [*IncreaseTimeout*][it]$(Validation)$
     2. $\texttt{output } (NoQuorum, NIL, NIL)$
 
 
@@ -140,6 +142,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 <!-- Consensus -->
 [env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[set]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 [gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
