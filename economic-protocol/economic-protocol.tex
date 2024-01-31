@@ -404,7 +404,11 @@
     the \gasprice and \gaslimit it is willing to pay for a given transaction,
     meaning that the binary interface of the \contract with the \blockgenerator
     must be extended to support this functionality.
-    Data must also be made available to the \contract, such as average gas price.
+    For any of the previous calculations to be possible, the protocol must make
+    data, such as low, average, and high gas price, available to the \contract.
+    This data will be served, like any other data, using a host function - a
+    function that is not part of the \contract, but is made available to it
+    by the node.
 
     \subsubsection*{User pays fees lesser than gas paid by contract}\label{subsubsec:scenario-3-user-pays-fees-lesser}
     It is possible for a \user to pay a \fee that is less than the \gasconsumed.
