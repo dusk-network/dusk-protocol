@@ -29,7 +29,7 @@ Each iteration is composed of three phases, or ***steps***:
   
   2. ***Validation***: in this step, a committee of provisioners, extracted via [*DS*][ds], votes on the validity of the candidate block via $\mathsf{Validation}$ messages. The committee can reach a successful *quorum* with a supermajority ($\frac{2}{3}$) of $Valid$ votes or an unsuccessful quorum with a majority ($\frac{1}{2}+1$) of $Invalid$ votes, cast for an invalid candidate, or $NoCandidate$ votes, cast when the candidate is unknown.
   
-  3. ***Ratification***: in this step, a new committee of provisioners, extracted via [*DS*][ds], votes on the result of the previous Validation step via $\mathsf{Ratification}$ messages. If a quorum was reached they cast the winning Validation vote, otherwise they will vote $NoQuorum$. If a quorum is reached, a $\mathsf{Quorum}$ message is broadcast, containing a $\mathsf{Certificate}$ with the votes of the two steps.
+  3. ***Ratification***: in this step, a new committee of provisioners, extracted via [*DS*][ds], votes on the result of the previous Validation step via $\mathsf{Ratification}$ messages. If a quorum was reached they cast the winning Validation vote, otherwise they will vote $NoQuorum$. If a quorum is reached, a $\mathsf{Quorum}$ message is broadcast, containing a $\mathsf{Attestation}$ with the votes of the two steps.
   Similar to Validation, the step succeeds if a supermajority quorum of $Valid$ votes is received, and it fails with a majority quorum of $Invalid$, $NoCandidate$, or $NoQuorum$ votes.
   If no quorum is reached, the step result is unknown.
 
@@ -79,16 +79,16 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Provisioners$       | Current set of (eligible) provisioners  |
 
 **Round State**
-| Name                          | Description                          |
-|-------------------------------|--------------------------------------|
-| $Round$                       | Current round number                 |
-| $Iteration$                   | Current iteration number             |
-| $\mathsf{B}^c$                | Candidate block                      |
-| $\mathsf{B}^w$                | Winning block                        |
-| $\tau_{Proposal}$             | Current Proposal timeout             |
-| $\tau_{Validation}$           | Current Validation timeout           |
-| $\tau_{Ratification}$         | Current Ratification timeout         |
-| $\boldsymbol{FailedCertificates}$ | Certificates of failed iterations for the current round |
+| Name                              | Description                          |
+|-----------------------------------|--------------------------------------|
+| $Round$                           | Current round number                 |
+| $Iteration$                       | Current iteration number             |
+| $\mathsf{B}^c$                    | Candidate block                      |
+| $\mathsf{B}^w$                    | Winning block                        |
+| $\tau_{Proposal}$                 | Current Proposal timeout             |
+| $\tau_{Validation}$               | Current Validation timeout           |
+| $\tau_{Ratification}$             | Current Ratification timeout         |
+| $\boldsymbol{FailedAttestations}$ | Attestations of failed iterations    |
 
 <p><br></p>
 
@@ -198,21 +198,21 @@ $\textit{SARound}():$
 *SAIteration* executes the sequence of *Proposal*, *Validation*, and *Ratification* steps.
 The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
 
-If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$ message is broadcast with the $\mathsf{Certificate}$ of the iteration (i.e. the two $\mathsf{StepVotes}$ $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
+If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$ message is broadcast with the $\mathsf{Attestation}$ of the iteration (i.e. the two $\mathsf{StepVotes}$ $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
 
 ***Algorithm***
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
 4. If Ratification reached a quorum on $v$: 
-   1. Create a certificate $\mathsf{C}$ with the Validation and Ratification votes
+   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
    2. Set vote to $(v, \eta_{\mathsf{B}^c})$
    3. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$
    4. Broadcast $\mathsf{M}^\mathsf{Q}$
    5. If the Ratification result is $Success$:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
    6. If the Ratification result is $Fail$
-      1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
+      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
 
 ***Procedure***
 $\textit{SAIteration}(R, I):$
@@ -223,9 +223,9 @@ $\textit{SAIteration}(R, I):$
   - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
   - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
 4. $\texttt{if } (v \ne NoQuorum):$
-   1. $\mathsf{C} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
+   1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
    2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{C})$
+   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
       | Field           | Value                 |
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -233,12 +233,12 @@ $\textit{SAIteration}(R, I):$
       | $Iteration$     | $I$                   |
       | $Vote$          | $v$                   |
       | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
-      | $Certificate$   | $\mathsf{C}$          |
+      | $Attestation$   | $\mathsf{A}$          |
    4. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
    5. $\texttt{if } (v = Success):$
-      1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+      1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
    6. $\texttt{else }:$
-      1. $\boldsymbol{FailedCertificates}[I] = {\mathsf{C}}$
+      1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
 
 <p><br></p>
 

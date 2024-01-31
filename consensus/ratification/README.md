@@ -3,8 +3,8 @@
 
 Members of the extracted committee cast a vote with the output of the [Validation][val] step as resulting from the $\mathsf{Validation}$ messages received. At the same time, all provisioners, including committee members, collect Ratification votes from the network until a target quorum is reached or the step timeout expires.
 
-If a quorum is reached for any result, a $\mathsf{Quorum}$ [`Quorum`][qmsg] is generated with the aggregated signatures of both Validation and Ratification steps.
-Since the certificate proves a candidate reached a quorum, receiving this message is sufficient to accept the candidate into the local chain.
+If a quorum is reached for any result, a [`Quorum`][qmsg] message is generated with the aggregated signatures of both Validation and Ratification steps.
+Since the attestation proves a candidate reached a quorum, receiving this message is sufficient to accept the candidate into the local chain.
 
 The main purpose of the Ratification step is to ensure provisioners are "aligned" with respect to the Validation result: if Validation result was $Valid$, it ensures a supermajority of provisioners saw such a result and hence accepted the block. Similarly, in case of $\text{non-}Valid$ result, it ensures a majority of provisioners will certify this iteration as failed, which, in turn, is used in determining if a winning candidate will be Attested or not (see [Finality][fin]).
 
