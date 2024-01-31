@@ -28,7 +28,7 @@ This section describes the network messages exchanged by nodes to participate in
 To run the SA protocol, nodes exchange four main types of messages:
 - $\mathsf{Candidate}$: it stores a candidate block for a specific round and iteration; it is used during the [Proposal][prop] step;
 - $\mathsf{Validation}$: it contains the vote of a member of the voting committee for a [Validation][val] step;
-- $\mathsf{Ratification}$: it contains the vote of a member of the voting committee for a [Ratification][val] step;
+- $\mathsf{Ratification}$: it contains the vote of a member of the voting committee for a [Ratification][rat] step;
 - $\mathsf{Quorum}$: it contains the aggregated votes of a specific iteration's Validation and Ratification steps; it is generated at the end of an SA iteration if a quorum was reached in the Ratification step;
 
 Consensus messages are composed of a [ConsensusInfo][cinf] structure, some fields specific to the message type, and, with the exception of the $\mathsf{Quorum}$ message, a [SignInfo][sinf] structure, containing the public key and signature of the provisioner that created the message. 
@@ -144,10 +144,12 @@ The message has the following structure:
 |-------------------|-----------------------|-----------|-----------------------------|
 | $ConsensusInfo$   | [ConsensusInfo][cinf] | 48 bytes  | Consensus info              |
 | $VoteInfo$        | [VoteInfo][vinf]      | 33 byte   | Ratification vote           |
-| $SignInfo$        | [SignInfo][sinf]      | 144 bytes | Signature info              |
 | $ValidationVotes$ | [StepVotes][sv]       | 56 byte   | Aggregated Validation votes |
+| $Timestamp$       | Unsigned Integer      | 64 bits   | Timestamp in Unix format    |
+| $SignInfo$        | [SignInfo][sinf]      | 144 bytes | Signature info              |
 
 In this message, $Vote$ (part of $VoteInfo$) can be $NoCandidate$, $Valid$, $Invalid$, or $NoQuorum$.
+The $Timestamp$ field is reserved for a future feature.
 
 The $\mathsf{Ratification}$'s *signature value* $\upsilon_\mathcal{M^R}$ is:
 
