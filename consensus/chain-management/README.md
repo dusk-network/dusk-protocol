@@ -165,7 +165,6 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 8.  $\texttt{output } true$
 
 ### *VerifyBlockHeader*
-<!-- TODO: rename to VerifyCandidate ? -->
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
 ***Parameters***
@@ -177,9 +176,8 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 2. Check $Hash$ is the header's hash
 3. Check $Height$ is $\mathsf{B}^p$'s height plus 1
 4. Check $PrevBlock$ is $\mathsf{B}^p$'s hash
-5. Check $Timestamp$ is higher than $\mathsf{B}^p$'s timestamp
-6. Check transaction root is correct with respect to the transaction set
-7. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+5. Check transaction root is correct with respect to the transaction set
+6. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
 - If any check failed
   1. Output $false$
 - Otherwise, output $true$
@@ -193,12 +191,11 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   2. $\texttt{or } (\mathsf{B}.Hash \ne$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$
   3. $\texttt{or } (\mathsf{B}.Height \ne \mathsf{B}^p.Height)$
   4. $\texttt{or } (\mathsf{B}.PreviousBlock \ne \mathsf{B}^p.Hash)$
-  5. $\texttt{or } (\mathsf{B}.Timestamp \lt \mathsf{B}^p.Timestamp)$
-  6. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
-  7. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
+  5. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
+  6. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
      1. $\texttt{output } false$
 
-   8. $\texttt{output } true$
+  7. $\texttt{output } true$
 
 
 ### *VerifyAttestation*
