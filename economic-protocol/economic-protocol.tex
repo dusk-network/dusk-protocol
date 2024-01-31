@@ -335,7 +335,8 @@
     from the first block - use this strategy.
 
     \subsubsection*{Insufficient gas}\label{subsubsec:scenario-1-insufficient-gas}
-    If there is insufficient gas to execute, the \user is refunded the full amount.
+    If there is insufficient gas to execute, the \gasconsumed up is paid to the
+    \blockgenerator.
 
     \subsubsection*{Reward to contracts}\label{subsubsec:scenario-1-insufficient-gas-reward-to-contract}
     In this scenario, contracts are rewarded directly by their \gasconsumed.
@@ -364,8 +365,8 @@
 	\mbi{I have the same observation as before.}
 
     \subsubsection*{Insufficient gas}\label{subsubsec:scenario-2-insufficient-gas}
-    In this case, 100\% of the \gas is returned to the \user, along with the
-    \fee.
+    If there is insufficient gas to execute, the \gasconsumed up is paid to the
+    \blockgenerator, and the \fee is refunded to the \user.
 
     \subsection*{Scenario 3: Contract pays gas, contract applies fee}\label{subsec:scenario-3}
     This scenario is similar to the previous one\ref{subsec:scenario-2}, in that
@@ -390,9 +391,8 @@
 
     \subsubsection*{Insufficient gas}\label{subsubsec:scenario-3-insufficient-gas}
     In the same way as the other scenarios, if there is \insufficientgas for the
-    execution to complete, the \user is refunded the full amount of the \fee.
-    However, in this case, since the \contract is paying for the gas, the \contract
-    receives is refunded the amount that it would have paid for the gas.
+    execution to complete, the \user is refunded the full amount of the \fee, and
+    the \gasconsumed is paid to the \blockgenerator.
 
     \subsubsection*{Setting gas price and limit}\label{subsubsec:scenario-3-setting-gas-price-and-limit}
     In the previous scenarios the \user sets the \gasprice and \gaslimit, and
