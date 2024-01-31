@@ -29,25 +29,25 @@ We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
 
 ## BlockHeader
 
-| Field                  | Type                     | Size       | Description                                         |
-|------------------------|--------------------------|------------|-----------------------------------------------------|
-| $Version$              | Unsigned Integer         | 8 bits     | Block version                                       |
-| $Height$               | Unsigned Integer         | 64 bits    | Block height                                        |
-| $Timestamp$            | Integer                  | 64 bits    | Block timestamp                                     |
-| $GasLimit$             | Unsigned Integer         | 64 bits    | Block gas limit                                     |
-| $Iteration$            | Integer                  | 8 bits     | Iteration at which the block was produced           |
-| $PreviousBlock$        | Sha3 Hash                | 32 bytes   | Hash of previous block                              |
-| $Seed$                 | Signature                | 48 bytes   | Signature of the previous block's seed              |
-| $Generator$            | Public Key               | 96 bytes   | Generator Public Key                                |
-| $TransactionRoot$      | Blake3 Hash              | 32 bytes   | Root of transactions Merkle tree                    |
-| $StateRoot$            | Sha3 Hash                | 32 bytes   | Root of contracts state Merkle tree                 |
-| $PrevBlockCertificate$ | [`Certificate`][cert]    | 112 bytes  | Certificate of the previous block                   |
-| $Hash$                 | Sha3 Hash                | 32 bytes   | Hash of previous fields                             |
-| $Certificate$          | [`Certificate`][cert]    | 112 bytes  | Certificate of the block votes                      |
-| $FailedIterations$     | [`Certificate`][cert][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
+| Field                  | Type                    | Size       | Description                                         |
+|------------------------|-------------------------|------------|-----------------------------------------------------|
+| $Version$              | Unsigned Integer        | 8 bits     | Block version                                       |
+| $Height$               | Unsigned Integer        | 64 bits    | Block height                                        |
+| $Timestamp$            | Integer                 | 64 bits    | Block timestamp                                     |
+| $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                     |
+| $Iteration$            | Integer                 | 8 bits     | Iteration at which the block was produced           |
+| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of previous block                              |
+| $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed              |
+| $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                |
+| $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                    |
+| $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                 |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | Certificate for the previous block                  |
+| $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                             |
+| $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block      |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
 
-The $BlockHeader$ structure has a variable total size of 522 to 28970 bytes (28.8 KB).
-This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Certificate$ is missing.
+The $\mathsf{BlockHeader}$ structure has a variable total size of 522 to 28970 bytes (28.8 KB).
+This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
 
 **Notation**
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
@@ -55,7 +55,8 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 We define a *block's hash* as:
 
 <!-- TODO: define \eta as function: \eta(B) -->
-$$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate)$$
+$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||$
+$\text{     }PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$$
 
 <!-- TODO: define block's round and iteration: r_{\mathsf{B}^p},s_{\mathsf{B}^p} -->
 
@@ -75,7 +76,7 @@ $$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration|
 
 <!-- Basics -->
 [cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#candidate-block
-[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificate
+[att]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestation
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
 
 <!-- Chain Management -->

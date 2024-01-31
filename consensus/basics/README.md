@@ -1,10 +1,10 @@
 # Basics of SA Consensus
-In this section, we describe the building blocks of the SA consensus protocol, such as *provisioners*, *voting committees*, *certificates*, and *blocks*.
+In this section, we describe the building blocks of the SA consensus protocol, such as *blocks*, *provisioners*, *voting committees*, and *attestations*.
 
 ### ToC
+  - [Candidate Block](#candidate-block)
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
-  - [Candidate Block](#candidate-block)
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
     - [Votes](#votes)
@@ -20,14 +20,21 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [*CountSetBits*](#countsetbits)
       - [*SubCommittee*](#subcommittee)
       - [*CountCredits*](#countcredits)
-  - [Certificates](#certificates)
+  - [Attestations](#attestations)
     - [Structures](#structures)
-      - [Certificate](#certificate)
+      - [Attestation](#attestation)
       - [StepVotes](#stepvotes)
       - [StepResult](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
 
+## Candidate Block
+A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
+
+Therefore, for each iteration, only one (valid) candidate block can be produced[^2]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{R,I}$, where $R$ is the consensus round, and $i$ is the consensus iteration. 
+Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
+
+A candidate block that reaches an agreement is called a *winning* block.
 
 ## Provisioners and Stakes
 A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
@@ -66,13 +73,7 @@ $$Epoch \lt M \le 2{\times}Epoch.$$
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
-## Candidate Block
-A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
-Therefore, for each iteration, only one (valid) candidate block can be produced[^2]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{R,I}$, where $R$ is the consensus round, and $i$ is the consensus iteration. 
-Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not generate confusion.
-
-A candidate block that reaches an agreement is called a *winning* block.
 
 ## Voting Committees
 A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *power* in the committee.
@@ -247,28 +248,26 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 2. $\texttt{output } credits$
 
 
-## Certificates
-<!-- TODO: Rename to Attestation and define Certificate as the PrevBlock Cert -->
-A *Certificate* contains the aggregated votes from two Validation and Ratification steps that reached a quorum. It is used as proof of a committee reaching a quorum in the two steps. 
-In particular, certificates are used to prove the result of an iteration over a candidate block: if the iteration was successful, it proves a quorums of $Valid$ votes was received in both steps; if the iteration failed, it proves there was a quorum of $Invalid$, $NoCandidate$ or $NoQuorum$. We use the terms *Valid Certificate* and *Failed Certificate* to refer to the two types of quorum the certificate proves.
-
+## Attestations
+An *Attestation* is an aggregate collection of votes from a specific iteration. It includes the votes of the [Validation][val] and [Ratification][rat] steps and is used as proof of a reached agreement in an iteration: if the iteration was successful, it proves a supermajority quorum of $Valid$ votes was cast in both steps, while if the iteration failed, it proves there was a majority quorum of $Invalid$, $NoCandidate$ or $NoQuorum$ votes. 
+We use the terms *Valid Attestation* and *Failed Attestation* to refer to the two types of quorum being proved.
 
 ### Structures
-#### Certificate
-The $\mathsf{Certificate}$ structure contains the aggregated votes of the [quorum-committees][sc] of the [Validation][val] and [Ratification][rat] steps. Each vote set is contained in a $\mathsf{StepVotes}$ structure.
+#### Attestation
+The $\mathsf{Attestation}$ structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
 
 
-| Field          | Type            | Size     | Description                               |
-|----------------|-----------------|----------|-------------------------------------------|
-| $Validation$   | [StepVotes][sv] | 56 bytes | Aggregated votes of the Validation step   |
-| $Ratification$ | [StepVotes][sv] | 56 bytes | Aggregated votes of the Ratification step |
+| Field          | Type              | Size     | Description                               |
+|----------------|-------------------|----------|-------------------------------------------|
+| $Validation$   | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Validation step   |
+| $Ratification$ | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Ratification step |
 
-The $\mathsf{Certificate}$ structure has a total size of 112 bytes.
+The $\mathsf{Attestation}$ structure has a total size of 112 bytes.
 
 #### StepVotes
 The $\mathsf{StepVotes}$ structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
-Votes are aggregated BLS signatures from members of a Voting Committee. Each vote is a signature for a triplet $(round, step, vote)$.
-To specify which committee members' votes are included, a [sub-committee bitset][bs] is used.
+Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers to.
+To specify the votes from which committee members included in the aggregated signature, a [sub-committee bitset][bs] is used.
 
 The structure is defined as follows:
 
@@ -280,21 +279,21 @@ The structure is defined as follows:
 The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
 
 #### StepResult
-The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Result$ and the $\mathsf{StepVotes}$ with the aggregated votes producing $Result$.
+The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the $\mathsf{StepVotes}$ with the aggregated votes producing $Vote$.
 
 The structure is defined as follows:
 
-| Field           | Type            | Size     | Description           |
-|---------------- |-----------------|----------|-----------------------|
-| $Result$        | Integer         | 8 bits   | The step result       |
-| $CandidateHash$ | SHA3            | 32 bytes | The candidate hash    |
-| $SV$            | [StepVotes][sv] | 56 bytes | Aggregated signatures |
+| Field           | Type            | Size     | Description                  |
+|---------------- |-----------------|----------|------------------------------|
+| $Vote$          | Integer         | 8 bits   | The winning vote of the step |
+| $CandidateHash$ | SHA3            | 32 bytes | The candidate hash           |
+| $SV$            | [`StepVotes`][sv] | 56 bytes | Aggregated signatures        |
 
-$Result$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
+$Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 ### Procedures
 #### *AggregateVote*
-*AggregateVote* adds a vote to a [StepVotes][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
+*AggregateVote* adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
 
 **Parameters**
 - $\mathsf{SV}$: the $\mathsf{StepVotes}$ structure with the aggregated votes
@@ -323,8 +322,9 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md -->
-[certs]: #certificates
-[cert]:  #certificate
+[vot]:  #votes
+[atts]: #attestations
+[att]:  #attestation
 [sv]:    #stepvotes
 [sr]:    #stepresult
 [av]:    #aggregatevote

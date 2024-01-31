@@ -12,7 +12,7 @@ In particular, this section describes how new blocks are accepted to the local b
   - [Block Verification](#block-verification)
     - [*VerifyBlock*](#verifyblock)
     - [*VerifyBlockHeader*](#verifyblockheader)
-    - [*VerifyCertificate*](#verifycertificate)
+    - [*VerifyAttestation*](#verifyattestation)
     - [*VerifyVotes*](#verifyvotes)
   - [Block Management](#block-management)
     - [*HandleQuorum*](#handlequorum)
@@ -38,8 +38,8 @@ In particular, this section describes how new blocks are accepted to the local b
 
 ## Overview
 <!-- TODO: Add Finality/Block management -->
-At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being a certified block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
-In the latter case, a block is received from the network, which has already reached consensus (proved by the block [certificate][certs]). 
+At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [Attestation][atts]). 
 
 There are two main reasons a network block is not in the chain:
  
@@ -62,9 +62,9 @@ As a consequence of the above, blocks from iterations greater than 0 could poten
 To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
 In particular, Blocks in the [local chain][lc] can be in three states:
 
-  - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a [Failed Certificate][certs]. 
+  - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a [Failed Attestation][atts]. 
 
-  - *Attested*: the block has a Valid Quorum and all previous iterations have a Failed Certificate; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  - *Attested*: the block has a Valid Quorum and all previous iterations have a Failed Attestation; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
   
   - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
 
@@ -79,11 +79,11 @@ Due to its relevance, we formally define the ***last final block*** as the highe
 
 The mechanism is based on the following observations:
  - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
- - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any certificate for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
+ - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any attestation for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
  - Since each committee is randomly extracted with [Deterministic Sortition][ds], it can be considered as a random sampling of the provisioner set.
  - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
  - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
- - While all blocks succeeding $B^A$ include Certificates confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Certificates are enough to consider $B^A$ as Final.
+ - While all blocks succeeding $B^A$ include Attestations confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Attestations are enough to consider $B^A$ as Final.
 
 Considering only Attested blocks allow minimizing the risk of accounting for "confirmations" that are then replaced by a fork.
 
@@ -122,10 +122,10 @@ The environment for the block-processing procedures includes node-level paramete
 
 ## Block Verification
 <!-- TODO: mv to Blockchain or Basics -->
-We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyCertificate*][vc], and [*VerifyVotes*][vv].
+We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
 ### *VerifyBlock*
-The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid certificate. If both conditions are met, it returns $true$, otherwise, it returns $false$.
+The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
 
 ***Parameters***
 - $\mathsf{B}$: the block to verify
@@ -134,33 +134,33 @@ The *VerifyBlock* procedure verifies a block is a valid successor of another blo
 ***Algorithm***
 1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
 2. If header's not valid, output $false$
-3. Verify $\mathsf{B}^p$'s certificate $\mathsf{C}_\mathsf{B^p}$ ([*VerifyCertificate*][vc])
-4. If $\mathsf{C}^p$ is not valid, output $false$
-5. Verify $\mathsf{B}$'s certificate $\mathsf{C}_\mathsf{B}$ ([*VerifyCertificate*][vc])
-6. If certificate's not valid, output $false$
-7. For each certificate $\mathsf{C}_i$ in $FailedIterations$
-   1. Verify $\mathsf{C}_i$ ([*VerifyCertificate*][vc])
+3. Verify $\mathsf{B}^p$'s attestation $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
+4. If $\mathsf{A}^p$ is not valid, output $false$
+5. Verify $\mathsf{B}$'s attestation $\mathsf{A}_\mathsf{B}$ ([*VerifyAttestation*][va])
+6. If attestation is not valid, output $false$
+7. For each attestation $\mathsf{A}_i$ in $FailedIterations$
+   1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
 8. If all verifications succeeded, output $true$
 
 ***Procedure***
 $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
-  - $\mathsf{C}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
-  - $\mathsf{C}_\mathsf{B} = \mathsf{B}.Certificate$
+  - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
+  - $\mathsf{A}_\mathsf{B} = \mathsf{B}.Attestation$
   - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
   - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyCertificate*][vc]$`(\mathsf{C}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
+3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $isValid$ = [*VerifyCertificate*][vc]$`(\mathsf{C}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
+5. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
 6. $\texttt{if } (isValid = false): \texttt{output } false$
 7. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
-   - $\mathsf{C}_i = \mathsf{B}.FailedIterations[i]$
-   1. $\texttt{if } (\mathsf{C}_i \ne NIL) :$
+   - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
+   1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       <!-- TODO: support Invalid/NoQuorum votes -->
       - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
-      - $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}_i, \upsilon_i)$
+      - $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
       - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
 
@@ -201,11 +201,11 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
    8. $\texttt{output } true$
 
 
-### *VerifyCertificate*
-*VerifyCertificate* checks a block's certificate by verifying the Validation and Ratification aggregated signatures against the respective committees.
+### *VerifyAttestation*
+*VerifyAttestation* checks a block's Attestation by verifying the Validation and Ratification aggregated signatures against the respective committees.
 
 ***Parameters***
-- $\mathsf{C}$: the certificate to verify
+- $\mathsf{A}$: the attestation to verify
 - $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
 
 ***Algorithm***
@@ -218,9 +218,9 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
 
 ***Procedure***
 
-$\textit{VerifyCertificate}(\mathsf{C}, \upsilon):$
+$\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
 - $\texttt{set}:$
-   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{C}`$
+   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
    - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
    - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
    - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
@@ -317,7 +317,7 @@ $\textit{HandleBlock}():$
           1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
 
 ### *HandleQuorum*
-*HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][va]) and then propagated.
+*HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
@@ -327,15 +327,15 @@ The corresponding candidate block is then marked as the winning block of the rou
 ***Algorithm***
 1. Loop:
    1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
-      1. Verify $\mathsf{M}^Q.Certificate$ ($\mathsf{C}$) is valid ([*VerifyQuorum*][va])
+      1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
       2. If valid:
          1. Propagate $\mathsf{M}^Q$
          2. If the quorum vote is $Valid$
             1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
             2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
-            3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Certificate$
+            3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Attestation$
          3. Otherwise
-            1. Add $\mathsf{C}$ to the $\boldsymbol{FailedCertificates}$ list
+            1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
          4. Stop [*SAIteration*][sai]
 
 ***Procedure***
@@ -344,12 +344,12 @@ $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{CI}, \mathsf{VI}, \mathsf{C} \leftarrow \mathsf{M}^Q`$
+          - $`\mathsf{CI}, \mathsf{VI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
           - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
           - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
           - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
-       1. $isValid =$ [*VerifyCertificate*][vc]$(\mathsf{C}, \upsilon)$
+       1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}, \upsilon)$
        2. $\texttt{if } (isValid = true) :$
           1. $\texttt{stop}$([*SAIteration*][sai])
           2. [*Propagate*][mx]$(\mathsf{M}^Q)$
@@ -357,26 +357,26 @@ $\textit{HandleQuorum}( R ):$
              1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
              2. $\texttt{if } (\mathsf{B}^c = NIL) :$
                - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
-             3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{C})$
+             3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
           4. $\texttt{else } :$
-             1. $\boldsymbol{FailedCertificates}[I_{\mathsf{M}}] = {\mathsf{C}}$
+             1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
 
 
 ### *MakeWinning*
-*MakeWinning* adds a certificate to a candidate block and sets the winning block variable $\mathsf{B}^w$.
+*MakeWinning* adds an attestation to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
 ***Parameters***
 - $\mathsf{B}$: candidate block
-- $\mathsf{C}$: block certificate
+- $\mathsf{A}$: block attestation
 
 ***Algorithm***
-1. Add certificate $\mathsf{C}$ to candidate block $\mathsf{B}$
+1. Add attestation $\mathsf{A}$ to candidate block $\mathsf{B}$
 2. Set winning block $\mathsf{B}^w$ to $\mathsf{B}$
 
 ***Procedure***
 
-$MakeWinning(\mathsf{B}, \mathsf{C}):$
-1. $\mathsf{B}.Certificate = \mathsf{C}$
+$MakeWinning(\mathsf{B}, \mathsf{A}):$
+1. $\mathsf{B}.Attestation = \mathsf{A}$
 2. $\mathsf{B}^w = \mathsf{B}$
 
 
@@ -417,7 +417,7 @@ The block state is computed according to the [Finality][fin] rules.
 - $\mathsf{B}$: the block being accepted to the chain
 
 ***Algorithm***
-1. If all failed iterations have a [Failed certificate][certs]:
+1. If all failed iterations have a [Failed Attestation][atts]:
    1. Set $cstate$ to "Attested"
    2. If $\mathsf{B}$'s parent is Final
       1. Set $cstate$ to "Final"
@@ -719,11 +719,11 @@ $\textit{AcceptPoolBlocks}():$
 [ss]:  #startsync
 [vb]:  #verifyblock
 [vbh]: #verifyblockheader
-[vc]:  #verifycertificate
+[va]:  #verifyattestation
 [vv]:  #verifyvotes
 [hq]:  #HandleQuorum
 [mw]:  #makewinning
-[va]:  #VerifyQuorum
+[vq]:  #VerifyQuorum
 
 <!-- Blockchain -->
 [b]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
@@ -731,7 +731,7 @@ $\textit{AcceptPoolBlocks}():$
 
 <!-- Basics -->
 [sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
-[certs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#certificates
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestations
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
 [cc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
 [ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
