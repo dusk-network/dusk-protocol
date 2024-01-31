@@ -205,7 +205,7 @@ If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
 4. If Ratification reached a quorum on $v$: 
-   1. Create a attestation $\mathsf{A}$ with the Validation and Ratification votes
+   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
    2. Set vote to $(v, \eta_{\mathsf{B}^c})$
    3. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$
    4. Broadcast $\mathsf{M}^\mathsf{Q}$

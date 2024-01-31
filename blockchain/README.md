@@ -50,13 +50,14 @@ The $\mathsf{BlockHeader}$ structure has a variable total size of 522 to 28970 b
 This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
 
 **Notation**
+
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define a *block's hash* as:
 
 <!-- TODO: define \eta as function: \eta(B) -->
-$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||$
-$\text{     }PreviousBlock||Seed||Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$$
+$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
+$\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
 <!-- TODO: define block's round and iteration: r_{\mathsf{B}^p},s_{\mathsf{B}^p} -->
 
