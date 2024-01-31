@@ -99,6 +99,10 @@
               with high gas prices are generally confirmed more quickly.
               Because of this, \gasprice generally determines the
               transaction priority.
+        \item \emphp: percentage of \gasconsumed paid to the contracts.
+              The remaining percentage is paid to the \blockgenerator.
+              The value of this percentage is estimated to be between 20\% and
+              40\%, pending threat model analysis.
         \item \icc (inter-contract call): interaction between
               multiple contracts. ICCs cannot be called directly. As such, the
               contract methods should be tagged as \ctoc (contract-to-contract) or
