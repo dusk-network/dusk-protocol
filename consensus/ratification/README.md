@@ -86,7 +86,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
-   1. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V}, \tau_{Now})$
+   1. $`\mathsf{M} = `$ [*Msg*][msg]$`(\mathsf{Ratification}, v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V}, \tau_{Now})`$
       | Field             | Value                 | 
       |-------------------|-----------------------|
       | $PrevHash$        | $\eta_{Tip}$          |
