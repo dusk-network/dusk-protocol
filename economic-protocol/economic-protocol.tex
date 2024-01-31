@@ -555,10 +555,25 @@
         \hline
     \end{tabular}}
 
+    \subsection*{On Fee Denomination}\label{subsec:on-fee-denominations}
+    We have chosen to write this document under the assumption that fees are
+    denominated in \dusk.
+    Given a specification of other denominations known to the \transfercontract,
+    it is possible to extend this economic model to support other denominations
+    for fees.
+    It would then become viable for a \user pay for a contract's \fee in any
+    denomination supported by the \transfercontract, with particular emphasis
+    on EMT (Electronic Money Token) or ART (Asset Reference Token) as established
+    by the MiCA regulatory framework.
+
+    Paired with the receiving \contract being able to specify the denomination(s)
+    that it is willing to accept, this would allow for some interesting use cases,
+    such as frictionless digital currencies and tokenized loyalty programs.
+
     \subsection*{Prior Art}\label{subsec:prior-art}
     Some blockchains are also trying to create incentives for smart contract
     developers/owners.
-    Fantom\footnote{https://docs.fantom.foundation/funding/gas-monetization} and NEAR\footnote{https://wiki.dusk.network/org/roadmap/economic-model\#platform-pays-contracts} propose
+    Fantom\footnote{https://docs.fantom.foundation/funding/gas-monetization} and NEAR\footnote{https://docs.near.org/concepts/basics/transactions/gas} propose
     similar approaches to the one presented in this document, albeit with
     slightly different implementations.
 
