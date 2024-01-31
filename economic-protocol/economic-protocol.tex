@@ -296,12 +296,12 @@
 		\end{spacing}
 	\end{table*}
 
-    \subsection*{Scenario 1: User pays gas}\label{sec:specifications:scenario-1}
+    \subsection*{Scenario 1: User pays gas}\label{subsec:scenario-1}
     This case mirrors the conventional gas expenditure method in most
     blockchains.
     The \user specifies a \gaslimit and a \gasprice.
 
-    \subsubsection*{Normal flow}\label{sec:specifications:scenario-1:normal-flow}
+    \subsubsection*{Normal flow}\label{subsubsec:scenario-1-normal-flow}
 
     In this case, (100-\emphp)\% \gasconsumed is transferred to the \blockgenerator,
     and \emphp\% is distributed to all touched contracts, weighed proportionally to
@@ -329,10 +329,10 @@
     The genesis contracts - the contracts handling \dusk - which are present
     from the first block - use this strategy.
 
-    \subsubsection*{Insufficient gas}\label{sec:specifications:scenario-1:insufficient-gas}
+    \subsubsection*{Insufficient gas}\label{subsubsec:scenario-1-insufficient-gas}
     If there is insufficient gas to execute, the \user is refunded the full amount.
 
-    \subsubsection*{Reward to contracts}\label{sec:specifications:scenario-1:insufficient-gas-1:reward-to-contract}
+    \subsubsection*{Reward to contracts}\label{subsubsec:scenario-1-insufficient-gas-reward-to-contract}
     In this scenario, contracts are rewarded directly by their \gasconsumed.
     Since the \user is the one ultimately paying, it can be considered that
     the user is paying for a contract's execution.
@@ -349,8 +349,8 @@
     \user must add to the transaction, specified by the \contract.
     The \user sets \gaslimit, \gasprice, and the \fee paid.
 
-    \subsubsection*{Normal flow}\label{sec:specifications:scenario-2:normal-flow}
-	As in Section~\ref{sec:specifications:scenario-1:normal-flow}, (100-\emphp)\% of
+    \subsubsection*{Normal flow}\label{subsubsec:scenario-2-normal-flow}
+	As in Section~\ref{subsubsec:scenario-1-normal-flow}, (100-\emphp)\% of
     the \gasconsumed is transferred to the \blockgenerator, and \emphp\% is distributed
     to all touched contracts, weighed proportionally to the amount of \gasconsumed.
 
@@ -358,11 +358,11 @@
 
 	\mbi{I have the same observation as before.}
 
-    \subsubsection*{Insufficient gas}\label{sec:specifications:scenario-2:insufficient-gas}
+    \subsubsection*{Insufficient gas}\label{subsubsec:scenario-2-insufficient-gas}
     In this case, 100\% of the \gas is returned to the \user, along with the
     \fee.
 
-    \subsection*{Scenario 3: Contract pays gas, contract applies fee}\label{sec:specifications:scenario-3}
+    \subsection*{Scenario 3: Contract pays gas, contract applies fee}\label{subsec:scenario-3}
     This scenario is similar to the previous one\ref{subsec:scenario-2}, in that
     it allows a contract to specify a \fee that the \user must pay.
     It differs however in that the \contract pays for the gas consumed during a call,
@@ -374,22 +374,22 @@
     Contract's using this scenario may wish to set a \fee higher than the gas
     costs themselves, such that the contract earns a profit from the transaction.
     The situation where this is not possible is described in
-    Section~\ref{sec:specifications:scenario-3:user-pays-fees-lesser}.
+    Section~\ref{subsubsec:scenario-3-user-pays-fees-lesser}.
 
-    \subsubsection*{Normal flow}\label{sec:specifications:scenario-3:normal-flow}
+    \subsubsection*{Normal flow}\label{subsubsec:scenario-3-normal-flow}
     The accounting of \gas is similar to the previous scenario, with the exception
     that the \gasconsumed being paid by the \contract as opposed to the \user.
     (100-\emphp)\% of the \gasconsumed is transferred to the \blockgenerator, and
     \emphp\% is distributed to all touched contracts, weighed proportionally to the
     amount of \gasconsumed.
 
-    \subsubsection*{Insufficient gas}\label{sec:specifications:scenario-3:insufficient-gas}
+    \subsubsection*{Insufficient gas}\label{subsubsec:scenario-3-insufficient-gas}
     In the same way as the other scenarios, if there is \insufficientgas for the
     execution to complete, the \user is refunded the full amount of te \fee.
     However, in this case, since the \contract is paying for the gas, the \contract
     receives is refunded the amount that it would have paid for the gas.
 
-    \subsubsection*{Setting gas price and limit}\label{sec:specifications:scenario-3:setting-gas-price-and-limit}
+    \subsubsection*{Setting gas price and limit}\label{subsubsec:scenario-3-setting-gas-price-and-limit}
     In the previous scenarios the \user sets the \gasprice and \gaslimit, and
     sends a transaction to the network without any interaction with the \contract.
     Given that, in this scenario, the \contract is paying for the gas, it becomes
@@ -402,7 +402,7 @@
     must be extended to support this functionality.
     Data must also be made available to the \contract, such as average gas price.
 
-    \subsubsection*{User pays fees lesser than gas paid by contract}\label{sec:specifications:scenario-3:user-pays-fees-lesser}
+    \subsubsection*{User pays fees lesser than gas paid by contract}\label{subsubsec:scenario-3-user-pays-fees-lesser}
     It is possible for a \user to pay a \fee that is less than the \gasconsumed.
     In this case, the \contract paying for gas and levying a \fee will be
     operating at a loss.
@@ -411,9 +411,9 @@
     whether it is willing to operate at such a loss.
     If the \contract is not willing to operate at a loss, and the \user pays
     a \fee that is less than the \gasconsumed, the transaction is treated in
-    the same way as if it ran out of gas\ref{sec:specifications:scenario-3:insufficient-gas}.
+    the same way as if it ran out of gas\ref{subsubsec:scenario-3-insufficient-gas}.
 
-    \subsubsection*{Service provider contract}\label{sec:specifications:scenario-3:service-provider-contract}
+    \subsubsection*{Service provider contract}\label{subsubsec:scenario-3-service-provider-contract}
     This scenario is particularly useful for so-called service \provider contracts.
     These are contracts designed to provide a service to \users, such as
     generating a zero-knowledge proof, a subscription service, off-chain
@@ -432,7 +432,7 @@
         community-run proof sequencers and provers.
     \end{enumerate}
 
-    \subsection*{Scenario 4: Contract charges a percentage of an obfuscated amount}\label{sec:specifications:scenario-4}
+    \subsection*{Scenario 4: Contract charges a percentage of an obfuscated amount}\label{subsec:scenario-4}
     This scenario is similar to the second scenario\ref{subsec:scenario-2}, in
     that the contract charges a \fee to the \user.
     The difference lay in the fact that in this scenario the \fee is a
@@ -442,13 +442,13 @@
     In this scenario the \contract accepts a percentage of that amount, and
     is assured of its validity using a zero-knowledge proof.
 
-    \subsection*{Scenario 5: Autocontracts}\label{sec:specifications:scenario-5}
+    \subsection*{Scenario 5: Autocontracts}\label{subsec:scenario-5}
 
     Leveraging the economic model, defined by the previously described scenarios,
     we are in a position to introduce a new type of contract: autocontracts.
     Autocontracts are contracts that are executed automatically when a specific
     event occurs, leveraging the economic model to pay for their own gas, using
-    scenario 3\ref{sec:specifications:scenario-3}.
+    scenario 3\ref{subsec:scenario-3}.
 
     The main benefit of smart contracts is that they can be leveraged to implement
     complex logic that can automatically executed.
@@ -460,8 +460,6 @@
     react to events.
 
     \subsubsection*{Considerations}\label{subsubsec:considerations}
-
-    \\\\
 
     \textbf{Execution Priority}: It is possible to envision autocontracts being
     executed in a few different orders.
@@ -514,7 +512,7 @@
     application level yields unique strategic benefits.
     It promotes a unified approach to the UX of wallets and clients, and
     incentivizes novel feature creation through a standardized base layer.
-    In fact, the very concept of autocontracts, introduced in Section~\ref{sec:specifications:scenario-5}
+    In fact, the very concept of autocontracts, introduced in Section~\ref{subsec:scenario-5}
     emerges from this setup and would not be possible at application level,
     offering a truly unique mechanism to create a scalable market for optimized
     smart contracts.
