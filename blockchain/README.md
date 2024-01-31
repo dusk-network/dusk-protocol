@@ -33,18 +33,18 @@ We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
 |------------------------|-------------------------|------------|-----------------------------------------------------|
 | $Version$              | Unsigned Integer        | 8 bits     | Block version                                       |
 | $Height$               | Unsigned Integer        | 64 bits    | Block height                                        |
-| $Timestamp$            | Integer                 | 64 bits    | Block timestamp                                     |
+| $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                      |
 | $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                     |
-| $Iteration$            | Integer                 | 8 bits     | Iteration at which the block was produced           |
+| $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced           |
 | $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of previous block                              |
 | $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed              |
 | $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                |
 | $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                    |
 | $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                 |
 | $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | Certificate for the previous block                  |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
 | $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                             |
 | $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block      |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
 
 The $\mathsf{BlockHeader}$ structure has a variable total size of 522 to 28970 bytes (28.8 KB).
 This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
