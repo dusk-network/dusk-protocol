@@ -98,8 +98,6 @@ In particular, Blocks in the local chain can be in three states:
 | Name                    | Value          |
 |-------------------------|----------------|
 | Minimum Stake           | 1000 Dusk      |
-| Epoch Duration          | 2160 Blocks    |
 | Committee Credits       | 64             |
 | Maximum Iterations      | 255            |
-| Rolling Finality Blocks | 5              |
 | Maximum Step Timeout    | 60             |
