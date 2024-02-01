@@ -278,7 +278,7 @@ Another effect of timeouts is enabling [slashing][sla] a provisioner for not pro
 To cope with changes in the network latency, step timeouts are designed to self-adjust based on previous events.
 
 Two mechanisms determine the timeout for a specific step execution:
-  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($INCREASE_AMOUNT$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
+  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($TimeoutIncrease$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
   <!-- If our timeout is too low, and other provisioners reach consensus, we would receive the Quorum/Block message before succeeding. We should consider this for the next round.  -->
   - round adjustment: at each round, the timeout for the first iteration is given by the average of the past rounds; this mechanism allows to adjust the timeout to the actual time needed by the step: if the last executions of the step succeeded within X seconds, it means X seconds are sufficient for the step to complete. This also allows the timeout to be reduced if the network latency decreases.
 

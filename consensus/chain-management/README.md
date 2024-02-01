@@ -468,7 +468,7 @@ Deleted blocks are blacklisted (because they belong to a lower-priority fork) an
 - $\eta$: the hash of the block to which to revert
 
 ***Algorithm***
-1. For each block $\mathsf{B}_i$ between $Tip$ and $\mathsf{B}_\eta$
+1. For each block $`\mathsf{B}_i`$ between $Tip$ and $\mathsf{B}_\eta$
    1. Push $\mathsf{B}_i$'s transactions back to mempool
    2. Delete $\mathsf{B}_i$ from the chain
    3. Blacklist $\mathsf{B}_i$
