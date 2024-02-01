@@ -81,6 +81,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 <!-- TODO: Add Type column -->
 | Name                 | Description                             |
 |----------------------|-----------------------------------------|
+| $\textbf{Chain}$     | The [local chain][lc] of the node       |
 | $Tip$                | Current chain tip (last block)          |
 | $State$              | Current system state                    |
 | $Provisioners$       | Current set of (eligible) provisioners  |
@@ -98,7 +99,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 
 ## Procedures
 The SA consensus is defined by the [*SAInit*][init] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
-The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ (see [*HandleBlock*][hb]) which could trigger the *fallback* or *synchronization* procedures.
+The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ (see [*HandleBlock*][hb]) which could trigger the [*fallback*][fal] or [*synchronization*][syn] procedures.
 Similarly, receiving a $\mathsf{Quorum}$ message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
 
 
@@ -137,35 +138,28 @@ $\textit{SAInit}():$
 <p><br></p>
 
 ### *SALoop*
-*SALoop* executes an infinite loop of consensus rounds ([*SARound*][sar]) and accepts winning blocks to the [local chain][lc]. 
-It is initially started by [*SAInit*][init] but it can be stopped and restarted by [synchronization][syn] procedures.
-
-The procedure executes an infinite loop of SA rounds. At the end of each round, it accepts the resulting *winning block* $\mathsf{B}^w$ as the new $Tip$, it updates the state, and starts the following round. 
-If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and it's halted. Such an event requires a manual recovery procedure.
+*SALoop* executes an infinite loop of consensus rounds ([*SARound*][sar]). 
+It is initially started by [*SAInit*][init] but it can be stopped and restarted due to [fallback][fal] or [synchronization][syn].
 
 ***Algorithm***
 
 1. Loop:
    1. Set $Round$ to $Tip$'s height plus one
    2. Execute Round $Round$ to produce winning block $\mathsf{B}^w$
-   3. If no winning block has been produced, halt consensus
-   4. Execute state transition
 
 ***Procedure***
 
 $\textit{SALoop}():$
 1. $\texttt{loop}:$
    1. $Round = Tip.Height + 1$
-   2. $\mathsf{B}^w =$ [*SARound*][sar]$(Round)$
-   3. $\texttt{if } (\mathsf{B}^w = NIL):$ 
-       - $\texttt{halt}$
-   4. $State =$ [*AcceptBlock*][ab]$(\mathsf{B}^w)$
+   2. [*SARound*][sar]$(Round)$
 
 <p><br></p>
 
 ### *SARound*
 *SARound* executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle $\mathsf{Quorum}$ messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
-If, at any time, a winning block is produced, as the result of a successful iteration or due to a $\mathsf{Quorum}$ message, the round stops.
+If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a $\mathsf{Quorum}$ message, it is accepted to the [local chain][lc] and the round ends. 
+If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
 
 ***Algorithm***
 
@@ -193,9 +187,9 @@ $\textit{SARound}():$
 4. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
    1. [*SAIteration*][sai]$(Round, Iteration)$
 5. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. $\texttt{output } NIL$
+   1. $\texttt{halt}$
 6. [*Broadcast*][mx]$(\mathsf{B}^w)$
-7. $\texttt{output } \mathsf{B}^w$
+7. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
 
 <p><br></p>
 
@@ -284,7 +278,7 @@ Another effect of timeouts is enabling [slashing][sla] a provisioner for not pro
 To cope with changes in the network latency, step timeouts are designed to self-adjust based on previous events.
 
 Two mechanisms determine the timeout for a specific step execution:
-  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($INCREASE_AMOUNT$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
+  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($TimeoutIncrease$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
   <!-- If our timeout is too low, and other provisioners reach consensus, we would receive the Quorum/Block message before succeeding. We should consider this for the next round.  -->
   - round adjustment: at each round, the timeout for the first iteration is given by the average of the past rounds; this mechanism allows to adjust the timeout to the actual time needed by the step: if the last executions of the step succeeded within X seconds, it means X seconds are sufficient for the step to complete. This also allows the timeout to be reduced if the network latency decreases.
 
@@ -401,6 +395,8 @@ $\textit{IncreaseTimeout}(Step):$
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 [rf]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#rolling-finality
 [mw]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#makewinning
+[fal]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#fallback
+[syn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#synchronization
 
 <!-- Sortition -->
 [ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md

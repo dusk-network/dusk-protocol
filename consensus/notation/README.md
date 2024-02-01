@@ -26,12 +26,13 @@ When using the dot notation, we will omit intermediate fields when possible. For
 
 We use $\leftarrow$ to assign object fields to separate variables. For instance, $\mathsf{H_B}, \boldsymbol{txs} \leftarrow \mathsf{B}$ will assign $\mathsf{B}.Header$ to $\mathsf{H_B}$, and $B.Transactions$ to $\boldsymbol{txs}$. The assignation follows the field order in the related structure definition. If a field is not needed in the algorithm, we ignore it by assigning it to a null variable $`\_`$.
 
-## Procedure Execution
+## Procedure Control
 Some procedures (typically containing a loop) are executed concurrently to each other (e.g., as parallel threads). We have these procedures be controlled using the following commands:
 - $\texttt{start}(P)$: initiates the procedure $P$;
 - $\texttt{stop}(P)$: interrupts the procedure $P$;
 - $\texttt{restart}(P)$: stops and restart the procedure $P$.
 
 Within these procedures, we use the command $\texttt{stop}$ (with no arguments) to indicate the interruption of the procedure execution.
-
 Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ if $P$ is currently running, and $false$ otherwise.
+
+When in a $\texttt{loop}$ we use $\texttt{break}$ to stop the execution and move on to the next iteration.

@@ -13,10 +13,13 @@ The local copy of the blockchain stored by a node is defined as a vector of [blo
 
 $$\textbf{Chain}: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
 
-where $\mathsf{B}_0 = Genesis$ and $Status_0 = \text{"Final"}$ (that is, the genesis block is final by definition).
+where $\mathsf{B}_0 = Genesis$ and $Status_0 = Final$ (that is, the genesis block is final by definition).
 
 **Notation**
-We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
+ - We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
+ - We use $\mathsf{B} \in \textbf{Chain}$ to say a block $\mathsf{B}$ in our local chain
+ - We use $\eta_\mathsf{B} \in \textbf{Chain}$ to say a block with hash $\eta_\mathsf{B}$ in our local chain
+ - We use $\mathsf{B}_\eta$ to indicate the block with hash $\eta$.
 
 <!-- TODO: define Genesis and Tip here; review use of Tip in procedures (we can use Chain instead) -->
 

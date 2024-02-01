@@ -1,39 +1,39 @@
 # Chain Management
-*Chain management* refers to how the SA protocol handles the local chain with respect to consensus-produced winning blocks, fork and out-of-sync events.
-
-In particular, this section describes how new blocks are accepted to the local blockchain and how this chain can be updated when receiving valid blocks from the network.
+This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
 ### ToC
   - [Overview](#overview)
   - [Finality](#finality)
     - [Consensus State](#consensus-state)
+    - [Last Final Block](#last-final-block)
     - [Rolling Finality](#rolling-finality)
-  - [Environment](#environment)
-  - [Block Verification](#block-verification)
-    - [*VerifyBlock*](#verifyblock)
-    - [*VerifyBlockHeader*](#verifyblockheader)
-    - [*VerifyAttestation*](#verifyattestation)
-    - [*VerifyVotes*](#verifyvotes)
-  - [Block Management](#block-management)
-    - [*HandleQuorum*](#handlequorum)
-    - [*MakeWinning*](#makewinning)
-    - [*AcceptBlock*](#acceptblock)
-    - [*GetBlockState*](#getblockstate)
-    - [*CheckRollingFinality*](#checkrollingfinality)
+    - [Procedures](#procedures)
+      - [*GetBlockState*](#getblockstate)
+      - [*CheckRollingFinality*](#checkrollingfinality)
       - [*HasRollingFinality*](#hasrollingfinality)
       - [*MakeChainFinal*](#makechainfinal)
-    - [*HandleBlock*](#handleblock)
-  - [Fallback](#fallback)
-    - [Procedures](#procedures)
-      - [*Fallback*](#fallback-1)
-  - [Synchronization](#synchronization)
+  - [Verification](#verification)
     - [Procedures](#procedures-1)
+      - [*VerifyBlock*](#verifyblock)
+      - [*VerifyBlockHeader*](#verifyblockheader)
+      - [*VerifyAttestation*](#verifyattestation)
+      - [*VerifyVotes*](#verifyvotes)
+  - [Chain Management](#chain-management-1)
+    - [Environment](#environment)
+    - [Procedures](#procedures-2)
+      - [*HandleBlock*](#handleblock)
+      - [*HandleQuorum*](#handlequorum)
+      - [*MakeWinning*](#makewinning)
+      - [*AcceptBlock*](#acceptblock)
+      - [*Fallback*](#fallback)
+  - [Synchronization](#synchronization)
+    - [Environment](#environment-1)
+    - [Procedures](#procedures-3)
       - [*SyncBlock*](#syncblock)
       - [*PreSync*](#presync)
       - [*StartSync*](#startsync)
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
-
 
 
 ## Overview
@@ -50,7 +50,6 @@ There are two main reasons a network block is not in the chain:
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
-<!-- TODO: mv to Block Management -->
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
 
 When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
@@ -68,7 +67,7 @@ In particular, Blocks in the [local chain][lc] can be in three states:
   
   - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
 
-**Final and Non-Final**
+### Last Final Block
 At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to Final (see [Rolling Finality][rf]. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
 
 Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
@@ -95,36 +94,66 @@ In other words, 5 consecutive Attested blocks finalize all previous Accepted blo
 Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
 <!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
 
-## Environment
-The environment for the block-processing procedures includes node-level parameters, conditioning the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
+### Procedures
 
-**Parameters**
+#### *GetBlockState*
+The block state is computed according to the [Finality][fin] rules.
 
-| Name             | Value | Description                                        |
-|------------------|-------|----------------------------------------------------|
-| $PreSyncTimeout$ | $10$  | Pre-Synchronization procedure timeout (in seconds) |
-| $SyncTimeout$    | $5$   | Synchronization procedure timeout (in seconds)     |
-| $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
+***Parameters***
+- $\mathsf{B}$: the block being accepted to the chain
 
-**State**
-<!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
+***Algorithm***
+1. If all failed iterations have a [Failed Attestation][atts]:
+   1. Set $cstate$ to "Attested"
+   2. If $\mathsf{B}$'s parent is Final
+      1. Set $cstate$ to "Final"
+2. Otherwise, set $cstate$ to "Accepted"
+3. Output $cstate$
 
-| Name          | Type                 | Description                             |
-|---------------|----------------------|-----------------------------------------|
-| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$. |
-| $Blacklist$   | $\mathsf{Block}$ [ ] | list of blacklisted blocks; a block is blacklisted if it has been replaced by a better block (e.g. a block with same height but lower iteration number). |
-| $inSync$      | Boolean              | $false$ if we are running a synchronization procedure with some peer, $true$ otherwise. It is initially set to $true$ |
-| $syncPeer$    | Peer ID              | If $inSync$ is false, it contains the ID of the peer the node is synchronizing with.    |
-| $\tau_{Sync}$ | Timestamp            | if $inSync$ is false, it contains the time from when the $syncTimeout$ is checked against; in other words, it indicates either the starting time of the synchronization process, or the time we received and accepted the last block from $syncPeer$. |
-| $syncFrom$    | Integer | The height of the starting block during the synchronization process. |
-| $syncTo$      | Integer | The heights of last blocks of synchronization process.               |
+***Procedure***
+
+$\textit{GetBlockState}(\mathsf{B}):$
+- $\texttt{set } h = \mathsf{H_B}.Height$
+1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
+   1. $\texttt{set } cstate = \text{"Attested"}$
+   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
+      1. $\texttt{set } cstate = \text{"Final"}$
+2. $\texttt{else } :$
+   1. $\texttt{set } cstate = \text{"Accepted"}$
+3. $\texttt{output } cstate$
 
 
-## Block Verification
-<!-- TODO: mv to Blockchain or Basics -->
+#### *CheckRollingFinality*
+*CheckRollingFinality* checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
+
+***Procedure***
+$\textit{CheckRollingFinality}():$
+1. $rf =$ *HasRollingFinality*$()$
+2. $\texttt{if } (rf = true) :$
+   1. *MakeChainFinal*$()$
+
+#### *HasRollingFinality*
+*HasRollingFinality* outputs true if the last $RollingFinality$ are all Attested and false otherwise.
+
+***Procedure***
+$\textit{HasRollingFinality}():$
+- $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
+1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
+   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
+      1. $\texttt{output } false$
+2. $\texttt{output } true$ 
+
+#### *MakeChainFinal*
+*MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
+
+
+
+## Verification
+<!-- TODO: mv to Blockchain or Basics ? -->
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
-### *VerifyBlock*
+### Procedures
+#### *VerifyBlock*
 The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
 
 ***Parameters***
@@ -164,7 +193,7 @@ $\textit{VerifyBlock}(\mathsf{B}):$
       - $\texttt{if } (isValid = false): \texttt{output } false$
 8.  $\texttt{output } true$
 
-### *VerifyBlockHeader*
+#### *VerifyBlockHeader*
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
 ***Parameters***
@@ -198,7 +227,7 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   7. $\texttt{output } true$
 
 
-### *VerifyAttestation*
+#### *VerifyAttestation*
 *VerifyAttestation* checks a block's Attestation by verifying the Validation and Ratification aggregated signatures against the respective committees.
 
 ***Parameters***
@@ -232,7 +261,7 @@ $\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
 5. $\texttt{if } (isValid{=}false): \texttt{output } false$
 6. $\texttt{output } true$
 
-### *VerifyVotes*
+#### *VerifyVotes*
 *VerifyVotes* checks the aggregated votes are valid and reach the target quorum.
 
 ***Parameters***
@@ -260,60 +289,75 @@ $VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
-## Block Management
+## Chain Management
 We here define block-management procedures: 
-  - *HandleBlock*: process a block from the network
-  - *HandleQuorum*: process a $\mathsf{Quorum}$ message from the network
-  - *MakeWinning*: sets a candidate block as the winning block of the round
-  - *AcceptBlock*: accept a block as the new tip
+  - [*HandleBlock*][hb]: handle $\mathsf{Block}$ messages from the network
+  - [*HandleQuorum*][hq]: handle $\mathsf{Quorum}$ messages from the network
+  - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
+  - [*AcceptBlock*][ab]: accept a block as the new tip
+  - [*Fallback*][fal]: reverts the chain to a specific block
 
-### *HandleBlock*
+### Environment
+
+| Name          | Type                 | Description                |
+|---------------|----------------------|----------------------------|
+| $Blacklist$   | $\mathsf{Block}$ [ ] | list of blacklisted blocks |
+
+
+### Procedures
+
+#### *HandleBlock*
 The *HandleBlock* procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
-The procedure acts depending on the block's height: if the block has the same height as the $Tip$, but lower $Iteration$, it starts the [*Fallback*][falp] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process; if the block as height lower than the $Tip$, the block is discarded.
+The procedure acts depending on the block's height: if the block has the same height as a local chain block, but it has lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process.
 
 ***Parameters*** 
 - $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
 
 ***Algorithm***
 1. Loop:
-   1. If a $\mathsf{Block}$ message $\mathsf{M}^B$:
+   1. If a $\mathsf{Block}$ message $\mathsf{M^B}$:
       - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
-      1. Check block hash is valid
-      2. Check if block is blacklisted
-      3. If block height is same as $Tip$
-         1. Check block's validity as successor of the $Tip$'s predecessor
-         2. If the block is valid
-         3. And block's iteration is lower than $Tip$
-         4. And block is not $Tip$
-            1. Start *fallback* procedure ([*Fallback*][falp])
-      4. If block height is lower than $Tip$
-         1. Discard block 
-      5. If block height is higher than $Tip$
+      1. Check $\mathsf{B}$ hash is valid
+      2. Check $\mathsf{B}$ is not blacklisted
+      3. If $\mathsf{B}$ is higher than $Tip$:
          1. Start *synchronization* ([*SyncBlock*][sb])
+      4. Otherwise, if $\mathsf{B}$ is higher than the last final block $\mathsf{B}^f$:
+         1. Check if $\mathsf{B}$ is not already in our chain
+         2. If $\mathsf{B}$'s parent is in our chain
+         3. And its local sibling has a higher iteration number
+            1. Check $\mathsf{B}$'s validity
+            2. If $\mathsf{B}$ is valid:
+               1. Stop consensus loop [*SALoop*][sl]
+               2. Revert chain to $\mathsf{B}$'s parent ([*Fallback*][fal])
+               3. Accept $\mathsf{B}$ to the chain
+               4. Restart the consensus loop [*SALoop*][sl]
 
 ***Procedure***
 
 $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M}^{Block} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
-       - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{Block}$
-       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{stop}`$
-       2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{stop}$
-          <!-- B.Height = Tip.Height -->
-       3. $\texttt{if } (\mathsf{B}.Height = Tip.Height) :$
-          1. $isValid = $[*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{Tip.Height-1})$
-          2. $\texttt{if } (isValid = true)$
-          3. $\texttt{and } (\mathsf{B}.Iteration \ge Tip.Iteration)$
-          4. $\texttt{and } (\mathsf{B} \ne Tip) :$
-             1. [*Fallback*][falp]$()$
-          <!-- B.Height < Tip.Height -->
-       4. $\texttt{if } (\mathsf{B}.Height < Tip.Height) :$
-          1. $\texttt{stop}$
+   1.  $\texttt{if } (\mathsf{M}^{B} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
+       - $\texttt{set}:$
+        - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{B}$
+        - $\eta^p = \mathsf{B}.PrevBlockHash$
+       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{break}`$
+       2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{break}$
           <!-- B.Height > Tip.Height -->
-       5. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
+       3. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
           1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
+          <!-- B.Height <= Tip.Height -->
+       4. $\texttt{else if } (\mathsf{B}.Height > \mathsf{B}^f.Height) :$
+          1. $\texttt{if } (\mathsf{B} \in \textbf{Chain}):  \texttt{break}$
+          2. $\texttt{if } (\eta^p \in \textbf{Chain})$
+          3. $\texttt{and } (\mathsf{B}.Iteration \lt \textbf{Chain}[\mathsf{B}.Height].Iteration):$
+             1. $isValid =$ [*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{\eta^p})$
+             2. $\texttt{if } (isValid = true)$
+                1. $\texttt{stop}($[*SALoop*][sl]$)$
+                2. [*Fallback*][fal]$(\eta^p)$
+                3. [*AcceptBlock*][ab]$(\mathsf{B})$
+                4. $\texttt{start}($[*SALoop*][sl]$)$
 
-### *HandleQuorum*
+#### *HandleQuorum*
 *HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
@@ -359,7 +403,8 @@ $\textit{HandleQuorum}( R ):$
              1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
 
 
-### *MakeWinning*
+#### *MakeWinning*
+<!-- TODO Move to consensus? -->
 *MakeWinning* adds an attestation to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
 ***Parameters***
@@ -377,7 +422,7 @@ $MakeWinning(\mathsf{B}, \mathsf{A}):$
 2. $\mathsf{B}^w = \mathsf{B}$
 
 
-### *AcceptBlock*
+#### *AcceptBlock*
 *AcceptBlock* sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable. 
 
 ***Parameters***
@@ -385,7 +430,7 @@ $MakeWinning(\mathsf{B}, \mathsf{A}):$
 
 ***Algorithm***
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
-2. Generate new state ($newState$) by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
+2. Update $State$ by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
 3. Update the $Provisioners$ set
 4. Set $Tip$ to block $\mathsf{B}$
 5. Compute the consensus state $s$ of $\mathsf{B}$
@@ -400,103 +445,47 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $newState =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
-3. $Provisioners = newState.Provisioners$
+2. $State =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
+3. $Provisioners = State.Provisioners$
 4. $Tip = \mathsf{B}$
 5. $s =$ *GetBlockState*$(\mathsf{B})$
 6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
 7. [*CheckRollingFinality*][crf]$()$
 
-### *GetBlockState*
-The block state is computed according to the [Finality][fin] rules.
 
-***Parameters***
-- $\mathsf{B}$: the block being accepted to the chain
-
-***Algorithm***
-1. If all failed iterations have a [Failed Attestation][atts]:
-   1. Set $cstate$ to "Attested"
-   2. If $\mathsf{B}$'s parent is Final
-      1. Set $cstate$ to "Final"
-2. Otherwise, set $cstate$ to "Accepted"
-3. Output $cstate$
-
-***Procedure***
-
-$\textit{GetBlockState}(\mathsf{B}):$
-- $\texttt{set } h = \mathsf{H_B}.Height$
-1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
-   1. $\texttt{set } cstate = \text{"Attested"}$
-   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
-      1. $\texttt{set } cstate = \text{"Final"}$
-2. $\texttt{else } :$
-   1. $\texttt{set } cstate = \text{"Accepted"}$
-3. $\texttt{output } cstate$
-
-
-### *CheckRollingFinality*
-*CheckRollingFinality* checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
-
-***Procedure***
-$\textit{CheckRollingFinality}():$
-1. $rf =$ *HasRollingFinality*$()$
-2. $\texttt{if } (rf = true) :$
-   1. *MakeChainFinal*$()$
-
-#### *HasRollingFinality*
-*HasRollingFinality* outputs true if the last $RollingFinality$ are all Attested and false otherwise.
-
-***Procedure***
-$\textit{HasRollingFinality}():$
-- $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
-1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
-   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
-      1. $\texttt{output } false$
-2. $\texttt{output } true$ 
-
-#### *MakeChainFinal*
-*MakeChainFinal* set to "Final" the state of all non-final blocks in $\textbf{Chain}$
-
-
-
-
-## Fallback
-The *Fallback* procedure reverts the local state to the last [finalized][fin] block. The procedure is triggered by [*HandleBlock*][hb] when receiving a block at the same height as the $Tip$ but with lower $Iteration$. 
-
-In fact, this event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
-
-### Procedures
 
 #### *Fallback*
-The *Fallback* procedure first retrieves the last finalized block  $\mathsf{B}^f$ in the local chain; than it deletes all blocks from $Tip$ to $\mathsf{B}^f$ (excluded), pushing all their transactions back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
+The *Fallback* procedure takes the hash $\eta$ of a block in the local chain and deletes all blocks from $Tip$ to $\mathsf{B}_\eta$ excluded. 
+It is triggered by [*HandleBlock*][hb] when receiving a block with height equal or lower than the local $Tip$ and with lower $Iteration$. 
 
-After reverting, the synchronization procedure is triggered to catch up with the main chain.
+<!-- TODO: mv this sentence to the Overview? -->
+This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
-Note that the previous $Tip$ is added to the *Blacklist* because we are choosing a better fork.
+<!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
+Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
+
+***Parameters***
+- $\eta$: the hash of the block to which to revert
 
 ***Algorithm***
-1. Retrieve last final block $\mathsf{B}^f$
-2. For each block between $Tip$ and $\mathsf{B}^f$
-   1. Push $\mathsf{B}^f$'s transactions back to mempool
-   2. Delete block $\mathsf{B}^f$
-3. Blacklist $Tip$
-4. Set $Tip$ to $\mathsf{B}^f$
-5. Revert VM state to $\mathsf{B}^f$'s state
-6. Update $Provisioners$
-7. Start *synchronization* ([*SyncBlock*][sb])
+1. For each block $`\mathsf{B}_i`$ between $Tip$ and $\mathsf{B}_\eta$
+   1. Push $\mathsf{B}_i$'s transactions back to mempool
+   2. Delete $\mathsf{B}_i$ from the chain
+   3. Blacklist $\mathsf{B}_i$
+2. Set $Tip$ to $\mathsf{B}_\eta$
+3. Revert VM state to $\mathsf{B}_\eta$'s state
+4. Update $Provisioners$
 
 ***Procedure***
 
 $\textit{Fallback}():$
-1. $\mathsf{B}^f =$ *GetLastFinal*$()$
-2. $\texttt{for } i = Tip.Height \dots \mathsf{B}^f.Height :$
+1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height :$
    1. $Mempool = Mempool \cup \{ \mathsf{B}_i.Transactions \}$
-   2. $\texttt{delete}(\mathsf{B}_i)$
-3. $Blacklist = Blacklist \cup Tip$
-4. $Tip = \mathsf{B}^f$
-5. $VM.Revert(\mathsf{B}^f)$
-6. $Provisioners = VM.State.Provisioners$
-7. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
+   2. $\textbf{Chain}[i] = NIL$
+   3. $Blacklist = Blacklist \cup \mathsf{B}_i$
+2. $Tip = \mathsf{B}_\eta$
+3. $State = VM.Revert(\mathsf{B}_\eta)$
+4. $Provisioners = State.Provisioners$
 
 
 ## Synchronization
@@ -519,6 +508,29 @@ More specifically, the protocol works as follows:
 
 In the sync phase, the node stops the SA loop ([*SALoop*][sl]) for efficiency purposes. Note that this is done after receiving a valid $Tip+1$, which is a sign of trustworthiness from the $syncPeer$.
 Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the synchronization is stopped (see [*HandleSyncTimeout*][hst]) and [*SALoop*][sl] is restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided.
+
+### Environment
+The environment of synchronization procedures includes node-level parameters, conditioning the node's behavior during synchronization, and state variables that help keep track of known blocks and handle the synchronization protocol execution.
+
+**Parameters**
+
+| Name             | Value | Description                                        |
+|------------------|-------|----------------------------------------------------|
+| $PreSyncTimeout$ | $10$  | Pre-Synchronization procedure timeout (in seconds) |
+| $SyncTimeout$    | $5$   | Synchronization procedure timeout (in seconds)     |
+| $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
+
+**State**
+<!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
+
+| Name          | Type                 | Description                             |
+|---------------|----------------------|-----------------------------------------|
+| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$. |
+| $inSync$      | Boolean              | $false$ if we are running a synchronization procedure with some peer, $true$ otherwise. It is initially set to $true$ |
+| $syncPeer$    | Peer ID              | If $inSync$ is false, it contains the ID of the peer the node is synchronizing with.    |
+| $\tau_{Sync}$ | Timestamp            | if $inSync$ is false, it contains the time from when the $syncTimeout$ is checked against; in other words, it indicates either the starting time of the synchronization process, or the time we received and accepted the last block from $syncPeer$. |
+| $syncFrom$    | Integer | The height of the starting block during the synchronization process. |
+| $syncTo$      | Integer | The heights of last blocks of synchronization process.               |
 
 ### Procedures
 
@@ -702,12 +714,14 @@ $\textit{AcceptPoolBlocks}():$
 [env]: #environment
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
-[cs]:  #consensus-state
+
 [fin]: #finality
+[cs]:  #consensus-state
+[lfb]: #last-final-block
 [rf]:  #rolling-finality
 [crf]: #checkrollingfinality
+
 [fal]: #fallback
-[falp]: #fallback-1
 [hst]: #handlesynctimeout
 [hb]:  #HandleBlock
 [syn]: #synchronization
