@@ -310,7 +310,6 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 <!-- TODO: Blockchain: Block/Transaction structures here ? -->
 
-<!-- TODO ## Timeouts -->
 
 <!----------------------- FOOTNOTES ----------------------->
 

@@ -72,10 +72,11 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
          2. Collect $\mathsf{M}$'s vote $v^R$ into the aggregated $\mathsf{SV}_{v^R}$
          3. Set the target quorum $Q$ to $Supermajority$ if $v^R$ is $Valid$ or $Majority$ otherwise
          4. If votes in $\mathsf{SV}_{v^R}$ reach $Q$
-            1. Output $(v^R, \mathsf{SV}_{v^R})$
+            1. Store elapsed time
+            2. Output $(v^R, \mathsf{SV}_{v^R})$
 
  6. If timeout $\tau_{Ratification}$ expired:
-    1. Increase Ratification timeout
+    1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
 ***Procedure***
@@ -121,10 +122,11 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
          2. $`\mathsf{SV}_{v^R} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^R}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )`$
          3. $Q =$ [*GetQuorum*][gq]$(v^R)$
          4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^R}) \ge Q):$
-            1. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
+            1. [*StoreElapsedTime*][set]$(Ratification, \tau_{Now}-\tau_{Start})$
+            2. $\texttt{output } (v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Ratification}):$
-    1. [*IncreaseTimeout*][it]$(\tau_{Ratification})$
+    1. [*IncreaseTimeout*][it]$(Ratification)$
     2. $\texttt{output } (NoQuorum, NIL, NIL)$
 
 
@@ -147,6 +149,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#provisioners-and-stakes
 [av]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#aggregatevote
+[set]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 [gq]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum

@@ -43,7 +43,8 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
          2. and $\mathsf{M}.PrevHash$ is $Tip$
          3. and $\mathsf{M}$'s signer is $\mathcal{G}$
             1. Propagate $\mathsf{M}$
-            2. Output $\mathsf{M}$'s block ($\mathsf{B}^c_\mathsf{M}$)
+            2. Store elapsed time
+            3. Output $\mathsf{M}$'s block ($\mathsf{B}^c_\mathsf{M}$)
    3. If timeout expired
       1. Increase Proposal timeout
       2. Output $NIL$
@@ -76,11 +77,12 @@ $\textit{Proposal}(R, I)$:
          - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}`$
          1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M^C}) = true \text{ })`$
          2. $\texttt{and }(\eta_{\mathsf{B}^p} = \eta_{Tip})$
-         3. $`\texttt{and }(\text{ } pk_\mathsf{M^C} = pk_\mathcal{G} \text{ }):`$
-            1. [*Propagate*][mx]$(\mathsf{M})$
-            2. $\texttt{output } \mathsf{B}_\mathsf{M}$
+         3. $`\texttt{and }(\text{ } pk_\mathsf{M} = \mathcal{G} \text{ }):`$
+            1. [*Propagate*][mx]$(\mathsf{M^C})$
+            2. [*StoreElapsedTime*][set]$(Proposal, \tau_{Now}-\tau_{Start})$
+            3. $\texttt{output } \mathsf{B}^c$
    3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Proposal}):$
-      1. [*IncreaseTimeout*][it]$(\tau_{Proposal})$
+      1. [*IncreaseTimeout*][it]$(Proposal)$
       2. $\texttt{output } NIL$
 
 <p><br></p>
@@ -155,6 +157,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 
 <!-- Consensus -->
 [env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[set]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
 [it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
 [sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 [gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
