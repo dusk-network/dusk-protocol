@@ -154,11 +154,22 @@ In this respect, note that, if a block is accepted for the round, all active ite
 
 ### Emergency Block
 If even emergency-mode iterations fail to produce a new block, the last iteration is reserved for Dusk-owned nodes to produce an *Emergency Block*.
-This block is empty (i.e., its contains no transactions) and signed with a private key belonging to Dusk. The corresponding public key is a [global parameter][cenv] ($DuskKey$) known to all nodes.
+This block is empty (i.e., it contains no transactions) and signed with a private key belonging to Dusk. The corresponding public key is a [global parameter][cenv] ($DuskKey$) known to all nodes.
 
 If a node receives an Emergency Block it accepts it into its local chain and moves to the next round. Nevertheless, the Emergency Block is $Accepted$ by definition, so it can be replaced if a lower-iteration block is received for the same round (unless it gets finalized due to [Rolling Finality][rf]).
 
 Note that multiple nodes owned by Dusk can produce the exact same block, since it contains no transactions and will thus have the same hash. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
+
+### Procedures
+
+#### *isEmergencyBlock*
+*isEmergencyBlock* outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
+
+$\textit{*isEmergencyBlock*}(\mathsf{B})$
+- $\texttt{if} (\mathsf{B}.Iteration = MaxIterations)$
+- $\texttt{and} (\mathsf{B}.Transactions = NIL)$
+- $\texttt{and} (\mathsf{B}.Generator = DuskKey)$
+  - $\texttt{output} true$
 
 <p><br></p>
 
@@ -404,6 +415,7 @@ $\textit{GetStepNum}(I, Step):$
 
 [em]:   #emergency-mode
 [eb]:   #emergency-block
+[ieb]:  #isemergencyblock
 
 [cenv]: #environment
 [init]: #sainit
