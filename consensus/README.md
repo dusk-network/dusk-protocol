@@ -71,9 +71,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
 | $Majority$         | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
 | $MaxIterations$    | 255            | Maximum number of iterations for a single round      |
-| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 | $InitTimeout$      | 5              | Initial step timeout (in seconds)                    |
-| $MaxStepTimeout$       | 60             | Maximum timeout for a single step (in seconds)       |
+| $MaxStepTimeout$   | 30             | Maximum timeout for a single step (in seconds)       |
 | $BlockGas$         | 5.000.000.000  | Gas limit for a single block                         |
 
 
@@ -303,7 +302,7 @@ At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. 
 | $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
 | $MinStepTimeout$     | 1 sec  | Minimum timeout for a single step            |
 | $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
-| $MaxElapsedTimes$ | 5      | Maximum number of elapsed time values stored |
+| $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored |
 
 **State Variables**
 
@@ -358,6 +357,26 @@ $\textit{AdjustBaseTimeout}(Step):$
 $\textit{IncreaseTimeout}(Step):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
 
+## Emergency Mode
+In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
+
+This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block. In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
+
+While a timeout expiration does not end a step, it still marks the pace of step execution: if a step timeout expires, the next step is started. This is necessary to be able to see a Validation quorum even when the candidate was not received, or a Ratification quorum even when a Validation quorum was not received.
+
+When a new iteration begins, the previous one remains active: if a message is received for any of the active steps, it is processed accordingly.
+
+Therefore, in emergency mode, multiple iterations can run in parallel. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning block for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
+<!-- TODO: check it is like this in the code -->
+In this respect, note that, if a block is accepted for the round, all active iterations are interrupted. This decreases the chances of other candidate blocks reaching quorum.
+
+
+### Environment
+| Name                     | Value                | Description                              |
+|--------------------------|----------------------|------------------------------------------|
+| $EmergencyModeIteration$ | $MaxIterations - 10$ | Iteration at which Emergency Mode starts |
+
+
 <!----------------------- FOOTNOTES ----------------------->
 
 [^1]: For the sake of simplicity, we assume the node handles a single provisioner identity.
@@ -388,6 +407,7 @@ $\textit{IncreaseTimeout}(Step):$
 [lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Chain Management -->
+[cm]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md
 [syn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#synchronization
 [ab]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#acceptblock
 [hb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#handleblock
