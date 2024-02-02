@@ -8,23 +8,24 @@ Before reading, please make sure you are familiar with the system [Basics][bas] 
 
 ### ToC
   - [Overview](#overview)
-  - [Environment](#environment)
-  - [Procedures](#procedures)
+  - [Step Timeouts](#step-timeouts)
+    - [Adaptive Timeout](#adaptive-timeout)
+    - [Design](#design)
+    - [Environment](#environment)
+    - [Procedures](#procedures)
+      - [*SetRoundTimeouts*](#setroundtimeouts)
+      - [*StoreElapsedTime*](#storeelapsedtime)
+      - [*AdjustBaseTimeout*](#adjustbasetimeout)
+      - [*IncreaseTimeout*](#increasetimeout)
+  - [Emergency Mode](#emergency-mode)
+  - [Environment](#environment-1)
+  - [Procedures](#procedures-1)
     - [*SAInit*](#sainit)
     - [*SALoop*](#saloop)
     - [*SARound*](#saround)
     - [*SAIteration*](#saiteration)
     - [*GetQuorum*](#getquorum)
     - [*GetStepNum*](#getstepnum)
-  - [Step Timeouts](#step-timeouts)
-    - [Adaptive Timeout](#adaptive-timeout)
-    - [Design](#design)
-      - [Environment](#environment-1)
-    - [Procedures](#procedures-1)
-      - [*SetRoundTimeouts*](#setroundtimeouts)
-      - [*StoreElapsedTime*](#storeelapsedtime)
-      - [*AdjustBaseTimeout*](#adjustbasetimeout)
-      - [*IncreaseTimeout*](#increasetimeout)
 
 
 ## Overview
@@ -47,6 +48,114 @@ The round terminates when an iteration is successful.
 
 A maximum number of 255 iterations is executed within a single round.
 
+## Step Timeouts
+Each step of the [SA iteration][sai] has a limited timeout, within which the step can succeed. If the timeout expires, the step fails.
+
+Step timeouts serve various purposes. First of all, they are used to keep provisioners aligned with each other: to reach consensus on a candidate block, provisioners need to run the same round and iteration at approximately the same time. Timeouts force the consensus loop to run on a fast pace, without indefinite waits for steps to end. For instance, if the provisioner node gets isolated from the network, it won't get stuck at the same round, but will move on until either an iteration succeeds or a full block is received.
+
+Timeouts are also functional to avoid forks. Without timeouts, a step could run indefinitely until some result is obtained (e.g., a candidate block is received, or a quorum of votes is reached). Dealing with this would require iterations to run in parallel, leading to blocks that could be replaced at any moment by lower-iteration ones. Instead, by having a limited time on each step, provisioners always act in a finite time, allowing iterations to move on. For instance, if the candidate block does not arrive in time, the provisioner votes $NoCandidate$ in the Validation step. Similarly, if the Validation step does not reach any quorum within the timeout, the provisioner votes $NoQuorum$. Moreover, once a vote is cast, no other vote is allowed from the same provisioner (this behavior will be slashed in the future). These timeout-induced votes enable blocks that are not produced at the first iteration to be [finalized][fin]. This is because a quorum of negative votes can be used to produce a [Failed Attestation][atts] that proves the iteration failed and can't reach any valid quorum.
+
+Another effect of timeouts is enabling [slashing][sla] a provisioner for not producing a block. While timeouts cannot ensure a block was not produced at all (which is impossible, since the generator could create the block and then postpone its broadcast indefinitely) they allow provisioners to agree on the fact that a majority did not receive such a block.
+
+### Adaptive Timeout
+To cope with changes in the network latency, step timeouts are designed to self-adjust based on previous events.
+
+Two mechanisms determine the timeout for a specific step execution:
+  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($TimeoutIncrease$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
+  <!-- If our timeout is too low, and other provisioners reach consensus, we would receive the Quorum/Block message before succeeding. We should consider this for the next round.  -->
+  - round adjustment: at each round, the timeout for the first iteration is given by the average of the past rounds; this mechanism allows to adjust the timeout to the actual time needed by the step: if the last executions of the step succeeded within X seconds, it means X seconds are sufficient for the step to complete. This also allows the timeout to be reduced if the network latency decreases.
+
+### Design
+
+There are three timeouts, one for each step:
+- $\tau_{Proposal}$
+- $\tau_{Validation}$
+- $\tau_{Ratification}$
+
+When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $DefaultStepTimeout$.
+
+At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. Then, while executing iterations, if the step is successful, its elapsed time is stored in $ElapsedTimes_{Step}$; if the timeout expires, it is increased by $TimeoutIncrease$ for the next iteration.
+
+### Environment
+
+**Parameters**
+
+| Name                 | Value  | Description                                  |
+|----------------------|--------|----------------------------------------------|
+| $DefaultStepTimeout$ | 5  sec | Default step timeout                         |
+| $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
+| $MinStepTimeout$     | 1 sec  | Minimum timeout for a single step            |
+| $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
+| $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored |
+
+**State Variables**
+
+| Name                  | Description                         |
+|-----------------------|-------------------------------------|
+| $\tau_{Step}$         | Current $Step$ timeout              |
+| $BaseTimeout_{Step}$  | Current $Step$ base timeout         |
+| $ElapsedTimes_{Step}$ | Stored $Step$ timeout elapsed times |
+
+With $Step = Proposal, Validation, Ratification$
+
+### Procedures
+
+#### *SetRoundTimeouts*
+Set the initial step timeout for all steps
+
+$\textit{SetRoundTimeouts}()$
+- $\texttt{for } Step \texttt{ in } [Proposal, Validation, Ratification] :$
+  - [*AdjustBaseTimeout*][abt]$(Step)$
+  - $\tau_{Step} = BaseTimeout_{Step}$
+
+#### *StoreElapsedTime*
+*StoreElapsedTime* adds a new elapsed time to $ElapsedTimes_{Step}$. 
+$ElapsedTimes$ storage is a queue structure with a max capacity of $MaxElapsedTimes$. As such, if there are $MaxElapsedTimes$ values stored, when a new value is inserted, the oldest one is removed.
+
+$\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
+- $\texttt{if } (|ElapsedTimes_{Step}| = MaxElapsedTimes):$
+  - $ElapsedTimes_{Step}.pop()$
+- $ElapsedTimes_{Step}.push(\tau_{Elapsed})$
+
+#### *AdjustBaseTimeout*
+*AdjustBaseTimeout* adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
+The new timeout is the rounded-up average value of the stored elapsed times.
+
+***Parameters***
+- $Step$: the step name
+
+***Procedure***
+
+$\textit{AdjustBaseTimeout}(Step):$
+- $AvgElapsed =$ *RoundUp*$($*Sum*$(ElapsedTimes_{Step}) / |ElapsedTimes_{Step}|)$
+- $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
+
+#### *IncreaseTimeout*
+*IncreaseTimeout* increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
+
+***Parameters***
+- $Step$: the step timeout
+
+***Procedure***
+
+$\textit{IncreaseTimeout}(Step):$
+- $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
+
+## Emergency Mode
+In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
+
+This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block. In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
+
+While a timeout expiration does not end a step, it still marks the pace of step execution: if a step timeout expires, the next step is started. This is necessary to be able to see a Validation quorum even when the candidate was not received, or a Ratification quorum even when a Validation quorum was not received.
+
+When a new iteration begins, the previous one remains active: if a message is received for any of the active steps, it is processed accordingly.
+
+Therefore, in emergency mode, multiple iterations can run in parallel. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning block for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
+<!-- TODO: check it is like this in the code -->
+In this respect, note that, if a block is accepted for the round, all active iterations are interrupted. This decreases the chances of other candidate blocks reaching quorum.
+
+<p><br></p>
+
 ## Environment
 We here define global parameters and state variables of the SA protocol, used and shared by all consensus procedures.
 
@@ -60,20 +169,19 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 **Global Parameters**
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value          | Description                                          |
-|--------------------|----------------|------------------------------------------------------|
-| $GenesisBlock$     | $\mathsf{B_0}$ | Genesis block of the network                         |
-| $Version$          | 0              | Protocol version number                              |
-| $Dusk$             | 1000000000     | Value of one unit of Dusk (in lux)                   |
-| $MinStake$         | 1000           | Minimum amount of a single stake (in Dusk)           |
-| $Epoch$            | 2160           | Epoch duration in number of blocks                   |
-| $CommitteeCredits$ | 64             | Total credits in a voting committee                  |
-| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$ (43) | Supermajority quorum     |
-| $Majority$         | $CommitteeCredits-Quorum+1$ (22) | Majority quorum                    |
-| $MaxIterations$    | 255            | Maximum number of iterations for a single round      |
-| $InitTimeout$      | 5              | Initial step timeout (in seconds)                    |
-| $MaxStepTimeout$   | 30             | Maximum timeout for a single step (in seconds)       |
-| $BlockGas$         | 5.000.000.000  | Gas limit for a single block                         |
+| Name                  | Value          | Description                                      |
+|-----------------------|----------------|--------------------------------------------------|
+| $Version$             | 0              | Protocol version number                          |
+| $GenesisBlock$        | $\mathsf{B}_0$ | Genesis block of the network                     |
+| $Dusk$                | 1000000000     | Value of one unit of Dusk (in lux)               |
+| $BlockGas$            | 5.000.000.000  | Gas limit for a single block                     |
+| $MinStake$            | 1000           | Minimum amount of a single stake (in Dusk)       |
+| $Epoch$               | 2160           | Epoch duration in number of blocks               |
+| $CommitteeCredits$    | 64             | Total credits in a voting committee              |
+| $Supermajority$       | $CommitteeCredits \times \frac{2}{3}$ | Supermajority quorum (43) |
+| $Majority$            | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (22)   |
+| $MaxIterations$       | 255            | Maximum number of iterations in a single round   |
+| $EmergencyIterations$ | $10$           | Iteration at which Emergency Mode starts         |
 
 
 **Chain State**
@@ -264,117 +372,7 @@ $\textit{GetQuorum}(v):$
 $\textit{GetStepNum}(I, Step):$
 - $\texttt{output } I \times + StepNum$ 
 
-## Step Timeouts
-Each step of the [SA iteration][sai] has a limited timeout, within which the step can succeed. If the timeout expires, the step fails.
 
-Step timeouts serve various purposes. First of all, they are used to keep provisioners aligned with each other: to reach consensus on a candidate block, provisioners need to run the same round and iteration at approximately the same time. Timeouts force the consensus loop to run on a fast pace, without indefinite waits for steps to end. For instance, if the provisioner node gets isolated from the network, it won't get stuck at the same round, but will move on until either an iteration succeeds or a full block is received.
-
-Timeouts are also functional to avoid forks. Without timeouts, a step could run indefinitely until some result is obtained (e.g., a candidate block is received, or a quorum of votes is reached). Dealing with this would require iterations to run in parallel, leading to blocks that could be replaced at any moment by lower-iteration ones. Instead, by having a limited time on each step, provisioners always act in a finite time, allowing iterations to move on. For instance, if the candidate block does not arrive in time, the provisioner votes $NoCandidate$ in the Validation step. Similarly, if the Validation step does not reach any quorum within the timeout, the provisioner votes $NoQuorum$. Moreover, once a vote is cast, no other vote is allowed from the same provisioner (this behavior will be slashed in the future). These timeout-induced votes enable blocks that are not produced at the first iteration to be [finalized][fin]. This is because a quorum of negative votes can be used to produce a [Failed Attestation][atts] that proves the iteration failed and can't reach any valid quorum.
-
-Another effect of timeouts is enabling [slashing][sla] a provisioner for not producing a block. While timeouts cannot ensure a block was not produced at all (which is impossible, since the generator could create the block and then postpone its broadcast indefinitely) they allow provisioners to agree on the fact that a majority did not receive such a block.
-
-### Adaptive Timeout
-To cope with changes in the network latency, step timeouts are designed to self-adjust based on previous events.
-
-Two mechanisms determine the timeout for a specific step execution:
-  - expiration increase: if a timeout expires, it is increased by a fixed amount of time ($TimeoutIncrease$) for the next iteration; in other words, if the step failed (locally) because not enough time was given to receive all messages, the timeout is increased to allow such messages to be received in the next iteration.
-  <!-- If our timeout is too low, and other provisioners reach consensus, we would receive the Quorum/Block message before succeeding. We should consider this for the next round.  -->
-  - round adjustment: at each round, the timeout for the first iteration is given by the average of the past rounds; this mechanism allows to adjust the timeout to the actual time needed by the step: if the last executions of the step succeeded within X seconds, it means X seconds are sufficient for the step to complete. This also allows the timeout to be reduced if the network latency decreases.
-
-### Design
-
-There are three timeouts, one for each step:
-- $\tau_{Proposal}$
-- $\tau_{Validation}$
-- $\tau_{Ratification}$
-
-When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $DefaultStepTimeout$.
-
-At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. Then, while executing iterations, if the step is successful, its elapsed time is stored in $ElapsedTimes_{Step}$; if the timeout expires, it is increased by $TimeoutIncrease$ for the next iteration.
-
-#### Environment
-
-**Parameters**
-
-| Name                 | Value  | Description                                  |
-|----------------------|--------|----------------------------------------------|
-| $DefaultStepTimeout$ | 5  sec | Default step timeout                         |
-| $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
-| $MinStepTimeout$     | 1 sec  | Minimum timeout for a single step            |
-| $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
-| $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored |
-
-**State Variables**
-
-| Name                  | Description                         |
-|-----------------------|-------------------------------------|
-| $\tau_{Step}$         | Current $Step$ timeout              |
-| $BaseTimeout_{Step}$  | Current $Step$ base timeout         |
-| $ElapsedTimes_{Step}$ | Stored $Step$ timeout elapsed times |
-
-With $Step = Proposal, Validation, Ratification$
-
-### Procedures
-
-#### *SetRoundTimeouts*
-Set the initial step timeout for all steps
-
-$\textit{SetRoundTimeouts}()$
-- $\texttt{for } Step \texttt{ in } [Proposal, Validation, Ratification] :$
-  - [*AdjustBaseTimeout*][abt]$(Step)$
-  - $\tau_{Step} = BaseTimeout_{Step}$
-
-#### *StoreElapsedTime*
-*StoreElapsedTime* adds a new elapsed time to $ElapsedTimes_{Step}$. 
-$ElapsedTimes$ storage is a queue structure with a max capacity of $MaxElapsedTimes$. As such, if there are $MaxElapsedTimes$ values stored, when a new value is inserted, the oldest one is removed.
-
-$\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
-- $\texttt{if } (|ElapsedTimes_{Step}| = MaxElapsedTimes):$
-  - $ElapsedTimes_{Step}.pop()$
-- $ElapsedTimes_{Step}.push(\tau_{Elapsed})$
-
-#### *AdjustBaseTimeout*
-*AdjustBaseTimeout* adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
-The new timeout is the rounded-up average value of the stored elapsed times.
-
-***Parameters***
-- $Step$: the step name
-
-***Procedure***
-
-$\textit{AdjustBaseTimeout}(Step):$
-- $AvgElapsed =$ *RoundUp*$($*Sum*$(ElapsedTimes_{Step}) / |ElapsedTimes_{Step}|)$
-- $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
-
-#### *IncreaseTimeout*
-*IncreaseTimeout* increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
-
-***Parameters***
-- $Step$: the step timeout
-
-***Procedure***
-
-$\textit{IncreaseTimeout}(Step):$
-- $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
-
-## Emergency Mode
-In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
-
-This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block. In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
-
-While a timeout expiration does not end a step, it still marks the pace of step execution: if a step timeout expires, the next step is started. This is necessary to be able to see a Validation quorum even when the candidate was not received, or a Ratification quorum even when a Validation quorum was not received.
-
-When a new iteration begins, the previous one remains active: if a message is received for any of the active steps, it is processed accordingly.
-
-Therefore, in emergency mode, multiple iterations can run in parallel. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning block for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
-<!-- TODO: check it is like this in the code -->
-In this respect, note that, if a block is accepted for the round, all active iterations are interrupted. This decreases the chances of other candidate blocks reaching quorum.
-
-
-### Environment
-| Name                     | Value                | Description                              |
-|--------------------------|----------------------|------------------------------------------|
-| $EmergencyModeIteration$ | $MaxIterations - 10$ | Iteration at which Emergency Mode starts |
 
 
 <!----------------------- FOOTNOTES ----------------------->
