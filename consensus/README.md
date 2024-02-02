@@ -19,15 +19,17 @@ Before reading, please make sure you are familiar with the system [Basics][bas] 
       - [*IncreaseTimeout*](#increasetimeout)
   - [Emergency Mode](#emergency-mode)
     - [Emergency Block](#emergency-block)
+    - [Procedures](#procedures-1)
+      - [*BroadcastEmergencyBlock*](#broadcastemergencyblock)
+      - [*isEmergencyBlock*](#isemergencyblock)
   - [Environment](#environment-1)
-  - [Procedures](#procedures-1)
+  - [Procedures](#procedures-2)
     - [*SAInit*](#sainit)
     - [*SALoop*](#saloop)
     - [*SARound*](#saround)
     - [*SAIteration*](#saiteration)
     - [*GetQuorum*](#getquorum)
     - [*GetStepNum*](#getstepnum)
-
 
 
 ## Overview
