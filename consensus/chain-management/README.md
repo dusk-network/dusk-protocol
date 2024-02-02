@@ -566,13 +566,13 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
    1. If not synchronizing with any peer ($inSync = true$) :
       1. If $\mathsf{B}$ is the $Tip$'s successor:
          1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
-         2. If not valid failed, stop
-         3. Accept $\mathsf{B}$ to the chain
-         4. If $\mathcal{S}$ is $syncPeer$
-            1. Start synchronization process ([*StartSync*][ss])
-         5. Otherwise:
-            1. Propagate $\mathsf{B}$ to other peers
-            2. Restart the consensus loop ([*SALoop*][sl])
+         2. If $\mathsf{B}$ is:
+            1. Accept $\mathsf{B}$ to the chain
+            2. If $\mathcal{S}$ is $syncPeer$
+               1. Start synchronization process ([*StartSync*][ss])
+            3. Otherwise:
+               1. Propagate $\mathsf{B}$ to other peers
+               2. Restart the consensus loop ([*SALoop*][sl])
 
    <!-- outSync -->
    2. Otherwise (If synchronizing with a peer ($inSync = false$)) :
@@ -604,13 +604,13 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
    1. $\texttt{if } (inSync = true) :$
       1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
          1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
-         2. $\texttt{if } (isValid = false): \texttt{stop}$
-         3. [*AcceptBlock*][ab]$(\mathsf{B})$
-         4. $\texttt{if } (\mathcal{S} = syncPeer):$
-            1. [*StartSync*][ss]$()$
-         5. $\texttt{else}:$
-            1. [*Propagate*][mx]$(\mathsf{B})$
-            2. $\texttt{restart}$([*SALoop*][sl])
+         2. $\texttt{if } (isValid = true):$
+            1. [*AcceptBlock*][ab]$(\mathsf{B})$
+            2. $\texttt{if } (\mathcal{S} = syncPeer):$
+               1. [*StartSync*][ss]$()$
+            3. $\texttt{else}:$
+               1. [*Propagate*][mx]$(\mathsf{B})$
+               2. $\texttt{restart}$([*SALoop*][sl])
     <!-- outSync -->
    2. $\texttt{else }:$      
       1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
@@ -687,13 +687,13 @@ $\textit{HandleSyncTimeout}():$
       1. $inSync = true$
       2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
-     1. $\texttt{stop}$
+     1. $\texttt{break}$
 2. $\texttt{else}:$
    1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + PreSyncTimeout):$
       1. $syncPeer = NIL$
       2. $syncFrom = NIL$
       3. $syncTo = NIL$
-     1. $\texttt{stop}$
+     1. $\texttt{break}$
 
 
 #### *AcceptPoolBlocks*
@@ -713,7 +713,7 @@ $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$
 2. $\texttt{for } i = 0 \dots |\boldsymbol{Successors}|{-}1 :$
    1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip)$
-      1. $\texttt{if } (isValid = false): \texttt{stop}$
+      1. $\texttt{if } (isValid = false): \texttt{break}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
    3. $\tau_{Sync} = \tau_{Now}$
 

@@ -290,7 +290,7 @@ $\textit{SARound}():$
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
    - $Iteration = 0$
 2. [*SetRoundTimeouts*][srt]$()$
-3. $\texttt{start}$([*HandleQuorum*][hq]$(Round))$
+3. $\texttt{start}$($[*HandleQuorum*][hq]$(Round))$
 4. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
    1. [*SAIteration*][sai]$(Round, Iteration)$
 5. $\texttt{if } (\mathsf{B}^w = NIL)$

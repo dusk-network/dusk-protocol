@@ -32,7 +32,6 @@ Some procedures (typically containing a loop) are executed concurrently to each 
 - $\texttt{stop}(P)$: interrupts the procedure $P$;
 - $\texttt{restart}(P)$: stops and restart the procedure $P$.
 
-Within these procedures, we use the command $\texttt{stop}$ (with no arguments) to indicate the interruption of the procedure execution.
 Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ if $P$ is currently running, and $false$ otherwise.
 
 When in a $\texttt{loop}$ we use $\texttt{break}$ to stop the execution and move on to the next iteration.
