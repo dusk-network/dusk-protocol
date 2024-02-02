@@ -169,19 +169,19 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 **Global Parameters**
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name                  | Value          | Description                                      |
-|-----------------------|----------------|--------------------------------------------------|
-| $Version$             | 0              | Protocol version number                          |
-| $GenesisBlock$        | $\mathsf{B}_0$ | Genesis block of the network                     |
-| $Dusk$                | 1000000000     | Value of one unit of Dusk (in lux)               |
-| $BlockGas$            | 5.000.000.000  | Gas limit for a single block                     |
-| $MinStake$            | 1000           | Minimum amount of a single stake (in Dusk)       |
-| $Epoch$               | 2160           | Epoch duration in number of blocks               |
-| $CommitteeCredits$    | 64             | Total credits in a voting committee              |
-| $Supermajority$       | $CommitteeCredits \times \frac{2}{3}$ | Supermajority quorum (43) |
-| $Majority$            | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (22)   |
-| $MaxIterations$       | 255            | Maximum number of iterations in a single round   |
-| $EmergencyIterations$ | $10$           | Iteration at which Emergency Mode starts         |
+| Name               | Value                                    | Description                                      |
+|--------------------|------------------------------------------|--------------------------------------------------|
+| $Version$          | 0                                        | Protocol version number                          |
+| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                     |
+| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)               |
+| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                     |
+| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)       |
+| $Epoch$            | 2160                                     | Epoch duration in number of blocks               |
+| $CommitteeCredits$ | 64                                       | Total credits in a voting committee              |
+| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                |
+| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                     |
+| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round   |
+| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which Emergency Mode starts         |
 
 
 **Chain State**
@@ -270,33 +270,41 @@ If, for any reason, the round ends without a winning block, the consensus is dee
 
 ***Algorithm***
 
-1. Set variables:
-   - Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-   - Set iteration $Iteration$ to 0
+1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
 2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
 3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-4. While $Iteration$ is less than $MaxIterations$ and no winning block has been produced
-   1. Execute SA iteration ([*SAIteration*][sai])
+4. For $Iteration$ from 0 to $MaxIterations$
+   1. If in Emergency Mode:
+      1. Start [*SAIteration*][sai] as a thread
+      2. Wait $MaxStepTimeout$ for each step
+   2. If not in Emergency Mode:
+      1. Execute SA iteration ([*SAIteration*][sai])
+   3. If a winning block $\mathsf{B}^w$ has been produced 
+      1. Broadcast $\mathsf{B}^w$
+      2. Accept $\mathsf{B}^w$ into the chain
+      3. End round
 5. If we reached $MaxIterations$ without a winning block
-   1. Output $NIL$
-6. Otherwise, broadcast the winning block $\mathsf{B}^w$
-7. Output $\mathsf{B}^w$
+   1. Stop the SA loop (and wait for some block to be received)
 
 ***Procedure***
-<!-- TODO: use for Iteration from 0 to MaxIterations{ if B^w != NIL, break} -->
 
 $\textit{SARound}():$
 1. $\texttt{set }$:
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-   - $Iteration = 0$
 2. [*SetRoundTimeouts*][srt]$()$
-3. $\texttt{start}$($[*HandleQuorum*][hq]$(Round))$
-4. $\texttt{while } (\mathsf{B}^w = NIL) \texttt{ and } (Iteration \le MaxIterations):$
-   1. [*SAIteration*][sai]$(Round, Iteration)$
+3. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
+4. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
+   1. $\texttt{if } (I \ge EmergencyMode):$
+      1. $\texttt{start}($[*SAIteration*][sai]$(Round, Iteration))$
+      2. $\texttt{wait} (3 \times MaxStepTimeout)$
+   2. $\texttt{else}:$
+      1. [*SAIteration*][sai]$(Round, Iteration)$
+   3. $\texttt{if }(\mathsf{B}^w \ne NIL):$
+      1. [*Broadcast*][mx]$(\mathsf{B}^w)$
+      2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
+      3. $\texttt{break}$
 5. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. $\texttt{halt}$
-6. [*Broadcast*][mx]$(\mathsf{B}^w)$
-7. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
+   1. $\texttt{stop}($[*SALoop*][sl]$)$
 
 <p><br></p>
 
