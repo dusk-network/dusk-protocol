@@ -7,6 +7,7 @@ This section describes how new blocks are accepted into the local blockchain and
     - [Consensus State](#consensus-state)
     - [Last Final Block](#last-final-block)
     - [Rolling Finality](#rolling-finality)
+    - [Environment](#environment)
     - [Procedures](#procedures)
       - [*GetBlockState*](#getblockstate)
       - [*CheckRollingFinality*](#checkrollingfinality)
@@ -19,7 +20,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*VerifyAttestation*](#verifyattestation)
       - [*VerifyVotes*](#verifyvotes)
   - [Chain Management](#chain-management-1)
-    - [Environment](#environment)
+    - [Environment](#environment-1)
     - [Procedures](#procedures-2)
       - [*HandleBlock*](#handleblock)
       - [*HandleQuorum*](#handlequorum)
@@ -27,7 +28,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*AcceptBlock*](#acceptblock)
       - [*Fallback*](#fallback)
   - [Synchronization](#synchronization)
-    - [Environment](#environment-1)
+    - [Environment](#environment-2)
     - [Procedures](#procedures-3)
       - [*SyncBlock*](#syncblock)
       - [*PreSync*](#presync)
@@ -93,6 +94,13 @@ In other words, 5 consecutive Attested blocks finalize all previous Accepted blo
 
 Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
 <!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
+
+### Environment
+<!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
+
+| Name               | Value          | Description                                          |
+|--------------------|----------------|------------------------------------------------------|
+| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 
 ### Procedures
 
