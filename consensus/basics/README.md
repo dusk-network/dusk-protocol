@@ -283,10 +283,10 @@ The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] o
 
 The structure is defined as follows:
 
-| Field           | Type            | Size     | Description                  |
-|---------------- |-----------------|----------|------------------------------|
-| $Vote$          | Integer         | 8 bits   | The winning vote of the step |
-| $CandidateHash$ | SHA3            | 32 bytes | The candidate hash           |
+| Field           | Type              | Size     | Description                  |
+|---------------- |-------------------|----------|------------------------------|
+| $Vote$          | Integer           | 8 bits   | The winning vote of the step |
+| $CandidateHash$ | SHA3              | 32 bytes | The candidate hash           |
 | $SV$            | [`StepVotes`][sv] | 56 bytes | Aggregated signatures        |
 
 $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.

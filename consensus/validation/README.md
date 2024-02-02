@@ -111,7 +111,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}):$
+5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}) \texttt{ and } (I \lt EmergencyMode):$
    1. $\texttt{if } (\mathsf{M^V} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
       - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
       - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$

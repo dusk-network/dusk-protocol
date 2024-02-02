@@ -69,7 +69,7 @@ $\textit{Proposal}(R, I)$:
    4. $\texttt{output } \mathsf{B}^c$
 3. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
-   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}):$
+   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}) \texttt{ and } (I \lt EmergencyMode):$
       1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M^C} \ne NIL):$
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$

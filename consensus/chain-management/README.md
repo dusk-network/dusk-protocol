@@ -7,6 +7,7 @@ This section describes how new blocks are accepted into the local blockchain and
     - [Consensus State](#consensus-state)
     - [Last Final Block](#last-final-block)
     - [Rolling Finality](#rolling-finality)
+    - [Environment](#environment)
     - [Procedures](#procedures)
       - [*GetBlockState*](#getblockstate)
       - [*CheckRollingFinality*](#checkrollingfinality)
@@ -19,7 +20,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*VerifyAttestation*](#verifyattestation)
       - [*VerifyVotes*](#verifyvotes)
   - [Chain Management](#chain-management-1)
-    - [Environment](#environment)
+    - [Environment](#environment-1)
     - [Procedures](#procedures-2)
       - [*HandleBlock*](#handleblock)
       - [*HandleQuorum*](#handlequorum)
@@ -27,7 +28,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*AcceptBlock*](#acceptblock)
       - [*Fallback*](#fallback)
   - [Synchronization](#synchronization)
-    - [Environment](#environment-1)
+    - [Environment](#environment-2)
     - [Procedures](#procedures-3)
       - [*SyncBlock*](#syncblock)
       - [*PreSync*](#presync)
@@ -94,6 +95,13 @@ In other words, 5 consecutive Attested blocks finalize all previous Accepted blo
 Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
 <!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
 
+### Environment
+<!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
+
+| Name               | Value          | Description                                          |
+|--------------------|----------------|------------------------------------------------------|
+| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
+
 ### Procedures
 
 #### *GetBlockState*
@@ -156,20 +164,25 @@ We here define the procedures to verify the validity of a block: [*VerifyBlock*]
 #### *VerifyBlock*
 The *VerifyBlock* procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
 
+If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
+
 ***Parameters***
 - $\mathsf{B}$: the block to verify
-- $\mathsf{B}^p$: the alleged $\mathsf{B}$'s predecessor
+- $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
 
 ***Algorithm***
 1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
 2. If header's not valid, output $false$
-3. Verify $\mathsf{B}^p$'s attestation $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
+3. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
 4. If $\mathsf{A}^p$ is not valid, output $false$
-5. Verify $\mathsf{B}$'s attestation $\mathsf{A}_\mathsf{B}$ ([*VerifyAttestation*][va])
-6. If attestation is not valid, output $false$
-7. For each attestation $\mathsf{A}_i$ in $FailedIterations$
+5. If $\mathsf{B}$ is an Emergency Block
+   1. Output $true$
+6. Verify $\mathsf{B}$'s attestation $\mathsf{A}_\mathsf{B}$ ([*VerifyAttestation*][va])
+7. If attestation is not valid, output $false$
+8. For each attestation $\mathsf{A}_i$ in $FailedIterations$
    1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
-8. If all verifications succeeded, output $true$
+   2. If $\mathsf{A}_i$ is not valid, output $false$
+9.  If all verifications succeeded, output $true$
 
 ***Procedure***
 $\textit{VerifyBlock}(\mathsf{B}):$
@@ -182,16 +195,18 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
 3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
-6. $\texttt{if } (isValid = false): \texttt{output } false$
-7. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
+5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
+   1. $\texttt{output } true$
+6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
+7. $\texttt{if } (isValid = false): \texttt{output } false$
+8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
-      - $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
-      - $\texttt{if } (isValid = false): \texttt{output } false$
-8.  $\texttt{output } true$
+      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$[^1]
+      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
+      2. $\texttt{if } (isValid = false): \texttt{output } false$
+9.  $\texttt{output } true$
 
 #### *VerifyBlockHeader*
 *VerifyBlockHeader* returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
@@ -205,8 +220,9 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 2. Check $Hash$ is the header's hash
 3. Check $Height$ is $\mathsf{B}^p$'s height plus 1
 4. Check $PrevBlock$ is $\mathsf{B}^p$'s hash
-5. Check transaction root is correct with respect to the transaction set
-6. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+5. Check $Seed$ is the generator's signature of the previous seed
+6. Check transaction root is correct with respect to the transaction set
+7. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
 - If any check failed
   1. Output $false$
 - Otherwise, output $true$
@@ -220,11 +236,12 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   2. $\texttt{or } (\mathsf{B}.Hash \ne$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$
   3. $\texttt{or } (\mathsf{B}.Height \ne \mathsf{B}^p.Height)$
   4. $\texttt{or } (\mathsf{B}.PreviousBlock \ne \mathsf{B}^p.Hash)$
-  5. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
-  6. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
+  5. $\texttt{or } (\mathsf{B}.Seed \ne $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
+  6. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
+  7. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
      1. $\texttt{output } false$
 
-  7. $\texttt{output } true$
+  8. $\texttt{output } true$
 
 
 #### *VerifyAttestation*
@@ -336,15 +353,15 @@ The procedure acts depending on the block's height: if the block has the same he
 
 $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M}^{B} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
+   1.  $\texttt{if } (\mathsf{M^B} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
        - $\texttt{set}:$
-        - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M}^{B}$
+        - $`\mathsf{B} \leftarrow \mathsf{M^B}`$
         - $\eta^p = \mathsf{B}.PrevBlockHash$
        1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{break}`$
        2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{break}$
           <!-- B.Height > Tip.Height -->
        3. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
-          1. [*SyncBlock*][sb]$(\mathsf{B}, \mathcal{S})$
+          1. [*SyncBlock*][sb]$(\mathsf{M^B})$
           <!-- B.Height <= Tip.Height -->
        4. $\texttt{else if } (\mathsf{B}.Height > \mathsf{B}^f.Height) :$
           1. $\texttt{if } (\mathsf{B} \in \textbf{Chain}):  \texttt{break}$
@@ -542,8 +559,7 @@ When receiving blocks with higher height than the $Tip$'s successor, they are st
 If an invalid $Tip$'s successor is received by a sync peer while running the protocol, the protocol is ended.
 
 ***Parameters***
-- $\mathsf{B}$: received block
-- $\mathcal{S}$: sender peer
+- $\mathsf{M^B} = (\mathsf{B}, \mathcal{S})$: received $\mathsf{Block}$ message
 
 ***Algorithm***
 <!-- B > Tip+1 -->
@@ -553,37 +569,33 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
    2. If not synchronizing with any peer ($inSync = true$):
       1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
 <!-- B = Tip+1 -->
-2. Otherwise (if $\mathsf{B}$ is the $Tip$'s successor):
-   <!-- inSync -->
-   1. If not synchronizing with any peer ($inSync = true$) :
-      1. If $\mathsf{B}$ is the $Tip$'s successor:
-         1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
-         2. If not valid failed, stop
-         3. Accept $\mathsf{B}$ to the chain
-         4. If $\mathcal{S}$ is $syncPeer$
+1. Otherwise, if $\mathsf{B}$'s height is the $Tip.Height + 1$:
+   1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
+   2. If $\mathsf{B}$ is valid:
+      1. Accept $\mathsf{B}$ to the chain
+        <!-- inSync -->
+      2. If not synchronizing with any peer ($inSync = true$):
+          1. If we pre-synced with $\mathcal{S}$ ($syncPeer = \mathcal{S}$)
             1. Start synchronization process ([*StartSync*][ss])
-         5. Otherwise:
-            1. Propagate $\mathsf{B}$ to other peers
-            2. Restart the consensus loop ([*SALoop*][sl])
-
-   <!-- outSync -->
-   2. Otherwise (If synchronizing with a peer ($inSync = false$)) :
-      1. If $\mathsf{B}$ is the $Tip$'s successor :
-         1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
-         2. If $\mathsf{B}$ is valid :
-            1. Accept $\mathsf{B}$ to the chain ([*AcceptBlock*][ab])
-            2. Reset sync timeout $\tau_{Sync}$
-            3. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
-            4. If the new $Tip$ is $syncTo$
-               1. Stop syncing ($inSync = true$)
-               2. Restart [*SALoop*][sl]
-         3. Otherwise (if $\mathsf{B}$ is not valid):
-            1. If $\mathcal{S}$ is $syncPeer$
-                1. Stop syncing ($inSync = true$)
+          2. Otherwise:
+            1. Propagate $\mathsf{M^B}$
+            2. Restart [*SALoop*][sl]
+      <!-- outSync -->
+      3. Otherwise (If synchronizing with a peer ($inSync = false$)) :
+          1. Reset sync timeout $\tau_{Sync}$
+          2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
+          3. If the new $Tip$ is $syncTo$
+            1. Stop syncing ($inSync = true$)
+            2. Restart [*SALoop*][sl]
+   3. Otherwise (if $\mathsf{B}$ is not valid):
+     1. If $\mathcal{S}$ is $syncPeer$
+         1. Stop syncing ($inSync = true$)
 
 ***Procedure***
 
-$\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
+$\textit{SyncBlock}(\mathsf{M^B}):$
+- $\texttt{set}:$
+  - $\mathsf{B},\mathcal{S} \leftarrow \mathsf{M^B}$
 <!-- B > Tip+1 -->
 1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
    1. $\texttt{if } (|BlockPool| < MaxSyncBlocks):$
@@ -591,32 +603,28 @@ $\textit{SyncBlock}(\mathsf{B}, \mathcal{S}):$
    2. $\texttt{if } (inSync = true):$
       1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
 <!-- B = Tip+1 -->
-2. $\texttt{else}:$
-    <!-- inSync -->
-   1. $\texttt{if } (inSync = true) :$
-      1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
-         1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B})$
-         2. $\texttt{if } (isValid = false): \texttt{stop}$
-         3. [*AcceptBlock*][ab]$(\mathsf{B})$
-         4. $\texttt{if } (\mathcal{S} = syncPeer):$
-            1. [*StartSync*][ss]$()$
-         5. $\texttt{else}:$
-            1. [*Propagate*][mx]$(\mathsf{B})$
-            2. $\texttt{restart}$([*SALoop*][sl])
-    <!-- outSync -->
-   2. $\texttt{else }:$      
-      1. $\texttt{if } (\mathsf{B}.Height = Tip.Height+1) :$
-         1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
-         2. $\texttt{if } (isValid = true):$
-            1. [*AcceptBlock*][ab]$(\mathsf{B})$
-            2. $\tau_{Sync} = \tau_{Now}$
-            3. [*AcceptPoolBlocks*][apb]$()$
-            4. $\texttt{if } (Tip.Height = syncTo):$
-               1. $inSync = true$
-               2. $\texttt{start}$([*SALoop*][sl])
-         3. $\texttt{else}:$
-            1. $\texttt{if } (\mathcal{S} = syncPeer):$
-                1. $inSync = true$
+1. $\texttt{else if } (\mathsf{B}.Height = Tip.Height+1) :$
+   1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
+   2. $\texttt{if } (isValid = true):$
+      1. $\texttt{stop}$([*SALoop*][sl])
+      2. [*AcceptBlock*][ab]$(\mathsf{B})$
+         <!-- inSync -->
+      3. $\texttt{if } (inSync = true) :$
+          1. $\texttt{if } (\mathcal{S} = syncPeer):$
+             1. [*StartSync*][ss]$()$
+          2. $\texttt{else}:$
+             1. [*Propagate*][mx]$(\mathsf{M^B})$
+             2. $\texttt{start}$([*SALoop*][sl])
+         <!-- outSync -->
+      4. $\texttt{else}:$
+          1. $\tau_{Sync} = \tau_{Now}$
+          2. [*AcceptPoolBlocks*][apb]$()$
+          3. $\texttt{if } (Tip.Height = syncTo):$
+            1. $inSync = true$
+            2. $\texttt{start}$([*SALoop*][sl])
+   3. $\texttt{else}:$
+       1. $\texttt{if } (\mathcal{S} = syncPeer):$
+           1. $inSync = true$
 
 
 #### *PreSync*
@@ -650,20 +658,18 @@ $\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
 
 #### *StartSync*
 The *StartSync* procedure initiates the synchronization protocol with $syncPeer$ on the base of the block $syncTo$ previously received from this peer.
-While syncing, the [*SALoop*][sl] is stopped to improve performance.
+While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 
 
 ***Algorithm***
 1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
-2. Stop [*SALoop*][sl]
-3. Set as "syncing" ($inSync = false$)
+2. Set as "syncing" ($inSync = false$)
 
 ***Procedure***
 
 $\textit{StartSync}():$
 1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
-2. $\texttt{stop}$([*SALoop*][sl])
-3. $inSync = false$
+2. $inSync = false$
 
 #### *HandleSyncTimeout*
 The *HandleSyncTimeout* procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing or pre-synchronizing with a peer.
@@ -679,13 +685,13 @@ $\textit{HandleSyncTimeout}():$
       1. $inSync = true$
       2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
-     1. $\texttt{stop}$
+     1. $\texttt{break}$
 2. $\texttt{else}:$
    1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + PreSyncTimeout):$
       1. $syncPeer = NIL$
       2. $syncFrom = NIL$
       3. $syncTo = NIL$
-     1. $\texttt{stop}$
+     1. $\texttt{break}$
 
 
 #### *AcceptPoolBlocks*
@@ -705,9 +711,13 @@ $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$
 2. $\texttt{for } i = 0 \dots |\boldsymbol{Successors}|{-}1 :$
    1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip)$
-      1. $\texttt{if } (isValid = false): \texttt{stop}$
+      1. $\texttt{if } (isValid = false): \texttt{break}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
    3. $\tau_{Sync} = \tau_{Now}$
+
+<!----------------------- FOOTNOTES ----------------------->
+
+[^1]: The current implementation does not fully support all non-Valid votes yet. Most likely, the vote type will be included in the `Attestation` structure.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
@@ -748,8 +758,10 @@ $\textit{AcceptPoolBlocks}():$
 [ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 
 <!-- Consensus -->
-[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
+[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#emergencyblock
+[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#isemergencyblock
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 [gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
