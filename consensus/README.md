@@ -74,7 +74,7 @@ There are three timeouts, one for each step:
 - $\tau_{Validation}$
 - $\tau_{Ratification}$
 
-When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $DefaultStepTimeout$.
+When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $MaxStepTimeout$.
 
 At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. Then, while executing iterations, if the step is successful, its elapsed time is stored in $ElapsedTimes_{Step}$; if the timeout expires, it is increased by $TimeoutIncrease$ for the next iteration.
 
@@ -84,9 +84,8 @@ At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. 
 
 | Name                 | Value  | Description                                  |
 |----------------------|--------|----------------------------------------------|
-| $DefaultStepTimeout$ | 5  sec | Default step timeout                         |
 | $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
-| $MinStepTimeout$     | 1 sec  | Minimum timeout for a single step            |
+| $MinStepTimeout$     | 2 sec  | Minimum timeout for a single step            |
 | $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
 | $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored |
 
@@ -129,8 +128,11 @@ The new timeout is the rounded-up average value of the stored elapsed times.
 ***Procedure***
 
 $\textit{AdjustBaseTimeout}(Step):$
-- $AvgElapsed =$ *RoundUp*$($*Sum*$(ElapsedTimes_{Step}) / |ElapsedTimes_{Step}|)$
-- $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
+1. $\texttt{if } (|ElapsedTimes_{Step}| = 0):$
+   1. $BaseTimeout_{Step} = MaxStepTimeout$ 
+2. $\texttt{else}:$
+   1. $AvgElapsed =$ *Ceil*$($*Sum*$(ElapsedTimes_{Step}) / |ElapsedTimes_{Step}|)$
+   2. $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
 
 #### *IncreaseTimeout*
 *IncreaseTimeout* increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
@@ -162,13 +164,16 @@ Note that multiple nodes owned by Dusk can produce the exact same block, since i
 
 ### Procedures
 
+#### *BroadcastEmergencyBlock*
+*BroadcastEmergencyBlock* creates a block $\mathsf{B}$ with no transactions and signed with the private $DuskKey$.
+
 #### *isEmergencyBlock*
 *isEmergencyBlock* outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
 
-$\textit{*isEmergencyBlock*}(\mathsf{B})$
+$`\textit{*isEmergencyBlock*}(\mathsf{B})`$
 - $\texttt{if} (\mathsf{B}.Iteration = MaxIterations)$
 - $\texttt{and} (\mathsf{B}.Transactions = NIL)$
-- $\texttt{and} (\mathsf{B}.Generator = DuskKey)$
+- $\texttt{and} (\mathsf{B}.Generator = DuskKey):$
   - $\texttt{output} true$
 
 <p><br></p>
@@ -325,8 +330,8 @@ $\textit{SARound}():$
       3. $\texttt{break}$
 5. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. If $\mathcal{N} = DuskKey$
-      1. *BroadcastEmergencyMode*$()$
-   2. $\texttt{stop}($[*SALoop*][sl]$)$
+      1. [*BroadcastEmergencyBlock*][beb]$()$
+   2. $\texttt{stop}($[*SALoop*][sal]$)$
 
 <p><br></p>
 
@@ -415,6 +420,7 @@ $\textit{GetStepNum}(I, Step):$
 
 [em]:   #emergency-mode
 [eb]:   #emergency-block
+[beb]:  #broadcastemergencyblock
 [ieb]:  #isemergencyblock
 
 [cenv]: #environment

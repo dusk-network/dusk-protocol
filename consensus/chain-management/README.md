@@ -181,6 +181,7 @@ If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIte
 7. If attestation is not valid, output $false$
 8. For each attestation $\mathsf{A}_i$ in $FailedIterations$
    1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
+   2. If $\mathsf{A}_i$ is not valid, output $false$
 9.  If all verifications succeeded, output $true$
 
 ***Procedure***
@@ -194,7 +195,7 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
 3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$ = true):$
+5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
    1. $\texttt{output } true$
 6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
 7. $\texttt{if } (isValid = false): \texttt{output } false$
@@ -202,9 +203,9 @@ $\textit{VerifyBlock}(\mathsf{B}):$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
-      - $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
-      - $\texttt{if } (isValid = false): \texttt{output } false$
+      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$[^1]
+      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
+      2. $\texttt{if } (isValid = false): \texttt{output } false$
 9.  $\texttt{output } true$
 
 #### *VerifyBlockHeader*
@@ -713,6 +714,10 @@ $\textit{AcceptPoolBlocks}():$
       1. $\texttt{if } (isValid = false): \texttt{break}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
    3. $\tau_{Sync} = \tau_{Now}$
+
+<!----------------------- FOOTNOTES ----------------------->
+
+[^1]: The current implementation does not fully support all non-Valid votes yet. Most likely, the vote type will be included in the `Attestation` structure.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
