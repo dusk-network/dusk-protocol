@@ -106,7 +106,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate, NoQuorum]:$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Ratification}):$
+5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Ratification}) \texttt{ and } (I \lt EmergencyMode):$
    1. $\texttt{if } (\mathsf{M^R} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
       - $`\mathsf{CI}, \mathsf{VI}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M^R}`$
       - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$

@@ -18,6 +18,7 @@ Before reading, please make sure you are familiar with the system [Basics][bas] 
       - [*AdjustBaseTimeout*](#adjustbasetimeout)
       - [*IncreaseTimeout*](#increasetimeout)
   - [Emergency Mode](#emergency-mode)
+    - [Emergency Block](#emergency-block)
   - [Environment](#environment-1)
   - [Procedures](#procedures-1)
     - [*SAInit*](#sainit)
@@ -26,6 +27,7 @@ Before reading, please make sure you are familiar with the system [Basics][bas] 
     - [*SAIteration*](#saiteration)
     - [*GetQuorum*](#getquorum)
     - [*GetStepNum*](#getstepnum)
+
 
 
 ## Overview
@@ -144,15 +146,19 @@ $\textit{IncreaseTimeout}(Step):$
 ## Emergency Mode
 In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
 
-This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block. In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
+This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block ($Valid$ or $Invalid$). In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
 
-While a timeout expiration does not end a step, it still marks the pace of step execution: if a step timeout expires, the next step is started. This is necessary to be able to see a Validation quorum even when the candidate was not received, or a Ratification quorum even when a Validation quorum was not received.
-
-When a new iteration begins, the previous one remains active: if a message is received for any of the active steps, it is processed accordingly.
-
-Therefore, in emergency mode, multiple iterations can run in parallel. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning block for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
-<!-- TODO: check it is like this in the code -->
+Iterations in emergency mode are run in parallel (although a sum of the step timeouts is waited before starting a new iteration), with each iteration moving forward only if the current step succeeds. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning blocks for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
+<!-- TODO: check the following is implemented: -->
 In this respect, note that, if a block is accepted for the round, all active iterations are interrupted. This decreases the chances of other candidate blocks reaching quorum.
+
+### Emergency Block
+If even emergency-mode iterations fail to produce a new block, the last iteration is reserved for Dusk-owned nodes to produce an *Emergency Block*.
+This block is empty (i.e., its contains no transactions) and signed with a private key belonging to Dusk. The corresponding public key is a [global parameter][cenv] ($DuskKey$) known to all nodes.
+
+If a node receives an Emergency Block it accepts it into its local chain and moves to the next round. Nevertheless, the Emergency Block is $Accepted$ by definition, so it can be replaced if a lower-iteration block is received for the same round (unless it gets finalized due to [Rolling Finality][rf]).
+
+Note that multiple nodes owned by Dusk can produce the exact same block, since it contains no transactions and will thus have the same hash. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
 
 <p><br></p>
 
@@ -169,19 +175,20 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 **Global Parameters**
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value                                    | Description                                      |
-|--------------------|------------------------------------------|--------------------------------------------------|
-| $Version$          | 0                                        | Protocol version number                          |
-| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                     |
-| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)               |
-| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                     |
-| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)       |
-| $Epoch$            | 2160                                     | Epoch duration in number of blocks               |
-| $CommitteeCredits$ | 64                                       | Total credits in a voting committee              |
-| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                |
-| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                     |
-| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round   |
-| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which Emergency Mode starts         |
+| Name               | Value                                    | Description                                                    |
+|--------------------|------------------------------------------|----------------------------------------------------------------|
+| $Version$          | 0                                        | Protocol version number                                        |
+| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                                   |
+| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)                             |
+| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                                   |
+| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)                     |
+| $Epoch$            | 2160                                     | Epoch duration in number of blocks                             |
+| $CommitteeCredits$ | 64                                       | Total credits in a voting committee                            |
+| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                              |
+| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                                   |
+| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round                 |
+| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which [Emergency Mode][em] starts                 |
+| $DuskKey$         | $pk_\mathcal{Dusk}$                      | A Dusk-owned public key used to sign the [Emergency Block][eb] |
 
 
 **Chain State**
@@ -284,7 +291,9 @@ If, for any reason, the round ends without a winning block, the consensus is dee
       2. Accept $\mathsf{B}^w$ into the chain
       3. End round
 5. If we reached $MaxIterations$ without a winning block
-   1. Stop the SA loop (and wait for some block to be received)
+   1. If we are a Dusk-owned node
+      1. Produce an Emergency Block
+   2. Otherwise, stop the SA loop (and wait for some block to be received)
 
 ***Procedure***
 
@@ -304,7 +313,9 @@ $\textit{SARound}():$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
 5. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. $\texttt{stop}($[*SALoop*][sl]$)$
+   1. If $\mathcal{N} = DuskKey$
+      1. *BroadcastEmergencyMode*$()$
+   2. $\texttt{stop}($[*SALoop*][sl]$)$
 
 <p><br></p>
 
@@ -390,6 +401,10 @@ $\textit{GetStepNum}(I, Step):$
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
 [sa]:   #overview
+
+[em]:   #emergency-mode
+[eb]:   #emergency-block
+
 [cenv]: #environment
 [init]: #sainit
 [sal]:  #saloop
