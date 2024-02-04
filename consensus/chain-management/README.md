@@ -188,7 +188,7 @@ If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIte
 $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
   - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
-  - $\mathsf{A}_\mathsf{B} = \mathsf{B}.Attestation$
+  - $\mathsf{A_B} = \mathsf{B}.Attestation$
   - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
   - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
@@ -245,7 +245,7 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
 
 
 #### *VerifyAttestation*
-*VerifyAttestation* checks a block's Attestation by verifying the Validation and Ratification aggregated signatures against the respective committees.
+*VerifyAttestation* checks a block's Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures against the respective committees.
 
 ***Parameters***
 - $\mathsf{A}$: the attestation to verify
@@ -296,7 +296,7 @@ $\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
 
 ***Procedure***
 
-$VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
+$\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 - $\texttt{set}:$
   - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
 1. $\mathcal{C}^{\boldsymbol{bs}}=$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
@@ -308,8 +308,8 @@ $VerifyVotes(\mathsf{SV}, \upsilon, Q)$:
 
 ## Chain Management
 We here define block-management procedures: 
-  - [*HandleBlock*][hb]: handle $\mathsf{Block}$ messages from the network
-  - [*HandleQuorum*][hq]: handle $\mathsf{Quorum}$ messages from the network
+  - [*HandleBlock*][hb]: handle `Block` messages from the network
+  - [*HandleQuorum*][hq]: handle `Quorum` messages from the network
   - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
   - [*AcceptBlock*][ab]: accept a block as the new tip
   - [*Fallback*][fal]: reverts the chain to a specific block
@@ -375,7 +375,7 @@ $\textit{HandleBlock}():$
                 4. $\texttt{start}($[*SALoop*][sl]$)$
 
 #### *HandleQuorum*
-*HandleQuorum* manages $\mathsf{Quorum}$ messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
+*HandleQuorum* manages `Quorum` messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 ***Parameters***
@@ -434,7 +434,7 @@ $\textit{HandleQuorum}( R ):$
 
 ***Procedure***
 
-$MakeWinning(\mathsf{B}, \mathsf{A}):$
+$\textit{MakeWinning}(\mathsf{B}, \mathsf{A}):$
 1. $\mathsf{B}.Attestation = \mathsf{A}$
 2. $\mathsf{B}^w = \mathsf{B}$
 
@@ -559,7 +559,7 @@ When receiving blocks with higher height than the $Tip$'s successor, they are st
 If an invalid $Tip$'s successor is received by a sync peer while running the protocol, the protocol is ended.
 
 ***Parameters***
-- $\mathsf{M^B} = (\mathsf{B}, \mathcal{S})$: received $\mathsf{Block}$ message
+- $\mathsf{M^B} = (\mathsf{B}, \mathcal{S})$: received `Block` message
 
 ***Algorithm***
 <!-- B > Tip+1 -->

@@ -15,7 +15,7 @@ In the Validation step, each node first executes the [*Deterministic Sortition*]
 
 If the node is part of the committee, it validates the output from the [Proposal][prop] step. If the output was $NIL$, it votes $NoCandidate$. Otherwise, it verifies the candidate block's validity against its previous block (i.e., the node's local $Tip$). If the candidate is valid, the node votes $Valid$, otherwise, it votes $Invalid$.
 $\text{Non-}Valid$ outputs are used to prove an iteration failed (i.e., it can't reach a quorum of $Valid$ votes), which is functional to block [*Attestation*][fin]; additionally, these votes are used for [slashing][sla].
-The vote is broadcast using a $\mathsf{Validation}$ message (see [`Validation`][vmsg]).
+The vote is broadcast using a [`Validation`][vmsg] message.
 
 Then, all nodes, including the committee members, collect votes from the network until a *supermajority* ($\frac{2}{3}$ of the committee credits[^1]) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of $\text{non-}Valid$ votes is reached, or the step timeout expires.
 Specifically, if a supermajority of $Valid$ votes is received, the step outputs $Valid$; if a majority of $Invalid$ or $NoCandidate$ votes is received, the step outputs $Invalid$ or $NoCandidate$, respectively.
@@ -23,7 +23,7 @@ Note that, while $\frac{1}{3}{+}1$ of $Invalid$ or $NoCandidate$ votes would be 
 
 If the step timeout expires, the step outputs $NoQuorum$, which represents an unknown result: it is possible that casted votes reach a quorum or a majority but the node did not see it.
 
-In all cases, except $NoQuorum$, the output of the step includes a $\mathsf{StepVotes}$ structure (see [`StepVotes`][sv]) with the aggregated votes that determined the result.
+In all cases, except $NoQuorum$, the output of the step includes a [`StepVotes`][sv] structure with the aggregated votes that determined the result.
 
 The step output will be used as the input for the [Ratification][rat] step.
 
@@ -34,9 +34,9 @@ The step output will be used as the input for the [Ratification][rat] step.
 
 The procedure performs two tasks: 
 
-1. If the node is part of the Validation committee $\mathcal{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a $\mathsf{Validation}$ message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+1. If the node is part of the Validation committee $\mathcal{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a [`Validation`][vmsg] message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
 
-2. It collects $\mathsf{Validation}$ messages from all committee members, and sets the result depending on the votes:
+2. It collects `Validation` messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;

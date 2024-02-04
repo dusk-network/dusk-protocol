@@ -22,9 +22,9 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [*CountCredits*](#countcredits)
   - [Attestations](#attestations)
     - [Structures](#structures)
-      - [Attestation](#attestation)
-      - [StepVotes](#stepvotes)
-      - [StepResult](#stepresult)
+      - [`Attestation`](#attestation)
+      - [`StepVotes`](#stepvotes)
+      - [`StepResult`](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
 
@@ -108,7 +108,6 @@ When counting votes, each vote is multiplied by the power of the voter in the co
 Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the voting process.
 
 ### Votes
-<!-- DOING -->
 In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
 
 Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
@@ -253,8 +252,8 @@ An *Attestation* is an aggregate collection of votes from a specific iteration. 
 We use the terms *Valid Attestation* and *Failed Attestation* to refer to the two types of quorum being proved.
 
 ### Structures
-#### Attestation
-The $\mathsf{Attestation}$ structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
+#### `Attestation`
+The `Attestation` structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
 
 
 | Field          | Type              | Size     | Description                               |
@@ -262,11 +261,11 @@ The $\mathsf{Attestation}$ structure contains the aggregated votes of the [Valid
 | $Validation$   | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Validation step   |
 | $Ratification$ | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Ratification step |
 
-The $\mathsf{Attestation}$ structure has a total size of 112 bytes.
+The structure has a total size of 112 bytes.
 
-#### StepVotes
-The $\mathsf{StepVotes}$ structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
-Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers to.
+#### `StepVotes`
+The `StepVotes` structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
+Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers.
 To specify the votes from which committee members included in the aggregated signature, a [sub-committee bitset][bs] is used.
 
 The structure is defined as follows:
@@ -276,10 +275,10 @@ The structure is defined as follows:
 | $Voters$ | BitSet        | 64 bits  | Bitset of the voters       |
 | $Votes$  | BLS Signature | 48 bytes | Aggregated step signatures |
 
-The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
+The structure has a total size of 56 bytes.
 
-#### StepResult
-The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the $\mathsf{StepVotes}$ with the aggregated votes producing $Vote$.
+#### `StepResult`
+The `StepResult` structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the `StepVotes` with the aggregated votes producing $Vote$.
 
 The structure is defined as follows:
 
