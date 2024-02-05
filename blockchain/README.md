@@ -40,7 +40,7 @@ where $\mathsf{B}_0$ is the genesis block and $Status_0 = Final$ (that is, the g
 | $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                      |
 | $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                     |
 | $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced           |
-| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of previous block                              |
+| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of the previous block                          |
 | $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed              |
 | $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                |
 | $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                    |
@@ -57,13 +57,12 @@ This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attesta
 
 We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
-We define a *block's hash* as:
+We define the *hash* of a block $\mathsf{B}$ as:
 
-<!-- TODO: define \eta as function: \eta(B) -->
 $\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
 $\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
-<!-- TODO: define block's round and iteration: r_{\mathsf{B}^p},s_{\mathsf{B}^p} -->
+We also define the function $\eta(\mathsf{B})$ which computes $\eta_\mathsf{B}$ over a block $\mathsf{B}$.
 
 ## `Transaction`
 

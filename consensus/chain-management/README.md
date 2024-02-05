@@ -2,7 +2,6 @@
 This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
 ### ToC
-  - [Overview](#overview)
   - [Finality](#finality)
     - [Consensus State](#consensus-state)
     - [Last Final Block](#last-final-block)
@@ -19,7 +18,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*VerifyBlockHeader*](#verifyblockheader)
       - [*VerifyAttestation*](#verifyattestation)
       - [*VerifyVotes*](#verifyvotes)
-  - [Chain Management](#chain-management-1)
+  - [Block Handling](#block-handling)
     - [Environment](#environment-1)
     - [Procedures](#procedures-2)
       - [*HandleBlock*](#handleblock)
@@ -36,19 +35,6 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
-
-## Overview
-<!-- TODO: Add Finality/Block management -->
-At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
-In the latter case, a block is received from the network, which has already reached consensus (proved by the block [Attestation][atts]). 
-
-There are two main reasons a network block is not in the chain:
- 
- - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
-
- - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
-
-Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
@@ -157,7 +143,6 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 
 ## Verification
-<!-- TODO: mv to Blockchain or Basics ? -->
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
 ### Procedures
@@ -230,15 +215,15 @@ This procedure returns $true$ if all block header fields are valid with respect 
 **Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions), BlockGas, pk_{G_\mathsf{B}})$
+- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
 - $\texttt{if }$
   1. $(\mathsf{B}.Version > 0)$ 
-  2. $\texttt{or } (\mathsf{B}.Hash \ne$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$
+  2. $\texttt{or } (\mathsf{B}.Hash \ne \eta(\mathsf{B}))$
   3. $\texttt{or } (\mathsf{B}.Height \ne \mathsf{B}^p.Height)$
   4. $\texttt{or } (\mathsf{B}.PreviousBlock \ne \mathsf{B}^p.Hash)$
   5. $\texttt{or } (\mathsf{B}.Seed \ne $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
   6. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
-  7. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
+  7. $\texttt{or } (\mathsf{B}.StateRoot \ne MerkleTree(newState).Root):$
      1. $\texttt{output } false$
 
   8. $\texttt{output } true$
@@ -306,13 +291,18 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
-## Chain Management
-We here define block-management procedures: 
-  - [*HandleBlock*][hb]: handle `Block` messages from the network
-  - [*HandleQuorum*][hq]: handle `Quorum` messages from the network
-  - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
-  - [*AcceptBlock*][ab]: accept a block as the new tip
-  - [*Fallback*][fal]: reverts the chain to a specific block
+## Block Handling
+At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [Attestation][atts]). 
+
+There are two main reasons a network block is not in the chain:
+ 
+ - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
+
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+
 
 ### Environment
 
@@ -322,6 +312,12 @@ We here define block-management procedures:
 
 
 ### Procedures
+We define the following block-handling procedures: 
+  - [*HandleBlock*][hb]: handle `Block` messages from the network
+  - [*HandleQuorum*][hq]: handle `Quorum` messages from the network
+  - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
+  - [*AcceptBlock*][ab]: accept a block as the new tip
+  - [*Fallback*][fal]: reverts the chain to a specific block
 
 #### *HandleBlock*
 This procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
@@ -357,7 +353,7 @@ $\textit{HandleBlock}():$
        - $\texttt{set}:$
         - $`\mathsf{B} \leftarrow \mathsf{M^B}`$
         - $\eta^p = \mathsf{B}.PrevBlockHash$
-       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{break}`$
+       1. $\texttt{if } (\mathsf{B}.Hash \ne \eta(\mathsf{B})): \texttt{break}`$
        2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{break}$
           <!-- B.Height > Tip.Height -->
        3. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
@@ -421,7 +417,6 @@ $\textit{HandleQuorum}( R ):$
 
 
 #### *MakeWinning*
-<!-- TODO Move to consensus? -->
 This procedure adds an attestation to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
 **Parameters**
@@ -475,7 +470,6 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 This procedure takes the hash $\eta$ of a block in the local chain and deletes all blocks from $Tip$ to $\mathsf{B}_\eta$ excluded. 
 It is triggered by [*HandleBlock*][hb] when receiving a block with height equal or lower than the local $Tip$ and with lower $Iteration$. 
 
-<!-- TODO: mv this sentence to the Overview? -->
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
@@ -538,16 +532,15 @@ The environment of synchronization procedures includes node-level parameters, co
 | $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
 
 **State**
-<!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
 
-| Name          | Type                 | Description                             |
-|---------------|----------------------|-----------------------------------------|
-| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$. |
-| $inSync$      | Boolean              | $false$ if we are running a synchronization procedure with some peer, $true$ otherwise. It is initially set to $true$ |
-| $syncPeer$    | Peer ID              | If $inSync$ is false, it contains the ID of the peer the node is synchronizing with.    |
-| $\tau_{Sync}$ | Timestamp            | if $inSync$ is false, it contains the time from when the $syncTimeout$ is checked against; in other words, it indicates either the starting time of the synchronization process, or the time we received and accepted the last block from $syncPeer$. |
-| $syncFrom$    | Integer | The height of the starting block during the synchronization process. |
-| $syncTo$      | Integer | The heights of last blocks of synchronization process.               |
+| Name          | Type                 | Description                                                                             |
+|---------------|----------------------|-----------------------------------------------------------------------------------------|
+| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$.                          |
+| $Syncing$     | Boolean              | $true$ if we are running a synchronization procedure with some peer, $false$ otherwise. |
+| $syncPeer$    | Peer ID              | It contains the ID of the peer the node is synchronizing with.                          |
+| $\tau_{Sync}$ | Timestamp            | It contains the time from when the $syncTimeout$ is checked against                     |
+| $syncFrom$    | Integer              | The height of the starting block during the synchronization process.                    |
+| $syncTo$      | Integer              | The heights of last blocks of synchronization process.                                  |
 
 ### Procedures
 
@@ -566,30 +559,30 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
 1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
    1. If $BlockPool$ has less than $MaxSyncBlocks$
       1. Add $\mathsf{B}$ to the $BlockPool$
-   2. If not synchronizing with any peer ($inSync = true$):
+   2. If not synchronizing with any peer ($Syncing = false$):
       1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
 <!-- B = Tip+1 -->
 1. Otherwise, if $\mathsf{B}$'s height is the $Tip.Height + 1$:
    1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
    2. If $\mathsf{B}$ is valid:
       1. Accept $\mathsf{B}$ to the chain
-        <!-- inSync -->
-      2. If not synchronizing with any peer ($inSync = true$):
+        <!-- Not syncing -->
+      2. If not synchronizing with any peer ($Syncing = false$):
           1. If we pre-synced with $\mathcal{S}$ ($syncPeer = \mathcal{S}$)
             1. Start synchronization process ([*StartSync*][ss])
           2. Otherwise:
             1. Propagate $\mathsf{M^B}$
             2. Restart [*SALoop*][sl]
-      <!-- outSync -->
-      3. Otherwise (If synchronizing with a peer ($inSync = false$)) :
+      <!-- Syncing -->
+      3. Otherwise (If synchronizing with a peer ($Syncing = true$)) :
           1. Reset sync timeout $\tau_{Sync}$
           2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
           3. If the new $Tip$ is $syncTo$
-            1. Stop syncing ($inSync = true$)
+            1. Stop syncing ($Syncing = false$)
             2. Restart [*SALoop*][sl]
    3. Otherwise (if $\mathsf{B}$ is not valid):
      1. If $\mathcal{S}$ is $syncPeer$
-         1. Stop syncing ($inSync = true$)
+         1. Stop syncing ($Syncing = false$)
 
 **Procedure**
 
@@ -600,7 +593,7 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
 1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
    1. $\texttt{if } (|BlockPool| < MaxSyncBlocks):$
       1. $BlockPool = BlockPool \cup \mathsf{B}$
-   2. $\texttt{if } (inSync = true):$
+   2. $\texttt{if } (Syncing = false):$
       1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
 <!-- B = Tip+1 -->
 1. $\texttt{else if } (\mathsf{B}.Height = Tip.Height+1) :$
@@ -608,23 +601,23 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
    2. $\texttt{if } (isValid = true):$
       1. $\texttt{stop}$([*SALoop*][sl])
       2. [*AcceptBlock*][ab]$(\mathsf{B})$
-         <!-- inSync -->
-      3. $\texttt{if } (inSync = true) :$
+         <!-- Not syncing -->
+      3. $\texttt{if } (Syncing = false) :$
           1. $\texttt{if } (\mathcal{S} = syncPeer):$
              1. [*StartSync*][ss]$()$
           2. $\texttt{else}:$
              1. [*Propagate*][mx]$(\mathsf{M^B})$
              2. $\texttt{start}$([*SALoop*][sl])
-         <!-- outSync -->
+         <!-- Syncing -->
       4. $\texttt{else}:$
           1. $\tau_{Sync} = \tau_{Now}$
           2. [*AcceptPoolBlocks*][apb]$()$
           3. $\texttt{if } (Tip.Height = syncTo):$
-            1. $inSync = true$
+            1. $Syncing = false$
             2. $\texttt{start}$([*SALoop*][sl])
    3. $\texttt{else}:$
        1. $\texttt{if } (\mathcal{S} = syncPeer):$
-           1. $inSync = true$
+           1. $Syncing = false$
 
 
 #### *PreSync*
@@ -663,13 +656,13 @@ While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 
 **Algorithm**
 1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
-2. Set as "syncing" ($inSync = false$)
+2. Set as "syncing" ($Syncing = true$)
 
 **Procedure**
 
 $\textit{StartSync}():$
 1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
-2. $inSync = false$
+2. $Syncing = true$
 
 #### *HandleSyncTimeout*
 This procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing or pre-synchronizing with a peer.
@@ -680,9 +673,9 @@ Only a single synchronization process is done at a time, so $\tau_{Sync}$ is uni
 **Procedure**
 $\textit{HandleSyncTimeout}():$
 - $\texttt{loop}:$
-1. $\texttt{if }(inSync = false):$
+1. $\texttt{if }(Syncing = true):$
    1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + SyncTimeout):$
-      1. $inSync = true$
+      1. $Syncing = false$
       2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
      1. $\texttt{break}$
