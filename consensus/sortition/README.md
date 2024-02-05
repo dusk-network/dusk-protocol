@@ -61,14 +61,14 @@ We describe the *Deterministic Sortition* algorithm through the *DS* procedure, 
 
 ### Deterministic Sortition (*DS*)
 
-***Parameters***
+**Parameters**
 
  - $R$: consensus round
  - $S$: consensus step
  - $Credits$: number of credits to assign
  - $\boldsymbol{P} = [\mathcal{P}_0,\dots,\mathcal{P}_n]$: provisioner list
 
-***Algorithm***
+**Algorithm**
 
 1. Start with empty committee
 2. Set each provisioner's weight equal to the amount of its stake
@@ -85,7 +85,7 @@ We describe the *Deterministic Sortition* algorithm through the *DS* procedure, 
    9. If total weight reaches 0, output the partial committee
 5. Output committee
 
-***Procedure***
+**Procedure**
 
 $DS(R, S, Credits, \boldsymbol{P})$:
 1. $\mathcal{C} = \emptyset$
@@ -111,18 +111,18 @@ $DS(R, S, Credits, \boldsymbol{P})$:
 
 ### Deterministic Extraction (*DE*)
 
-***Parameters***
+**Parameters**
  - $Score$: score for current credit assignation
  - $\boldsymbol{P} = [\mathcal{P}_0,\dots,\mathcal{P}_n]$: array of provisioners ordered by public key
 
-***Algorithm***
+**Algorithm**
   1. For each provisioner $\mathcal{P}$ in $\boldsymbol{P}$
      1. if $\mathcal{P}$'s weight is higher than $Score$, 
         1. output $\mathcal{P}$
      2. otherwise, 
         1. subtract $\mathcal{P}$'s weight from $Score$
 
-***Procedure***
+**Procedure**
 
 $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
   1. $\texttt{for }  \mathcal{P} = \boldsymbol{P}[0] \dots \boldsymbol{P}[|\boldsymbol{P}|-1]$ :

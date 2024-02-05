@@ -44,12 +44,12 @@ The procedure performs two tasks:
 
 Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
 
-***Parameters***
+**Parameters**
 - $R$: round number
 - $I$: iteration number
 - $\mathsf{B}^c$: candidate block
 
-***Algorithm***
+**Algorithm**
 1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
 2. Start step timeout $\tau_{Validation}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
@@ -81,7 +81,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
     1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
-***Procedure***
+**Procedure**
 
 $ValidationStep( R, I, \mathsf{B}^c ) :$
 1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, ValStep)$

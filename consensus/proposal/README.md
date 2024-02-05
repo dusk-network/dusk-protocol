@@ -23,12 +23,12 @@ It is called by [*SAIteration*][sai], which will pass the result to [*Validation
 
 In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Proposal}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
 
-***Parameters*** 
+**Parameters** 
 - [SA Environment][env]
 - $R$: round number
 - $I$: iteration number
 
-***Algorithm***
+**Algorithm**
 1. Extract the block generator $\mathcal{G}$ ([*ExtractGenerator*][eg])
 2. If this node's provisioner is $\mathcal{G}$:
    1. Generate candidate block $\mathsf{B}^c$
@@ -49,7 +49,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
       1. Increase Proposal timeout
       2. Output $NIL$
 
-***Procedure***
+**Procedure**
 
 $\textit{ProposalStep}(R, I)$:
 1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
@@ -91,12 +91,12 @@ $\textit{ProposalStep}(R, I)$:
 This procedure creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
 It is called by [*ProposalStep*][props], which will broadcast the returned block in a `Candidate` message.
 
-***Parameters***
+**Parameters**
 - [SA Environment][env]
 - $R$: round number
 - $I$: iteration number
 
-***Algorithm***
+**Algorithm**
 1. Fetch transactions $\boldsymbol{txs}$ from Mempool
 2. Execute $\boldsymbol{txs}$ and get new state $State_R$
 3. Compute transaction Merkle tree root $TxRoot_R$
@@ -105,7 +105,7 @@ It is called by [*ProposalStep*][props], which will broadcast the returned block
 6. Create candidate block $\mathsf{B}^c$
 7. Output $\mathsf{B}^c$
 
-***Procedure***
+**Procedure**
 
 $\textit{GenerateBlock}(R,I)$
 1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
