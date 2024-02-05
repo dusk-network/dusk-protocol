@@ -230,15 +230,15 @@ This procedure returns $true$ if all block header fields are valid with respect 
 **Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions), BlockGas, pk_{G_\mathsf{B}})$
+- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
 - $\texttt{if }$
   1. $(\mathsf{B}.Version > 0)$ 
-  2. $\texttt{or } (\mathsf{B}.Hash \ne$ *Hash*$`_{SHA3}(\mathsf{H}_{\mathsf{B}}))`$
+  2. $\texttt{or } (\mathsf{B}.Hash \ne \eta(\mathsf{B}))$
   3. $\texttt{or } (\mathsf{B}.Height \ne \mathsf{B}^p.Height)$
   4. $\texttt{or } (\mathsf{B}.PreviousBlock \ne \mathsf{B}^p.Hash)$
   5. $\texttt{or } (\mathsf{B}.Seed \ne $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
   6. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
-  7. $\texttt{or } (\mathsf{B}^c.StateRoot \ne newState.Root):$
+  7. $\texttt{or } (\mathsf{B}.StateRoot \ne MerkleTree(newState).Root):$
      1. $\texttt{output } false$
 
   8. $\texttt{output } true$
@@ -357,7 +357,7 @@ $\textit{HandleBlock}():$
        - $\texttt{set}:$
         - $`\mathsf{B} \leftarrow \mathsf{M^B}`$
         - $\eta^p = \mathsf{B}.PrevBlockHash$
-       1. $\texttt{if } (\mathsf{B}.Hash =$ *Hash*$`_{SHA3}(\mathsf{H_B})) : \texttt{break}`$
+       1. $\texttt{if } (\mathsf{B}.Hash \ne \eta(\mathsf{B})): \texttt{break}`$
        2. $\texttt{if } (\mathsf{B} \in Blacklist) : \texttt{break}$
           <!-- B.Height > Tip.Height -->
        3. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
