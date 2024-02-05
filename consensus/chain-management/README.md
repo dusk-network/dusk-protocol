@@ -538,16 +538,15 @@ The environment of synchronization procedures includes node-level parameters, co
 | $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
 
 **State**
-<!-- TODO: rename inSync to reflect its purpose. It should be "Syncing". After changing the name, switch true with false -->
 
-| Name          | Type                 | Description                             |
-|---------------|----------------------|-----------------------------------------|
-| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$. |
-| $inSync$      | Boolean              | $false$ if we are running a synchronization procedure with some peer, $true$ otherwise. It is initially set to $true$ |
-| $syncPeer$    | Peer ID              | If $inSync$ is false, it contains the ID of the peer the node is synchronizing with.    |
-| $\tau_{Sync}$ | Timestamp            | if $inSync$ is false, it contains the time from when the $syncTimeout$ is checked against; in other words, it indicates either the starting time of the synchronization process, or the time we received and accepted the last block from $syncPeer$. |
-| $syncFrom$    | Integer | The height of the starting block during the synchronization process. |
-| $syncTo$      | Integer | The heights of last blocks of synchronization process.               |
+| Name          | Type                 | Description                                                                             |
+|---------------|----------------------|-----------------------------------------------------------------------------------------|
+| $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$.                          |
+| $Syncing$     | Boolean              | $true$ if we are running a synchronization procedure with some peer, $false$ otherwise. |
+| $syncPeer$    | Peer ID              | It contains the ID of the peer the node is synchronizing with.                          |
+| $\tau_{Sync}$ | Timestamp            | It contains the time from when the $syncTimeout$ is checked against                     |
+| $syncFrom$    | Integer              | The height of the starting block during the synchronization process.                    |
+| $syncTo$      | Integer              | The heights of last blocks of synchronization process.                                  |
 
 ### Procedures
 
@@ -566,30 +565,30 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
 1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
    1. If $BlockPool$ has less than $MaxSyncBlocks$
       1. Add $\mathsf{B}$ to the $BlockPool$
-   2. If not synchronizing with any peer ($inSync = true$):
+   2. If not synchronizing with any peer ($Syncing = false$):
       1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
 <!-- B = Tip+1 -->
 1. Otherwise, if $\mathsf{B}$'s height is the $Tip.Height + 1$:
    1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
    2. If $\mathsf{B}$ is valid:
       1. Accept $\mathsf{B}$ to the chain
-        <!-- inSync -->
-      2. If not synchronizing with any peer ($inSync = true$):
+        <!-- Not syncing -->
+      2. If not synchronizing with any peer ($Syncing = false$):
           1. If we pre-synced with $\mathcal{S}$ ($syncPeer = \mathcal{S}$)
             1. Start synchronization process ([*StartSync*][ss])
           2. Otherwise:
             1. Propagate $\mathsf{M^B}$
             2. Restart [*SALoop*][sl]
-      <!-- outSync -->
-      3. Otherwise (If synchronizing with a peer ($inSync = false$)) :
+      <!-- Syncing -->
+      3. Otherwise (If synchronizing with a peer ($Syncing = true$)) :
           1. Reset sync timeout $\tau_{Sync}$
           2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
           3. If the new $Tip$ is $syncTo$
-            1. Stop syncing ($inSync = true$)
+            1. Stop syncing ($Syncing = false$)
             2. Restart [*SALoop*][sl]
    3. Otherwise (if $\mathsf{B}$ is not valid):
      1. If $\mathcal{S}$ is $syncPeer$
-         1. Stop syncing ($inSync = true$)
+         1. Stop syncing ($Syncing = false$)
 
 **Procedure**
 
@@ -600,7 +599,7 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
 1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
    1. $\texttt{if } (|BlockPool| < MaxSyncBlocks):$
       1. $BlockPool = BlockPool \cup \mathsf{B}$
-   2. $\texttt{if } (inSync = true):$
+   2. $\texttt{if } (Syncing = false):$
       1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
 <!-- B = Tip+1 -->
 1. $\texttt{else if } (\mathsf{B}.Height = Tip.Height+1) :$
@@ -608,23 +607,23 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
    2. $\texttt{if } (isValid = true):$
       1. $\texttt{stop}$([*SALoop*][sl])
       2. [*AcceptBlock*][ab]$(\mathsf{B})$
-         <!-- inSync -->
-      3. $\texttt{if } (inSync = true) :$
+         <!-- Not syncing -->
+      3. $\texttt{if } (Syncing = false) :$
           1. $\texttt{if } (\mathcal{S} = syncPeer):$
              1. [*StartSync*][ss]$()$
           2. $\texttt{else}:$
              1. [*Propagate*][mx]$(\mathsf{M^B})$
              2. $\texttt{start}$([*SALoop*][sl])
-         <!-- outSync -->
+         <!-- Syncing -->
       4. $\texttt{else}:$
           1. $\tau_{Sync} = \tau_{Now}$
           2. [*AcceptPoolBlocks*][apb]$()$
           3. $\texttt{if } (Tip.Height = syncTo):$
-            1. $inSync = true$
+            1. $Syncing = false$
             2. $\texttt{start}$([*SALoop*][sl])
    3. $\texttt{else}:$
        1. $\texttt{if } (\mathcal{S} = syncPeer):$
-           1. $inSync = true$
+           1. $Syncing = false$
 
 
 #### *PreSync*
@@ -663,13 +662,13 @@ While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 
 **Algorithm**
 1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
-2. Set as "syncing" ($inSync = false$)
+2. Set as "syncing" ($Syncing = true$)
 
 **Procedure**
 
 $\textit{StartSync}():$
 1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
-2. $inSync = false$
+2. $Syncing = true$
 
 #### *HandleSyncTimeout*
 This procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing or pre-synchronizing with a peer.
@@ -680,9 +679,9 @@ Only a single synchronization process is done at a time, so $\tau_{Sync}$ is uni
 **Procedure**
 $\textit{HandleSyncTimeout}():$
 - $\texttt{loop}:$
-1. $\texttt{if }(inSync = false):$
+1. $\texttt{if }(Syncing = true):$
    1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + SyncTimeout):$
-      1. $inSync = true$
+      1. $Syncing = false$
       2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
      1. $\texttt{break}$
