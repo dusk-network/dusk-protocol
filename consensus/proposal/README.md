@@ -9,7 +9,7 @@
     - [*SelectTransactions*](#selecttransactions)
 
 ## Overview
-In the Proposal step, each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to extract the *block generator*. If the node is selected, it creates a new *candidate block*, and broadcasts it using a $\mathsf{Candidate}$ message (see [`Candidate`][cmsg]).
+In the Proposal step, each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to extract the *block generator*. If the node is selected, it creates a new *candidate block*, and broadcasts it using a [`Candidate`][cmsg] message.
 In this step, all other nodes wait to receive the candidate block until the step timeout expires. 
 If it was generated or received from the network, the step returns the candidate block; otherwise, it returns $NIL$. The step output will then be passed on as input to the [*Validation*][val] step, where a committee of provisioners will verify its validity and vote accordingly.
 
@@ -18,7 +18,7 @@ If it was generated or received from the network, the step returns the candidate
 ## Procedures
 
 ### *ProposalStep*
-*ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
+This procedure takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
 It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
 In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Proposal}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
@@ -51,7 +51,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
 
 ***Procedure***
 
-$\textit{Proposal}(R, I)$:
+$\textit{ProposalStep}(R, I)$:
 1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
 2. $\texttt{if } (pk_\mathcal{N} = \mathcal{G}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
@@ -88,8 +88,8 @@ $\textit{Proposal}(R, I)$:
 <p><br></p>
 
 ### *GenerateBlock*
-*GenerateBlock* creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
-It is called by [*ProposalStep*][props], which will broadcast the returned block in a $\mathsf{Candidate}$ message.
+This procedure creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
+It is called by [*ProposalStep*][props], which will broadcast the returned block in a `Candidate` message.
 
 ***Parameters***
 - [SA Environment][env]
@@ -107,7 +107,7 @@ It is called by [*ProposalStep*][props], which will broadcast the returned block
 
 ***Procedure***
 
-$GenerateBlock(R,I)$
+$\textit{GenerateBlock}(R,I)$
 1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
 2. $State_R =$ [*ExecuteStateTransition*][xt]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
 3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
@@ -139,7 +139,7 @@ $GenerateBlock(R,I)$
 <p><br></p>
 
 ### *SelectTransactions*
-*SelectTransactions* selects a set of transactions from the Mempool to be included in a new block.
+This procedure selects a set of transactions from the Mempool to be included in a new block.
 
 The criteria used for the selection is arbitrary and is left to the Block Generator.
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
