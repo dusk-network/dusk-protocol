@@ -37,11 +37,11 @@ The SA protocol proceeds in ***rounds***, with each round adding a new block to 
 In turn, each round proceeds in ***iterations***, with each iteration aiming at generating a candidate block and reaching agreement among provisioners.
 
 Each iteration is composed of three phases, or ***steps***:
-  1. ***Proposal***: in this step, a *generator*, extracted via [*DS*][ds], creates a new candidate block and broadcasts it to the network using a $\mathsf{Candidate}$ message;
+  1. [***Proposal***][prop]: in this step, a *generator*, extracted via [*DS*][ds], creates a new candidate block and broadcasts it to the network using a `Candidate` message;
   
-  2. ***Validation***: in this step, a committee of provisioners, extracted via [*DS*][ds], votes on the validity of the candidate block via $\mathsf{Validation}$ messages. The committee can reach a successful *quorum* with a supermajority ($\frac{2}{3}$) of $Valid$ votes or an unsuccessful quorum with a majority ($\frac{1}{2}+1$) of $Invalid$ votes, cast for an invalid candidate, or $NoCandidate$ votes, cast when the candidate is unknown.
+  2. [***Validation***][val]: in this step, a committee of provisioners, extracted via [*DS*][ds], votes on the validity of the candidate block via `Validation` messages. The committee can reach a successful *quorum* with a supermajority ($\frac{2}{3}$) of $Valid$ votes or an unsuccessful quorum with a majority ($\frac{1}{2}+1$) of $Invalid$ votes, cast for an invalid candidate, or $NoCandidate$ votes, cast when the candidate is unknown.
   
-  3. ***Ratification***: in this step, a new committee of provisioners, extracted via [*DS*][ds], votes on the result of the previous Validation step via $\mathsf{Ratification}$ messages. If a quorum was reached they cast the winning Validation vote, otherwise they will vote $NoQuorum$. If a quorum is reached, a $\mathsf{Quorum}$ message is broadcast, containing a $\mathsf{Attestation}$ with the votes of the two steps.
+  3. [***Ratification***][rat]: in this step, a new committee of provisioners, extracted via [*DS*][ds], votes on the result of the previous Validation step via `Ratification` messages. If a quorum was reached they cast the winning Validation vote, otherwise they will vote $NoQuorum$. If a quorum is reached, a `Quorum` message is broadcast, containing an `Attestation` with the votes of the two steps.
   Similar to Validation, the step succeeds if a supermajority quorum of $Valid$ votes is received, and it fails with a majority quorum of $Invalid$, $NoCandidate$, or $NoQuorum$ votes.
   If no quorum is reached, the step result is unknown.
 
@@ -104,7 +104,7 @@ With $Step = Proposal, Validation, Ratification$
 ### Procedures
 
 #### *SetRoundTimeouts*
-Set the initial step timeout for all steps
+This procedure sets the initial step timeout for all steps
 
 $\textit{SetRoundTimeouts}()$
 - $\texttt{for } Step \texttt{ in } [Proposal, Validation, Ratification] :$
@@ -112,7 +112,7 @@ $\textit{SetRoundTimeouts}()$
   - $\tau_{Step} = BaseTimeout_{Step}$
 
 #### *StoreElapsedTime*
-*StoreElapsedTime* adds a new elapsed time to $ElapsedTimes_{Step}$. 
+This procedure adds a new elapsed time to $ElapsedTimes_{Step}$. 
 $ElapsedTimes$ storage is a queue structure with a max capacity of $MaxElapsedTimes$. As such, if there are $MaxElapsedTimes$ values stored, when a new value is inserted, the oldest one is removed.
 
 $\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
@@ -121,7 +121,7 @@ $\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
 - $ElapsedTimes_{Step}.push(\tau_{Elapsed})$
 
 #### *AdjustBaseTimeout*
-*AdjustBaseTimeout* adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
+This procedure adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
 The new timeout is the rounded-up average value of the stored elapsed times.
 
 ***Parameters***
@@ -137,7 +137,7 @@ $\textit{AdjustBaseTimeout}(Step):$
    2. $BaseTimeout_{Step} =$ *Max*$(AvgElapsed, MinStepTimeout)$ 
 
 #### *IncreaseTimeout*
-*IncreaseTimeout* increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
+This procedure increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
 
 ***Parameters***
 - $Step$: the step timeout
@@ -167,12 +167,12 @@ Note that multiple nodes owned by Dusk can produce the exact same block, since i
 ### Procedures
 
 #### *BroadcastEmergencyBlock*
-*BroadcastEmergencyBlock* creates a block $\mathsf{B}$ with no transactions and signed with the private $DuskKey$.
+This procedure creates a block $\mathsf{B}$ with no transactions and signed with the private $DuskKey$.
 
 #### *isEmergencyBlock*
-*isEmergencyBlock* outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
+This procedure outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
 
-$`\textit{*isEmergencyBlock*}(\mathsf{B})`$
+$`\textit{isEmergencyBlock}(\mathsf{B})`$
 - $\texttt{if} (\mathsf{B}.Iteration = MaxIterations)$
 - $\texttt{and} (\mathsf{B}.Transactions = NIL)$
 - $\texttt{and} (\mathsf{B}.Generator = DuskKey):$
@@ -185,7 +185,7 @@ We here define global parameters and state variables of the SA protocol, used an
 
 The SA environment is composed of:
 - *global parameters*: network-wide parameters used by all nodes of the network using a particular protocol version;
-- *chain state*: represent the current system state, as per result of the execution of all transactions in the blockchain;
+- *chain state*: represents the current system state, as per result of the execution of all transactions in the blockchain;
 - *round state*: local variables used to handle the consensus state 
 
 Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^1] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
@@ -231,16 +231,16 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 
 ## Procedures
 The SA consensus is defined by the [*SAInit*][init] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
-The consensus loop could be interrupted when receiving a valid $\mathsf{Block}$ (see [*HandleBlock*][hb]) which could trigger the [*fallback*][fal] or [*synchronization*][syn] procedures.
-Similarly, receiving a $\mathsf{Quorum}$ message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
+The consensus loop could be interrupted when receiving a valid [`Block`][bmsg] message (see [*HandleBlock*][hb]) which could trigger the [*fallback*][fal] or [*synchronization*][syn] procedures.
+Similarly, receiving a [`Quorum`][qmsg] message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
 
 
 ### *SAInit*
-*SAInit* is the entry point of a consensus node. 
+This procedure is the entry point of a consensus node. 
 Upon boot, the node checks if there is a local state saved and, if so, loads it. Otherwise, it sets the local $Tip$ to *GenesisBlock*. 
 Then, it probes the network to check if it is in sync or not with the main chain. If not, it starts a synchronization procedure. 
 
-When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming $\mathsf{Block}$ messages. 
+When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages. 
 
 ***Algorithm***
 
@@ -270,7 +270,7 @@ $\textit{SAInit}():$
 <p><br></p>
 
 ### *SALoop*
-*SALoop* executes an infinite loop of consensus rounds ([*SARound*][sar]). 
+This procedure executes an infinite loop of consensus rounds ([*SARound*][sar]). 
 It is initially started by [*SAInit*][init] but it can be stopped and restarted due to [fallback][fal] or [synchronization][syn].
 
 ***Algorithm***
@@ -289,8 +289,8 @@ $\textit{SALoop}():$
 <p><br></p>
 
 ### *SARound*
-*SARound* executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle $\mathsf{Quorum}$ messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
-If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a $\mathsf{Quorum}$ message, it is accepted to the [local chain][lc] and the round ends. 
+This procedure executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle [`Quorum`][qmsg] messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
+If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a `Quorum` message, it is accepted to the [local chain][lc] and the round ends. 
 If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
 
 ***Algorithm***
@@ -338,10 +338,10 @@ $\textit{SARound}():$
 <p><br></p>
 
 ### *SAIteration*
-*SAIteration* executes the sequence of *Proposal*, *Validation*, and *Ratification* steps.
+This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
 The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
 
-If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$ message is broadcast with the $\mathsf{Attestation}$ of the iteration (i.e. the two $\mathsf{StepVotes}$ $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
+If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
 
 ***Algorithm***
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
@@ -350,11 +350,11 @@ If a quorum was reached in both Validation and Ratification, a $\mathsf{Quorum}$
 4. If Ratification reached a quorum on $v$: 
    1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
    2. Set vote to $(v, \eta_{\mathsf{B}^c})$
-   3. Create $\mathsf{Quorum}$ message $\mathsf{M}^\mathsf{Q}$
-   4. Broadcast $\mathsf{M}^\mathsf{Q}$
-   5. If the Ratification result is $Success$:
+      1. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
+   3. Broadcast $\mathsf{M^Q}$
+   4. If the Ratification result is $Success$:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
-   6. If the Ratification result is $Fail$
+   5. If the Ratification result is $Fail$
       1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
 
 ***Procedure***
@@ -368,7 +368,7 @@ $\textit{SAIteration}(R, I):$
 4. $\texttt{if } (v \ne NoQuorum):$
    1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
    2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M}^\mathsf{Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
+   3. $\mathsf{M^Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
       | Field           | Value                 |
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -377,16 +377,16 @@ $\textit{SAIteration}(R, I):$
       | $Vote$          | $v$                   |
       | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
       | $Attestation$   | $\mathsf{A}$          |
-   4. [*Broadcast*][mx]$(\mathsf{M}^\mathsf{Q})$
+   4. [*Broadcast*][mx]$(\mathsf{M^Q})$
    5. $\texttt{if } (v = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
-   6. $\texttt{else }:$
+   6. $\texttt{else}:$
       1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
 
 <p><br></p>
 
 ### *GetQuorum*
-*GetQuorum* returns the quorum target depending on the vote $v$
+This procedure returns the quorum target depending on the vote $v$
 
 ***Parameters***
 - $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
@@ -398,7 +398,7 @@ $\textit{GetQuorum}(v):$
 - $\texttt{else}: \texttt{output } Majority$
 
 ### *GetStepNum*
-*GetStepNum* returns the absolute step number within the round. It is used for the [*DS*][ds] procedure.
+This procedure returns the absolute step number within the round. It is used for the [*DS*][ds] procedure.
 
 ***Parameters***
 - $I$: the iteration number
@@ -483,6 +483,7 @@ $\textit{GetStepNum}(I, Step):$
 [qmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#quorum
 [rmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#ratification
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate
+[bmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block
 
 <!-- TODO -->
 [sla]: #slashing

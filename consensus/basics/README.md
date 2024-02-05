@@ -22,9 +22,9 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [*CountCredits*](#countcredits)
   - [Attestations](#attestations)
     - [Structures](#structures)
-      - [Attestation](#attestation)
-      - [StepVotes](#stepvotes)
-      - [StepResult](#stepresult)
+      - [`Attestation`](#attestation)
+      - [`StepVotes`](#stepvotes)
+      - [`StepResult`](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
 
@@ -108,7 +108,6 @@ When counting votes, each vote is multiplied by the power of the voter in the co
 Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the voting process.
 
 ### Votes
-<!-- DOING -->
 In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
 
 Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
@@ -158,7 +157,7 @@ Note that a 64-bit bitset is enough to represent the maximum number of members i
 ### Procedures
 
 #### *ExtractGenerator*
-*ExtractGenerator* extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+This procedure extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
 ***Parameters***
 - $R$: round number
@@ -178,7 +177,7 @@ $\textit{ExtractGenerator}(R,I)$
 
 
 #### *ExtractCommittee*
-*ExtractGenerator* extracts the voting committee for the [Validation][val] or the [Ratification][rat] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+This procedure extracts the voting committee for the [Validation][val] or the [Ratification][rat] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
 The procedure excludes the block generator $\mathcal{G}$ of the same iteration to prevent it from being part of the committee. In other words, a candidate generator cannot vote over its own block.
 
@@ -205,12 +204,12 @@ $\textit{ExtractCommittee}(R,I, StepNum)$
 
 
 #### *BitSet*
-*BitSet* takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
+This procedure takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
 
 $\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
 
 #### *SetBit*
-*SetBit* sets a committee member's bit in a subcommittee bitset.
+This procedure sets a committee member's bit in a subcommittee bitset.
 
 ***Parameters***
 - $\boldsymbol{bs}$: the subcommittee bitset
@@ -223,17 +222,17 @@ $\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs
  - $\boldsymbol{bs}[i_M^\mathcal{C}] = 1$
 
 #### *CountSetBits*
-*CountSetBits* returns the amount of set bits in a bitset.
+This procedure returns the amount of set bits in a bitset.
 
 $\textit{CountSetBits}(\boldsymbol{bs}) \rightarrow setbits$
 
 #### *SubCommittee*
-$SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
+This procedure takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
 
-$SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
+$\textit{SubCommittee}(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
 
 #### *CountCredits*
-*CountCredits* takes a committee $\mathcal{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathcal{C}$.
+This procedure takes a committee $\mathcal{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathcal{C}$.
 
 ***Parameters***
 - $\mathcal{C}$: a voting committee
@@ -253,8 +252,8 @@ An *Attestation* is an aggregate collection of votes from a specific iteration. 
 We use the terms *Valid Attestation* and *Failed Attestation* to refer to the two types of quorum being proved.
 
 ### Structures
-#### Attestation
-The $\mathsf{Attestation}$ structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
+#### `Attestation`
+This structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
 
 
 | Field          | Type              | Size     | Description                               |
@@ -262,11 +261,11 @@ The $\mathsf{Attestation}$ structure contains the aggregated votes of the [Valid
 | $Validation$   | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Validation step   |
 | $Ratification$ | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Ratification step |
 
-The $\mathsf{Attestation}$ structure has a total size of 112 bytes.
+The structure has a total size of 112 bytes.
 
-#### StepVotes
-The $\mathsf{StepVotes}$ structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
-Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers to.
+#### `StepVotes`
+This structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
+Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers.
 To specify the votes from which committee members included in the aggregated signature, a [sub-committee bitset][bs] is used.
 
 The structure is defined as follows:
@@ -276,10 +275,10 @@ The structure is defined as follows:
 | $Voters$ | BitSet        | 64 bits  | Bitset of the voters       |
 | $Votes$  | BLS Signature | 48 bytes | Aggregated step signatures |
 
-The $\mathsf{StepVotes}$ structure has a total size of 56 bytes.
+The structure has a total size of 56 bytes.
 
-#### StepResult
-The $\mathsf{StepResult}$ structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the $\mathsf{StepVotes}$ with the aggregated votes producing $Vote$.
+#### `StepResult`
+This structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the `StepVotes` with the aggregated votes producing $Vote$.
 
 The structure is defined as follows:
 
@@ -293,7 +292,7 @@ $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 ### Procedures
 #### *AggregateVote*
-*AggregateVote* adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
+This procedure adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
 
 **Parameters**
 - $\mathsf{SV}$: the $\mathsf{StepVotes}$ structure with the aggregated votes

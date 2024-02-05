@@ -2,13 +2,14 @@
 This section describes the formal definition of the Dusk chain, block, and transaction structures.
 
 #### ToC
-  - [Chain](#chain)
-  - [Block](#block)
-  - [BlockHeader](#blockheader)
-  - [Transaction](#transaction)
+  - [**Chain**](#chain)
+  - [`Block`](#block)
+  - [`BlockHeader`](#blockheader)
+  - [`Transaction`](#transaction)
 
 
-## Chain
+
+## **Chain**
 The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][fin]):
 
 $$\textbf{Chain}: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
@@ -23,14 +24,14 @@ where $\mathsf{B}_0$ is the genesis block and $Status_0 = Final$ (that is, the g
 
 <!-- TODO: define Genesis and Tip here; review use of Tip in procedures (we can use Chain instead) -->
 
-## Block
+## `Block`
 
 | Field            | Type                   | Size      | Description        |
 |------------------|------------------------|-----------|--------------------|
 | $Header$         | [`BlockHeader`][bh]    | 112 bytes | Block header       |
 | $Transactions$   | [`Transaction`][tx][ ] | variable  | Block transactions |
 
-## BlockHeader
+## `BlockHeader`
 
 | Field                  | Type                    | Size       | Description                                         |
 |------------------------|-------------------------|------------|-----------------------------------------------------|
@@ -49,7 +50,7 @@ where $\mathsf{B}_0$ is the genesis block and $Status_0 = Final$ (that is, the g
 | $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                             |
 | $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block      |
 
-The $\mathsf{BlockHeader}$ structure has a variable total size of 522 to 28970 bytes (28.8 KB).
+The `BlockHeader` structure has a variable total size of 522 to 28970 bytes (28.8 KB).
 This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
 
 **Notation**
@@ -64,7 +65,7 @@ $\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||Faile
 
 <!-- TODO: define block's round and iteration: r_{\mathsf{B}^p},s_{\mathsf{B}^p} -->
 
-## Transaction
+## `Transaction`
 
 | Field     | Type             | Size      | Description         |
 |-----------|------------------|-----------|---------------------|
