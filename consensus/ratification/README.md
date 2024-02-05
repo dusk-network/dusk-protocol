@@ -131,13 +131,14 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 
 
 <!----------------------- FOOTNOTES ----------------------->
-[^1]: We currently assume no double votes are cast. In a future version of the protocol, double votes will be punished with slashing.
+[^1]: We currently assume no double votes are cast. In a future version of the protocol, double votes will be punished with [slashing][sla].
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md -->
 [rs]: #ratificationstep
 
 <!-- Basics -->
+[sla]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#slashing
 [vc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
 [ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 [sc]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittees
