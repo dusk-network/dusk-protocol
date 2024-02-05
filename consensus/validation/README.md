@@ -155,6 +155,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 <!-- Basics -->
 [p]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#provisioners-and-stakes
+[sla]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#slashing
 [vc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
 [ec]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
 [sc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittees
@@ -176,6 +177,3 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
 [vmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#validation
 [msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
-
-<!-- TODO -->
-[sla]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/slashing

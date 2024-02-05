@@ -5,6 +5,9 @@ In this section, we describe the building blocks of the SA consensus protocol, s
   - [Candidate Block](#candidate-block)
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
+    - [Incentives and Penalties](#incentives-and-penalties)
+      - [Rewards](#rewards)
+      - [Slashing](#slashing)
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
     - [Votes](#votes)
@@ -27,6 +30,7 @@ In this section, we describe the building blocks of the SA consensus protocol, s
       - [`StepResult`](#stepresult)
     - [Procedures](#procedures-1)
       - [*AggregateVote*](#aggregatevote)
+
 
 ## Candidate Block
 A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
@@ -72,6 +76,35 @@ $$Epoch \lt M \le 2{\times}Epoch.$$
 
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
+
+### Incentives and Penalties
+Given the nature of the SA consensus protocol, it is of paramount importance that provisioners participate when selected. In fact, offline provisioners can slow down the network, and, in extreme cases, even stop block production. Specifically, the provisioner selected for the Proposal step must be online to produce the candidate block; similarly, a supermajority of voters is required to be online when the Validation or Ratification steps occur, to reach a quorum on the candidate block. If any of the two conditions are not met, the iteration fails and a new one is needed to create a new block.
+To minimize the risk of failure, a number of incentives, in the form of *rewards*, and penalties, in the form of *slashing*, are included.
+
+Many of these rewards and slashes are decided based on the block [attestations][atts], which are used as the source of truth when deciding on good or bad behaviors.
+All operations are handled by the VM when performing the *state transition* of the accepted block.
+
+#### Rewards 
+The most basic reward is, for obvious reasons, the block reward, which is given to the generator of a candidate block that gets accepted into the chain.
+This reward consists of two parts: the assignment of newly-emitted coins, and a portion of the fees of the transactions included in the block (for more details on fee distribution see the [Economic Protocol][ep]). In particular, the block generator is assigned 90% of the block emission (see the Dusk [emission schedule][tok]).
+
+On the other hand, a small reward is also assigned to the voters of an accepted block[^3]. This not only incentivizes provisioners to stay online, but also disincentivizes skipping the vote at lower iterations. In fact, since the block producers of all iterations in the current round are known, if a block producer of a later iteration is in the voting committee of the current iteration, they might be incentivized to not vote in order to get to produce their block.
+Additionally, we incentivize the block producer to include as many voters as possible by making a portion of the block reward proportional to the number of signatures in the block attestation. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
+
+Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
+
+#### Slashing
+The following behaviors are subject to slashing:
+- Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
+- Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
+- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures[^3];
+- Double block: if a generator broadcasts two candidates for the same iteration; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures.
+
+Currently, the slash amount is equal to the block reward (which varies according to the [emission schedule][tok]).
+
+Slashing is applied to the provisioner's reward first and then to the actual stake. That is, if the provisioner previously earned some rewards, then slashing affects this amount first. If the reward amount reaches zero, then slashing is applied to the actual stake.
+
+Note that slashing has an immediate effect, in contrast with [staking][pro], which takes effect at the beginning of the second epoch after the stake operation.
 
 
 
@@ -316,24 +349,24 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 [^2]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Validation step, since provisioners will reach agreement on a specific block hash.
 
-
+[^3]: Note that rewards related to quorum voters are not yet implemented, so no specific reward amount has been yet decided. The same applies to slashing for double vote and double candidate.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md -->
 [vot]:  #votes
 [atts]: #attestations
 [att]:  #attestation
-[sv]:    #stepvotes
-[sr]:    #stepresult
-[av]:    #aggregatevote
-[pro]:   #provisioners-and-stakes
-[eg]:    #extractgenerator
-[ec]:    #ExtractCommittee
-[cc]:    #countcredits
-[sc]:    #subcommittee
-[cb]:    #countsetbits
-[bs]:    #bitset
-[sb]:    #setbit
+[sv]:   #stepvotes
+[sr]:   #stepresult
+[av]:   #aggregatevote
+[pro]:  #provisioners-and-stakes
+[eg]:   #extractgenerator
+[ec]:   #ExtractCommittee
+[cc]:   #countcredits
+[sc]:   #subcommittee
+[cb]:   #countsetbits
+[bs]:   #bitset
+[sb]:   #setbit
 
 <!-- Consensus -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
@@ -348,3 +381,6 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 <!-- TODO: link to Stake Contract -->
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
+
+[ep]: https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
+[tok]: https://docs.dusk.network/learn/economy/tokenomics/#token-emission-schedule
