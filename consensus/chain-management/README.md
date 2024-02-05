@@ -417,7 +417,6 @@ $\textit{HandleQuorum}( R ):$
 
 
 #### *MakeWinning*
-<!-- TODO Move to consensus? -->
 This procedure adds an attestation to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
 **Parameters**
@@ -471,7 +470,6 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 This procedure takes the hash $\eta$ of a block in the local chain and deletes all blocks from $Tip$ to $\mathsf{B}_\eta$ excluded. 
 It is triggered by [*HandleBlock*][hb] when receiving a block with height equal or lower than the local $Tip$ and with lower $Iteration$. 
 
-<!-- TODO: mv this sentence to the Overview? -->
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->

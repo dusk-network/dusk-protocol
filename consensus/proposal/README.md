@@ -109,7 +109,7 @@ It is called by [*ProposalStep*][props], which will broadcast the returned block
 
 $\textit{GenerateBlock}(R,I)$
 1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
-2. $State_R =$ [*ExecuteStateTransition*][xt]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+2. $State_R =$ [*ExecuteStateTransition*][est]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
 3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`Seed_R = Sign_{BLS}(sk_\mathcal{N}, Seed_{R-1})`$
 5. $`\mathsf{H}_{\mathsf{B}^c_{R,I}} = (V,R,\tau_{now},BlockGas,I,\eta_{\mathsf{B}_{R-1}},Seed_R,pk_\mathcal{N},$
@@ -169,7 +169,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
 
 <!-- TODO: Add ExecuteTransactions -->
-[xt]: https://github.com/dusk-network/dusk-protocol/tree/main/
+[est]: https://github.com/dusk-network/dusk-protocol/tree/main/
 
 <!-- Messages -->
 [ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures

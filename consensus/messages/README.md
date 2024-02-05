@@ -1,4 +1,3 @@
-<!-- TODO: mv Verify message functions here -->
 # Protocol Messages
 This section describes the network messages exchanged by nodes to participate in the SA consensus protocol.
 
