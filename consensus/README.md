@@ -124,10 +124,10 @@ $\textit{StoreElapsedTime}(Step, \tau_{Elapsed})$
 This procedure adjusts the first-iteration timeout for step $Step$ based on the stored elapsed time values.
 The new timeout is the rounded-up average value of the stored elapsed times.
 
-***Parameters***
+**Parameters**
 - $Step$: the step name
 
-***Procedure***
+**Procedure**
 
 $\textit{AdjustBaseTimeout}(Step):$
 1. $\texttt{if } (|ElapsedTimes_{Step}| = 0):$
@@ -139,10 +139,10 @@ $\textit{AdjustBaseTimeout}(Step):$
 #### *IncreaseTimeout*
 This procedure increases a step timeout by $TimeoutIncrease$ seconds up to $MaxStepTimeout$.
 
-***Parameters***
+**Parameters**
 - $Step$: the step timeout
 
-***Procedure***
+**Procedure**
 
 $\textit{IncreaseTimeout}(Step):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
@@ -242,7 +242,7 @@ Then, it probes the network to check if it is in sync or not with the main chain
 
 When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages. 
 
-***Algorithm***
+**Algorithm**
 
 1. Load local state $S$
 2. If there is no saved state
@@ -254,7 +254,7 @@ When the node is synchronized, it starts [*SALoop*][sal] to execute the consensu
 4. Start SA loop ([*SALoop*][sal])
 5. Start Block message handler ([*HandleBlock*][hb])
 
-***Procedure***
+**Procedure**
 
 $\textit{SAInit}():$
 1. $S =$ *LoadState*$()$
@@ -273,13 +273,13 @@ $\textit{SAInit}():$
 This procedure executes an infinite loop of consensus rounds ([*SARound*][sar]). 
 It is initially started by [*SAInit*][init] but it can be stopped and restarted due to [fallback][fal] or [synchronization][syn].
 
-***Algorithm***
+**Algorithm**
 
 1. Loop:
    1. Set $Round$ to $Tip$'s height plus one
    2. Execute Round $Round$ to produce winning block $\mathsf{B}^w$
 
-***Procedure***
+**Procedure**
 
 $\textit{SALoop}():$
 1. $\texttt{loop}:$
@@ -293,7 +293,7 @@ This procedure executes a single consensus round. First, it initializes the [*Ro
 If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a `Quorum` message, it is accepted to the [local chain][lc] and the round ends. 
 If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
 
-***Algorithm***
+**Algorithm**
 
 1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
 2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
@@ -313,7 +313,7 @@ If, for any reason, the round ends without a winning block, the consensus is dee
       1. Produce an Emergency Block
    2. Otherwise, stop the SA loop (and wait for some block to be received)
 
-***Procedure***
+**Procedure**
 
 $\textit{SARound}():$
 1. $\texttt{set }$:
@@ -343,7 +343,7 @@ The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; thi
 
 If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
 
-***Algorithm***
+**Algorithm**
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
@@ -357,7 +357,7 @@ If a quorum was reached in both Validation and Ratification, a `Quorum` message 
    5. If the Ratification result is $Fail$
       1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
 
-***Procedure***
+**Procedure**
 $\textit{SAIteration}(R, I):$
 1. $\mathsf{B}^c =$ [*ProposalStep*][props]$(R, I)$
 2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
@@ -388,10 +388,10 @@ $\textit{SAIteration}(R, I):$
 ### *GetQuorum*
 This procedure returns the quorum target depending on the vote $v$
 
-***Parameters***
+**Parameters**
 - $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
 
-***Procedure***
+**Procedure**
 
 $\textit{GetQuorum}(v):$
 - $\texttt{if } (v = Valid): \texttt{output } Supermajority$
@@ -400,11 +400,11 @@ $\textit{GetQuorum}(v):$
 ### *GetStepNum*
 This procedure returns the absolute step number within the round. It is used for the [*DS*][ds] procedure.
 
-***Parameters***
+**Parameters**
 - $I$: the iteration number
 - $StepNum$: the relative step number ($PropStep$, $ValStep$, $RatStep$)
 
-***Procedure***
+**Procedure**
 
 $\textit{GetStepNum}(I, Step):$
 - $\texttt{output } I \times + StepNum$ 

@@ -107,10 +107,10 @@ Note that this mechanism assumes that a block being finalized by the Rolling Fin
 #### *GetBlockState*
 The block state is computed according to the [Finality][fin] rules.
 
-***Parameters***
+**Parameters**
 - $\mathsf{B}$: the block being accepted to the chain
 
-***Algorithm***
+**Algorithm**
 1. If all failed iterations have a [Failed Attestation][atts]:
    1. Set $cstate$ to "Attested"
    2. If $\mathsf{B}$'s parent is Final
@@ -118,7 +118,7 @@ The block state is computed according to the [Finality][fin] rules.
 2. Otherwise, set $cstate$ to "Accepted"
 3. Output $cstate$
 
-***Procedure***
+**Procedure**
 
 $\textit{GetBlockState}(\mathsf{B}):$
 - $\texttt{set } h = \mathsf{H_B}.Height$
@@ -134,7 +134,7 @@ $\textit{GetBlockState}(\mathsf{B}):$
 #### *CheckRollingFinality*
 This procedure checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
 
-***Procedure***
+**Procedure**
 $\textit{CheckRollingFinality}():$
 1. $rf =$ *HasRollingFinality*$()$
 2. $\texttt{if } (rf = true) :$
@@ -143,7 +143,7 @@ $\textit{CheckRollingFinality}():$
 #### *HasRollingFinality*
 This procedure outputs true if the last $RollingFinality$ are all Attested and false otherwise.
 
-***Procedure***
+**Procedure**
 $\textit{HasRollingFinality}():$
 - $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
 1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
@@ -166,11 +166,11 @@ This procedure verifies a block is a valid successor of another block $\mathsf{B
 
 If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
 
-***Parameters***
+**Parameters**
 - $\mathsf{B}$: the block to verify
 - $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
 
-***Algorithm***
+**Algorithm**
 1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
 2. If header's not valid, output $false$
 3. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
@@ -184,7 +184,7 @@ If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIte
    2. If $\mathsf{A}_i$ is not valid, output $false$
 9.  If all verifications succeeded, output $true$
 
-***Procedure***
+**Procedure**
 $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
   - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
@@ -211,11 +211,11 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 #### *VerifyBlockHeader*
 This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
-***Parameters***
+**Parameters**
 - $\mathsf{B}$: block to verify
 - $\mathsf{B}^p$: previous block
 
-***Algorithm***
+**Algorithm**
 1. Check $Version$ is $0$
 2. Check $Hash$ is the header's hash
 3. Check $Height$ is $\mathsf{B}^p$'s height plus 1
@@ -227,7 +227,7 @@ This procedure returns $true$ if all block header fields are valid with respect 
   1. Output $false$
 - Otherwise, output $true$
 
-***Procedure***
+**Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
 - $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions), BlockGas, pk_{G_\mathsf{B}})$
@@ -247,11 +247,11 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
 #### *VerifyAttestation*
 This procedure checks a block's Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures against the respective committees.
 
-***Parameters***
+**Parameters**
 - $\mathsf{A}$: the attestation to verify
 - $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
 
-***Algorithm***
+**Algorithm**
 1. Check both Validation and Ratification votes are present
 2. Verify Validation votes
 3. If votes are not valid, output $false$
@@ -259,7 +259,7 @@ This procedure checks a block's Attestation by verifying the [Validation][val] a
 5. If votes are not valid, output $false$
 6. Output $true$
 
-***Procedure***
+**Procedure**
 
 $\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
 - $\texttt{set}:$
@@ -281,20 +281,20 @@ $\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
 #### *VerifyVotes*
 This procedure checks the aggregated votes are valid and reach the target quorum.
 
-***Parameters***
+**Parameters**
 - $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
 - $\upsilon$: the [signature value][ms]
 - $Q$: the target quorum
 - $\mathcal{C}$: the step committee
 
-***Algorithm***
+**Algorithm**
 1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{SV}.BitSet$
 2. If credits in $C^{\boldsymbol{bs}}$ are less than the target quorum $Q$
    1. Output $false$
 3. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
 4. Verify aggregated signature over $\upsilon$
 
-***Procedure***
+**Procedure**
 
 $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 - $\texttt{set}:$
@@ -327,10 +327,10 @@ We here define block-management procedures:
 This procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.
 The procedure acts depending on the block's height: if the block has the same height as a local chain block, but it has lower $Iteration$, it starts the [*Fallback*][fal] procedure; if the block's height is more than $Tip.Height+1$, it executes the [*SyncBlock*][sb] is executed to start or continue the synchronization process.
 
-***Parameters*** 
+**Parameters** 
 - $\mathsf{M}^{Block}$: the incoming $\mathsf{Block}$ message
 
-***Algorithm***
+**Algorithm**
 1. Loop:
    1. If a $\mathsf{Block}$ message $\mathsf{M^B}$:
       - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
@@ -349,7 +349,7 @@ The procedure acts depending on the block's height: if the block has the same he
                3. Accept $\mathsf{B}$ to the chain
                4. Restart the consensus loop [*SALoop*][sl]
 
-***Procedure***
+**Procedure**
 
 $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
@@ -378,11 +378,11 @@ $\textit{HandleBlock}():$
 This procedure manages `Quorum` messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
 The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
-***Parameters***
+**Parameters**
 - [SA Environment][cenv]
 - $R$: round number
 
-***Algorithm***
+**Algorithm**
 1. Loop:
    1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
       1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
@@ -396,7 +396,7 @@ The corresponding candidate block is then marked as the winning block of the rou
             1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
          4. Stop [*SAIteration*][sai]
 
-***Procedure***
+**Procedure**
 <!-- TODO: define candidate pool/db and functions, eg FetchCandidate -->
 $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
@@ -424,15 +424,15 @@ $\textit{HandleQuorum}( R ):$
 <!-- TODO Move to consensus? -->
 This procedure adds an attestation to a candidate block and sets the winning block variable $\mathsf{B}^w$.
 
-***Parameters***
+**Parameters**
 - $\mathsf{B}$: candidate block
 - $\mathsf{A}$: block attestation
 
-***Algorithm***
+**Algorithm**
 1. Add attestation $\mathsf{A}$ to candidate block $\mathsf{B}$
 2. Set winning block $\mathsf{B}^w$ to $\mathsf{B}$
 
-***Procedure***
+**Procedure**
 
 $\textit{MakeWinning}(\mathsf{B}, \mathsf{A}):$
 1. $\mathsf{B}.Attestation = \mathsf{A}$
@@ -442,10 +442,10 @@ $\textit{MakeWinning}(\mathsf{B}, \mathsf{A}):$
 #### *AcceptBlock*
 This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates the local state accordingly by executing all transactions in the block and setting the $Provisioners$ state variable. 
 
-***Parameters***
+**Parameters**
 - $\mathsf{B}$: the block to accept as the new chain tip
 
-***Algorithm***
+**Algorithm**
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
 2. Update $State$ by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
 3. Update the $Provisioners$ set
@@ -454,7 +454,7 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 6. Add $(Tip, s)$ to the local chain
 7. Check Rolling Finality
 
-***Procedure***
+**Procedure**
 
 $\textit{AcceptBlock}(\mathsf{B}):$
 1. $\texttt{set }$:
@@ -481,10 +481,10 @@ This event indicates that a quorum was reached on a previous candidate and that 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
 Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
 
-***Parameters***
+**Parameters**
 - $\eta$: the hash of the block to which to revert
 
-***Algorithm***
+**Algorithm**
 1. For each block $`\mathsf{B}_i`$ between $Tip$ and $\mathsf{B}_\eta$
    1. Push $\mathsf{B}_i$'s transactions back to mempool
    2. Delete $\mathsf{B}_i$ from the chain
@@ -493,7 +493,7 @@ Deleted blocks are blacklisted (because they belong to a lower-priority fork) an
 3. Revert VM state to $\mathsf{B}_\eta$'s state
 4. Update $Provisioners$
 
-***Procedure***
+**Procedure**
 
 $\textit{Fallback}():$
 1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height :$
@@ -558,10 +558,10 @@ When receiving blocks with higher height than the $Tip$'s successor, they are st
 
 If an invalid $Tip$'s successor is received by a sync peer while running the protocol, the protocol is ended.
 
-***Parameters***
+**Parameters**
 - $\mathsf{M^B} = (\mathsf{B}, \mathcal{S})$: received `Block` message
 
-***Algorithm***
+**Algorithm**
 <!-- B > Tip+1 -->
 1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
    1. If $BlockPool$ has less than $MaxSyncBlocks$
@@ -591,7 +591,7 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
      1. If $\mathcal{S}$ is $syncPeer$
          1. Stop syncing ($inSync = true$)
 
-***Procedure***
+**Procedure**
 
 $\textit{SyncBlock}(\mathsf{M^B}):$
 - $\texttt{set}:$
@@ -632,12 +632,12 @@ This procedure requests to a peer the successor of $Tip$ to ensure it knows it b
 
 A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with sync. $syncPeer$ has maximum $PreSyncTimeout$ to send the first block, and $SyncTimeout$ time to send the following ones. With each valid block the timeout is reset (that is, the peer has $SyncTimeout$ time to send each block).
 
-***Parameters***
+**Parameters**
 
 - $\mathsf{B}$: the block received
 - $\mathcal{S}$: sender peer
  
-***Algorithm***
+**Algorithm**
 
 1. Set $syncFrom$ to $Tip$
 2. Set $syncTo$ to $\mathsf{B}$'s height or $Tip + MaxSyncBlocks$
@@ -646,7 +646,7 @@ A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with s
 5. Start the sync timeout $\tau_{Sync}$
 6. Start the sync timeout handler ([*HandleSyncTimeout*][hst])
 
-***Procedure***
+**Procedure**
 
 $\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
 1. $syncFrom = Tip.Height$
@@ -661,11 +661,11 @@ This procedure initiates the synchronization protocol with $syncPeer$ on the bas
 While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 
 
-***Algorithm***
+**Algorithm**
 1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
 2. Set as "syncing" ($inSync = false$)
 
-***Procedure***
+**Procedure**
 
 $\textit{StartSync}():$
 1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
@@ -677,7 +677,7 @@ If the timeout expires while synchronizing, the synchronization is ended and the
 
 Only a single synchronization process is done at a time, so $\tau_{Sync}$ is unique.
 
-***Procedure***
+**Procedure**
 $\textit{HandleSyncTimeout}():$
 - $\texttt{loop}:$
 1. $\texttt{if }(inSync = false):$
@@ -697,7 +697,7 @@ $\textit{HandleSyncTimeout}():$
 #### *AcceptPoolBlocks*
 This procedure accepts all successive blocks in $BlockPool$ from height $Tip.Height+1$ until no successor is available. It is called after receiving a valid block at height $Tip.Height+1$ (which updates the $Tip$) to accept previously-collected blocks.
 
-***Algorithm***
+**Algorithm**
 1. Get all successive blocks in $BlockPool$ starting from $Tip$'s successor
 2. For each retrieved block $\mathsf{B}_i$:
    1. Verify $\mathsf{B}_i$ ([*VerifyBlock*][vb])
@@ -705,7 +705,7 @@ This procedure accepts all successive blocks in $BlockPool$ from height $Tip.Hei
    2. Accept $\mathsf{B}_i$ to the chain
    3. Reset sync timeout $\tau_{Sync}$
 
-***Procedure***
+**Procedure**
 
 $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$

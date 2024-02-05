@@ -192,17 +192,17 @@ Note that a 64-bit bitset is enough to represent the maximum number of members i
 #### *ExtractGenerator*
 This procedure extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
-***Parameters***
+**Parameters**
 - $R$: round number
 - $I$: iteration number
 
-***Algorithm***
+**Algorithm**
 
 1. Get absolute step number $S$ for Proposal at iteration $I$
 2. Execute Deterministic Sortition [*DS*][dsp] to extract the generator $\mathcal{G}$
 3. Output $\mathcal{G}$
 
-***Procedure***
+**Procedure**
 $\textit{ExtractGenerator}(R,I)$
 1. $S =$ [*GetStepNum*][gsn]$(I, PropStep)$
 2. $\mathcal{G}=$ [*DS*][dsp]$(R, S, 1, Provisioners)$
@@ -214,12 +214,12 @@ This procedure extracts the voting committee for the [Validation][val] or the [R
 
 The procedure excludes the block generator $\mathcal{G}$ of the same iteration to prevent it from being part of the committee. In other words, a candidate generator cannot vote over its own block.
 
-***Parameters***
+**Parameters**
 - $R$: round number
 - $I$: iteration number
 - $StepNum$: the step number ($ValStep$ or $RatStep$)
 
-***Algorithm***
+**Algorithm**
 
 1. Get absolute step number $S$ for $StepNum$ at iteration $I$
 2. Extract iteration generator $\mathcal{G}$ for iteration $I$
@@ -227,7 +227,7 @@ The procedure excludes the block generator $\mathcal{G}$ of the same iteration t
 4. Execute Deterministic Sortition [*DS*][dsp] to extract the committee $\mathcal{C}$
 5. Output $\mathcal{C}$
 
-***Procedure***
+**Procedure**
 $\textit{ExtractCommittee}(R,I, StepNum)$
 1. $S =$ [*GetStepNum*][gsn]$(I, StepNum)$
 2. $\mathcal{G}_{R,I} =$ [*ExtractGenerator*][eg]$(R,I)$
@@ -244,12 +244,12 @@ $\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs
 #### *SetBit*
 This procedure sets a committee member's bit in a subcommittee bitset.
 
-***Parameters***
+**Parameters**
 - $\boldsymbol{bs}$: the subcommittee bitset
 - $\mathcal{C}$: the committee
 - $M$: the public key of the committee member
 
-***Procedure***
+**Procedure**
 
  $\textit{SetBit}(\boldsymbol{bs}, \mathcal{C}, M)$
  - $\boldsymbol{bs}[i_M^\mathcal{C}] = 1$
@@ -267,11 +267,11 @@ $\textit{SubCommittee}(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\d
 #### *CountCredits*
 This procedure takes a committee $\mathcal{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathcal{C}$.
 
-***Parameters***
+**Parameters**
 - $\mathcal{C}$: a voting committee
 - $\boldsymbol{bs}$: a subcommittee bitset 
 
-***Procedure***
+**Procedure**
 
 $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 1. $\texttt{for } i=0 \dots CommitteeCredits{-}1 :$
