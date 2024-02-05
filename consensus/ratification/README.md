@@ -34,7 +34,7 @@ The output, together with the Validation output, will be used to determine the o
 ### Procedures
 
 #### *RatificationStep*
-*RatificationStep* takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $`\mathsf{SR}^R=(v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})`$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
+This procedure takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $`\mathsf{SR}^R=(v^R, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^R})`$, where $v^R$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^R}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 

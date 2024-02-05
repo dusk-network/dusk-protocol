@@ -30,7 +30,7 @@ The step output will be used as the input for the [Ratification][rat] step.
 ### Procedures
 
 #### *ValidationStep*
-*ValidationStep* takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^V, \mathsf{SV}_{v^V})`$, where $v^V$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^V}$ is the aggregated vote of the quorum committee.
+This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^V, \mathsf{SV}_{v^V})`$, where $v^V$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^V}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 

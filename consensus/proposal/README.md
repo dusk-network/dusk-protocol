@@ -18,7 +18,7 @@ If it was generated or received from the network, the step returns the candidate
 ## Procedures
 
 ### *ProposalStep*
-*ProposalStep* takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
+This procedure takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
 It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
 In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Proposal}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
@@ -88,7 +88,7 @@ $\textit{ProposalStep}(R, I)$:
 <p><br></p>
 
 ### *GenerateBlock*
-*GenerateBlock* creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
+This procedure creates a candidate block for round $R$ and iteration $I$ by selecting a set of transactions from the Mempool and executing them to obtain the new state $S$.
 It is called by [*ProposalStep*][props], which will broadcast the returned block in a `Candidate` message.
 
 ***Parameters***
@@ -139,7 +139,7 @@ $\textit{GenerateBlock}(R,I)$
 <p><br></p>
 
 ### *SelectTransactions*
-*SelectTransactions* selects a set of transactions from the Mempool to be included in a new block.
+This procedure selects a set of transactions from the Mempool to be included in a new block.
 
 The criteria used for the selection is arbitrary and is left to the Block Generator.
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.

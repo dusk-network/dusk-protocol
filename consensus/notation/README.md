@@ -7,7 +7,7 @@ In this documentation we will use the following notation:
   - consensus parameters, state variables, and object fields, with whole words, (e.g. the $Epoch$ parameter)
 - $\boldsymbol{Bold}$ is used for arrays (e.g. a bitset $\boldsymbol{bs}$)
 - $\mathcal{Calligrafic}$ is used for actors (e.g. a provisioner $\mathcal{P}$)
-- Markdown's `code` format is used for structure reference in texts (e.g., the `Block` structure), while $\mathsf{Sans Serif}$ is used for structures in pseudocode (e.g., a $\mathsf{Candidate}$ message)
+- Markdown's `code` format is used for structure reference in texts (e.g., the `Block` structure), while $\mathsf{Sans Serif}$ is used for structures in pseudocode (e.g., a $\mathsf{Candidate}$ message)[^1]
 - *Italic* is used for function names (e.g. the *Hash* function)
 
 Moreover, we will use the following symbols:
@@ -34,3 +34,7 @@ Some procedures (typically containing a loop) are executed concurrently (e.g., a
 Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ if $P$ is currently running, and $false$ otherwise.
 
 When in a $\texttt{loop}$ we use $\texttt{break}$ to stop the execution and move on to the next iteration.
+
+<!----------------------- FOOTNOTES ----------------------->
+
+[^1]: This duality is mostly due to limitations in Markdown's formatting

@@ -157,7 +157,7 @@ Note that a 64-bit bitset is enough to represent the maximum number of members i
 ### Procedures
 
 #### *ExtractGenerator*
-*ExtractGenerator* extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+This procedure extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
 ***Parameters***
 - $R$: round number
@@ -177,7 +177,7 @@ $\textit{ExtractGenerator}(R,I)$
 
 
 #### *ExtractCommittee*
-*ExtractGenerator* extracts the voting committee for the [Validation][val] or the [Ratification][rat] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
+This procedure extracts the voting committee for the [Validation][val] or the [Ratification][rat] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
 The procedure excludes the block generator $\mathcal{G}$ of the same iteration to prevent it from being part of the committee. In other words, a candidate generator cannot vote over its own block.
 
@@ -204,12 +204,12 @@ $\textit{ExtractCommittee}(R,I, StepNum)$
 
 
 #### *BitSet*
-*BitSet* takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
+This procedure takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
 
 $\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs}_{\boldsymbol{P}}^C$
 
 #### *SetBit*
-*SetBit* sets a committee member's bit in a subcommittee bitset.
+This procedure sets a committee member's bit in a subcommittee bitset.
 
 ***Parameters***
 - $\boldsymbol{bs}$: the subcommittee bitset
@@ -222,17 +222,17 @@ $\textit{BitSet}(C, \boldsymbol{P}=[pk_1,\dots,pk_n]) \rightarrow \boldsymbol{bs
  - $\boldsymbol{bs}[i_M^\mathcal{C}] = 1$
 
 #### *CountSetBits*
-*CountSetBits* returns the amount of set bits in a bitset.
+This procedure returns the amount of set bits in a bitset.
 
 $\textit{CountSetBits}(\boldsymbol{bs}) \rightarrow setbits$
 
 #### *SubCommittee*
-$SubCommittee$ takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
+This procedure takes a committee $C$ and a bitset $\boldsymbol{bs}^C$ and outputs the corresponding subcommittee.
 
-$SubCommittee(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
+$\textit{SubCommittee}(C, \boldsymbol{bs}^C) \rightarrow \boldsymbol{P}=[pk_1,\dots,pk_n]$
 
 #### *CountCredits*
-*CountCredits* takes a committee $\mathcal{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathcal{C}$.
+This procedure takes a committee $\mathcal{C}$ and a bitset $\boldsymbol{bs}$ and returns the cumulative amount of credits belonging to members of the subcommittee with respect to $\mathcal{C}$.
 
 ***Parameters***
 - $\mathcal{C}$: a voting committee
@@ -292,7 +292,7 @@ $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 ### Procedures
 #### *AggregateVote*
-*AggregateVote* adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
+This procedure adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
 
 **Parameters**
 - $\mathsf{SV}$: the $\mathsf{StepVotes}$ structure with the aggregated votes
