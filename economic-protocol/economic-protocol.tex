@@ -64,12 +64,10 @@
 	It consists of levying service fees, offsetting gas costs for users,
 	and optimizing gas payments for improved profitability.
 	Essentially, the economic model allows service providers to be
-	productized and for profit.
+	productized and generate revenue.
 
     \section*{Terminology}\label{sec:terminology}
-    Throughout this document, we use the following terms.
-    \mbi{I added two terms that were used across the doc: \transfercontract,
-    \blockgenerator.}
+    Throughout this document, we use the following terms:
     \begin{itemize}
         \item \contract: smart contract method activated by the user
               through a transaction.
@@ -78,17 +76,12 @@
         seems to have two different meanings: (1) a method of an smart contract
         and (2) a smart contract. I think it is best to call the functions
         of a smart contract just functions or \textbf{methods}.}
-        \mbi{Following my above comment, when talking about \icc, by this
-        definition, an smart contract with two different methods where one
-        calls the other, would also be considered an \icc, although there is
-        only one smart contract involved. Terminology seems counterintuitive to me.}
         \item \user: party initiating the \contract transaction.
         \item \gas: unit measure of computational resource.
-              In this scope, \gaslimit indicates the maximum amount of
-              resources allocated by a user or a contract to perform a
-              computation, \gasconsumed measures incurred costs of
-              computation executed, \gasunspent is the difference
-              between \gaslimit and \gasconsumed.
+        \item \gaslimit: the maximum amount of resources allocated by a user or 
+              a contract to perform a computation. 
+        \item \gasconsumed: the cost incurred in executing a computation.
+        \item \gasunspent: the difference between \gaslimit and \gasconsumed.
               If a computation requires more resources than those allocated,
               then we incur an \insufficientgas error.
         \item \gasprice: amount of \dusk that a sender is
@@ -101,7 +94,7 @@
               transaction priority.
         \item \emphp: percentage of \gasconsumed paid to the contracts.
               The remaining percentage is paid to the \blockgenerator.
-              The value of this percentage is estimated to be between 20\% and
+              The optimal value of \emphp is estimated to be between 20\% and
               40\%, pending threat model analysis.
         \item \icc (inter-contract call): interaction between
               multiple contracts. ICCs cannot be called directly. As such, the
