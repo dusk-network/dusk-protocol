@@ -2,7 +2,6 @@
 This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
 ### ToC
-  - [Overview](#overview)
   - [Finality](#finality)
     - [Consensus State](#consensus-state)
     - [Last Final Block](#last-final-block)
@@ -19,7 +18,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*VerifyBlockHeader*](#verifyblockheader)
       - [*VerifyAttestation*](#verifyattestation)
       - [*VerifyVotes*](#verifyvotes)
-  - [Chain Management](#chain-management-1)
+  - [Block Handling](#block-handling)
     - [Environment](#environment-1)
     - [Procedures](#procedures-2)
       - [*HandleBlock*](#handleblock)
@@ -36,19 +35,6 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
-
-## Overview
-<!-- TODO: Add Finality/Block management -->
-At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
-In the latter case, a block is received from the network, which has already reached consensus (proved by the block [Attestation][atts]). 
-
-There are two main reasons a network block is not in the chain:
- 
- - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
-
- - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
-
-Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
 ## Finality
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
@@ -157,7 +143,6 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 
 ## Verification
-<!-- TODO: mv to Blockchain or Basics ? -->
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
 ### Procedures
@@ -306,13 +291,18 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 
-## Chain Management
-We here define block-management procedures: 
-  - [*HandleBlock*][hb]: handle `Block` messages from the network
-  - [*HandleQuorum*][hq]: handle `Quorum` messages from the network
-  - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
-  - [*AcceptBlock*][ab]: accept a block as the new tip
-  - [*Fallback*][fal]: reverts the chain to a specific block
+## Block Handling
+At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
+In the latter case, a block is received from the network, which has already reached consensus (proved by the block [Attestation][atts]). 
+
+There are two main reasons a network block is not in the chain:
+ 
+ - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
+
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+
+Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
+
 
 ### Environment
 
@@ -322,6 +312,12 @@ We here define block-management procedures:
 
 
 ### Procedures
+We define the following block-handling procedures: 
+  - [*HandleBlock*][hb]: handle `Block` messages from the network
+  - [*HandleQuorum*][hq]: handle `Quorum` messages from the network
+  - [*MakeWinning*][mw]: sets a candidate block as the winning block of the round
+  - [*AcceptBlock*][ab]: accept a block as the new tip
+  - [*Fallback*][fal]: reverts the chain to a specific block
 
 #### *HandleBlock*
 This procedure processes a full block received from the network and decides whether to trigger the synchronization or fallback procedures.

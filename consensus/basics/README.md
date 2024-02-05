@@ -340,8 +340,6 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 2. $\mathsf{SV}.Voters =$ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathcal{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
 
-<!-- TODO: Blockchain: Block/Transaction structures here ? -->
-
 
 <!----------------------- FOOTNOTES ----------------------->
 
