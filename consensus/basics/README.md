@@ -253,7 +253,7 @@ We use the terms *Valid Attestation* and *Failed Attestation* to refer to the tw
 
 ### Structures
 #### `Attestation`
-The `Attestation` structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
+This structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
 
 
 | Field          | Type              | Size     | Description                               |
@@ -264,7 +264,7 @@ The `Attestation` structure contains the aggregated votes of the [Validation][va
 The structure has a total size of 112 bytes.
 
 #### `StepVotes`
-The `StepVotes` structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
+This structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
 Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers.
 To specify the votes from which committee members included in the aggregated signature, a [sub-committee bitset][bs] is used.
 
@@ -278,7 +278,7 @@ The structure is defined as follows:
 The structure has a total size of 56 bytes.
 
 #### `StepResult`
-The `StepResult` structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the `StepVotes` with the aggregated votes producing $Vote$.
+This structure contains the result of a [Validation][val] or [Ratification][rat] step, that is the step result $Vote$ and the `StepVotes` with the aggregated votes producing $Vote$.
 
 The structure is defined as follows:
 
