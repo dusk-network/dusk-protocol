@@ -6,7 +6,7 @@ Provisioners participate in turns to the production and validation of each new b
 
 Before reading, please make sure you are familiar with the system [Basics][bas] and the document [Notation][not].
 
-### ToC
+**ToC**
   - [Overview](#overview)
   - [Step Timeouts](#step-timeouts)
     - [Adaptive Timeout](#adaptive-timeout)

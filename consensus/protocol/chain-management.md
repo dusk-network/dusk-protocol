@@ -1,7 +1,7 @@
 # Chain Management
 This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
-### ToC
+**ToC**
   - [Block Verification](#block-verification)
     - [Procedures](#procedures)
       - [*VerifyBlock*](#verifyblock)

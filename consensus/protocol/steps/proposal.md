@@ -1,7 +1,7 @@
  # Proposal
 *Proposal* is the first step in an [*SA iteration*][sai]. In this step, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, other provisioners wait for the candidate block produced by the generator.
 
-#### ToC
+**ToC**
   - [Overview](#overview)
   - [Procedures](#procedures)
     - [*ProposalStep*](#proposalstep)

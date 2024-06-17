@@ -1,7 +1,7 @@
 # Protocol Messages
 This section describes the network messages exchanged by nodes to participate in the SA consensus protocol.
 
-## ToC
+**ToC**
   - [Consensus Messages](#consensus-messages)
       - [Sender](#sender)
       - [`ConsensusInfo`](#consensusinfo)

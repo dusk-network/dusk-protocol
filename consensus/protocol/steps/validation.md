@@ -5,7 +5,7 @@ Members of the extracted committee verify the candidate's validity and then cast
 
 The main purpose of the Validation step is to agree on whether a candidate block was produced and if it was valid against its parent block.
 
-### ToC
+**ToC**
   - [Overview](#overview)
     - [Procedures](#procedures)
       - [*ValidationStep*](#validationstep)
