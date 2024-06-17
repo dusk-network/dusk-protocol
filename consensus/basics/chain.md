@@ -1,14 +1,30 @@
 # Blockchain
-This section describes the formal definition of the Dusk chain, block, and transaction structures.
+This section formally describes the the Dusk blockchain and block finality.
 
-#### ToC
+**ToC**
+  - [Blocks](#blocks)
+      - [Candidate Block](#candidate-block)
+      - [Full block](#full-block)
+    - [Structures](#structures)
+      - [`Block` Structure](#block-structure)
+      - [`BlockHeader` Structure](#blockheader-structure)
   - [**Chain**](#chain)
-  - [`Block`](#block)
-  - [`BlockHeader`](#blockheader)
-  - [`Transaction`](#transaction)
+      - [Main Chain](#main-chain)
+      - [Local Chain](#local-chain)
+  - [Finality](#finality)
+    - [Consensus State](#consensus-state)
+    - [Last Final Block](#last-final-block)
+    - [Rolling Finality](#rolling-finality)
+    - [Environment](#environment)
+    - [Procedures](#procedures)
+      - [*GetBlockState*](#getblockstate)
+      - [*CheckRollingFinality*](#checkrollingfinality)
+      - [*HasRollingFinality*](#hasrollingfinality)
+      - [*MakeChainFinal*](#makechainfinal)
 
 
-## Candidate Block
+## Blocks
+#### Candidate Block
 A candidate block is the block generated in the [Proposal][prop] step by the provisioner extracted as block generator. This is the block on which other provisioners will have to reach an agreement. If an agreement is not reached by the end of the iteration, a new candidate block will be produced and a new iteration will start.
 
 Therefore, for each iteration, only one (valid) candidate block can be produced[^1]. To reflect this, we denote a candidate block with $\mathsf{B}^c_{R,I}$, where $R$ is the consensus round, and $i$ is the consensus iteration. 
@@ -16,31 +32,18 @@ Note that we simplify this notation to simply $\mathsf{B}^c$ when this does not 
 
 A candidate block that reaches an agreement is called a *winning* block.
 
+#### Full block
+A full block is a candidate block that reached a quorum agreement on both the [Validation][val] and [Ratification][rat]. It is essentially a candidate block with an [attestation][atts] of $Valid$ quorum.
 
+### Structures
+#### `Block` Structure
 
-## **Chain**
-The local copy of the blockchain stored by a node is defined as a vector of [blocks](#block) along with their *consensus status* label (see [Block Finality][fin]):
+| Field          | Type                | Size                | Description        |
+|----------------|---------------------|---------------------|--------------------|
+| $Header$       | [`BlockHeader`][bh] | 522 Bytes - 28.8 KB | Block header       |
+| $Transactions$ | `Transaction`[ ]    | variable            | Block transactions |
 
-$$\textbf{Chain}: [(\mathsf{B}_0, Status_0), \text{ }\dots, (\mathsf{B}_n, Status_n)],$$
-
-where $\mathsf{B}_0$ is the genesis block and $Status_0 = Final$ (that is, the genesis block is final by definition).
-
-**Notation**
- - We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
- - We use $\mathsf{B} \in \textbf{Chain}$ to say a block $\mathsf{B}$ in our local chain
- - We use $\eta_\mathsf{B} \in \textbf{Chain}$ to say a block with hash $\eta_\mathsf{B}$ in our local chain
- - We use $\mathsf{B}_\eta$ to indicate the block with hash $\eta$.
-
-<!-- TODO: define Genesis and Tip here; review use of Tip in procedures (we can use Chain instead) -->
-
-## `Block`
-
-| Field            | Type                   | Size      | Description        |
-|------------------|------------------------|-----------|--------------------|
-| $Header$         | [`BlockHeader`][bh]    | 112 bytes | Block header       |
-| $Transactions$   | [`Transaction`][tx][ ] | variable  | Block transactions |
-
-## `BlockHeader`
+#### `BlockHeader` Structure
 
 | Field                  | Type                    | Size       | Description                                         |
 |------------------------|-------------------------|------------|-----------------------------------------------------|
@@ -71,15 +74,36 @@ We define the *hash* of a block $\mathsf{B}$ as:
 $\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
 $\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
-We also define the function $\eta(\mathsf{B})$ which computes $\eta_\mathsf{B}$ over a block $\mathsf{B}$.
+We also define the function $\eta(\mathsf{B})$ that given a block $\mathsf{B}$ outputs $\eta_\mathsf{B}$.
 
-## `Transaction`
+Finally, we use $\mathsf{B}_\eta$ to indicate the block with hash $\eta$.
 
-| Field     | Type             | Size      | Description         |
-|-----------|------------------|-----------|---------------------|
-| $Version$ | Unsigned Integer | 32 bits   | Transaction version |
-| $Type$    | Unsigned Integer | 32 bits   | Transaction type    |
-| $Payload$ | Byte[ ]          | variable  | Transaction payload |
+
+## **Chain**
+In each moment, it is possible that different nodes store a different version of the Dusk blockchain, which may vary in the extent of the chain (i.e., a difference in the height of last known block) or even composition (i.e., the last blocks are different, a case known as chain fork). For this reason, we distinguish between the chain on which the majority of the network agreed, referred to as the *main chain*, from the local version stored by a single node, referred to as the *local chain*.
+
+#### Main Chain
+The *main chain* is the most accepted sequence of blocks in the network. In particular, it is the chain containing the highest portion of the stakes. The main chain is not necessarily the longest one (a portion of provisioners might have independently produced more blocks) but it is the one that has the highest probability of moving forward.
+
+The concept if main chain is typically used when assessing the validity of the chain known by a network node. Specifically, it is used to determine whether a node's chain has fallen behind the rest of the network or if it is on a separate branch (a chain fork). However, it is important to note that no single source of truth for the main chain can exist, and nodes can only compare their chain to those of other nodes. Based on this comparison, nodes choose what "seems" to be the main chain (see [Chain Management][cm]).
+
+To help eliminate ambiguities and make node identify blocks that reached a definitive state, the concept of [*finality*][fin] is used. A block marked as *final* cannot be replaced and it is then permanently part of the main chain.
+
+<!-- TODO: Describe the Genesis Block and its contents -->
+
+#### Local Chain
+The *local chain* is the copy of the blockchain stored by a node, and is defined as a vector of [blocks](#block) along with their *consensus status* label indicating their status with respect to [finality][fin] rules:
+
+$$\textbf{Chain}: [(\mathsf{B}_{Genesis}, "Final"), \text{ }\dots, (\mathsf{B}_i, Status_i)], \dots ,$$
+
+where $\mathsf{B}_{Genesis}$ is the *Genesis Block*, $\mathsf{B}_i$ is the block at height $i$ and $Status_i$ is its consensus status.
+
+**Notation**
+ - We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
+ - We use $\mathsf{B} \in \textbf{Chain}$ to indicate that block $\mathsf{B}$ in the node's local chain.
+ - We use $\eta_\mathsf{B} \in \textbf{Chain}$ to indicate that a block with hash $\eta_\mathsf{B}$ in the node's local chain.
+
+Finally, we use $Tip$ to refer to the last block in the local chain.
 
 
 ## Finality
@@ -203,5 +227,6 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
 
 <!-- Chain Management -->
+[cm]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md
 [fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
 [cs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#consensus-state
