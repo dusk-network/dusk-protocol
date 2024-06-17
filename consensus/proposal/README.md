@@ -21,7 +21,7 @@ If it was generated or received from the network, the step returns the candidate
 This procedure takes in input the round $R$ and the iteration $I$, and outputs the *candidate block* $\mathsf{B}^c$, if it was generated or received, or $NIL$ otherwise.
 It is called by [*SAIteration*][sai], which will pass the result to [*ValidationStep*][val].
 
-In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Proposal}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
+In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Prop}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
 
 **Parameters** 
 - [SA Environment][env]
@@ -36,7 +36,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
    3. Broadcast $\mathsf{M}$
    4. Output $\mathsf{B}^c$
 3. Otherwise:
-   1. Start Proposal timeout $\tau_{Proposal}$
+   1. Start Proposal timeout $\tau_{Prop}$
    2. While timeout has not expired:
       1. If a $\mathsf{Candidate}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
          1. If $\mathsf{M}$'s signature is valid
@@ -69,7 +69,7 @@ $\textit{ProposalStep}(R, I)$:
    4. $\texttt{output } \mathsf{B}^c$
 3. $\texttt{else}:$
    1. $\tau_{Start} = \tau_{Now}$
-   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Proposal}) \texttt{ and } (I \lt EmergencyMode):$
+   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Prop}) \texttt{ and } (I \lt EmergencyMode):$
       1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M^C} \ne NIL):$
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
@@ -81,7 +81,7 @@ $\textit{ProposalStep}(R, I)$:
             1. [*Propagate*][mx]$(\mathsf{M^C})$
             2. [*StoreElapsedTime*][set]$(Proposal, \tau_{Now}-\tau_{Start})$
             3. $\texttt{output } \mathsf{B}^c$
-   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Proposal}):$
+   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Prop}):$
       1. [*IncreaseTimeout*][it]$(Proposal)$
       2. $\texttt{output } NIL$
 

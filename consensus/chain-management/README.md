@@ -328,7 +328,7 @@ The procedure acts depending on the block's height: if the block has the same he
 
 **Algorithm**
 1. Loop:
-   1. If a $\mathsf{Block}$ message $\mathsf{M^B}$:
+   1. If a $\mathsf{Block}$ message $\mathsf{M^B}$ is received:
       - Extract the block $\mathsf{B}$ and the message sender $\mathcal{S}$
       1. Check $\mathsf{B}$ hash is valid
       2. Check $\mathsf{B}$ is not blacklisted
@@ -562,24 +562,24 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
    2. If not synchronizing with any peer ($Syncing = false$):
       1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
 <!-- B = Tip+1 -->
-1. Otherwise, if $\mathsf{B}$'s height is the $Tip.Height + 1$:
+1. Otherwise, if $\mathsf{B}$'s height is $Tip.Height + 1$:
    1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
    2. If $\mathsf{B}$ is valid:
       1. Accept $\mathsf{B}$ to the chain
         <!-- Not syncing -->
       2. If not synchronizing with any peer ($Syncing = false$):
           1. If we pre-synced with $\mathcal{S}$ ($syncPeer = \mathcal{S}$)
-            1. Start synchronization process ([*StartSync*][ss])
+             1. Start synchronization process ([*StartSync*][ss])
           2. Otherwise:
-            1. Propagate $\mathsf{M^B}$
-            2. Restart [*SALoop*][sl]
+             1. Propagate $\mathsf{M^B}$
+             2. Restart [*SALoop*][sl]
       <!-- Syncing -->
       3. Otherwise (If synchronizing with a peer ($Syncing = true$)) :
           1. Reset sync timeout $\tau_{Sync}$
           2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
           3. If the new $Tip$ is $syncTo$
-            1. Stop syncing ($Syncing = false$)
-            2. Restart [*SALoop*][sl]
+             1. Stop syncing ($Syncing = false$)
+             2. Restart [*SALoop*][sl]
    3. Otherwise (if $\mathsf{B}$ is not valid):
      1. If $\mathcal{S}$ is $syncPeer$
          1. Stop syncing ($Syncing = false$)

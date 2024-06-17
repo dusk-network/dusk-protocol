@@ -72,9 +72,9 @@ Two mechanisms determine the timeout for a specific step execution:
 ### Design
 
 There are three timeouts, one for each step:
-- $\tau_{Proposal}$
-- $\tau_{Validation}$
-- $\tau_{Ratification}$
+- $\tau_{Prop}$, for $Proposal$
+- $\tau_{Val}$, for $Validation$
+- $\tau_{Rat}$, for $Ratification$
 
 When a new round begins, each step's base timeout ($BaseTimeout_{Step}$) is adjusted to the rounded average of the past successful executions (up to $MaxElapsedTimes$ values); if no previous elapsed times are known, the base timeout is set to $MaxStepTimeout$.
 

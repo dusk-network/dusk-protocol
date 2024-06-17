@@ -14,7 +14,7 @@ Moreover, we will use the following symbols:
 - $pk$ and $sk$ are used to denote public and secret keys, respectively
 - $\sigma$ characters are used for signatures (e.g. a message signature $\sigma_{M}$)
 - $\eta$ characters are used for hash digests (e.g. a block hash $\eta_B$)
-- $\tau$ characters are used for time variables (e.g. the Proposal timeout $\tau_{Proposal}$)
+- $\tau$ characters are used for time variables (e.g. the Proposal timeout $\tau_{Prop}$)
 - $\mathcal{G}$ is used to the block generator
 - $\mathsf{B}^c$ is used for the candidate block
 - $\mathsf{B}^w$ is used for the winning block
