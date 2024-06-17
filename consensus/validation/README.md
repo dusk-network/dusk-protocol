@@ -30,7 +30,7 @@ The step output will be used as the input for the [Ratification][rat] step.
 ### Procedures
 
 #### *ValidationStep*
-This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^V, \mathsf{SV}_{v^V})`$, where $v^V$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^V}$ is the aggregated vote of the quorum committee.
+This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})`$, where $v^\mathsf{V}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^\mathsf{V}}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
 
@@ -70,12 +70,13 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
    1. If a $\mathsf{Validation}$ message $\mathsf{M^V}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M^V}$'s signature is valid
       2. and $\mathsf{M^V}$'s signer is in the committee $\mathcal{C}$
+      3. and $\mathsf{M^V}$'s vote is valid ($NoQuorum$, $Valid$, or $Invalid$)
          1. Propagate $\mathsf{M^V}$
-         2. Collect $\mathsf{M^V}$'s vote $v^V$ into the aggregated $\mathsf{SV}_{v^V}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $v^V$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
-         4. If votes in $\mathsf{SV}_{v^V}$ reach $Q$
+         2. Collect $\mathsf{M^V}$'s vote $v^\mathsf{V}$ into the aggregated $\mathsf{SV}_{v^\mathsf{V}}$
+         3. Set the target quorum $Q$ to $Supermajority$ if $v^\mathsf{V}$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
+         4. If votes in $\mathsf{SV}_{v^\mathsf{V}}$ reach $Q$
             1. Store elapsed time
-            2. Output $(v^V, \mathsf{SV}_{v^V})$
+            2. Output $(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})$
 
  6. If timeout $\tau_{Validation}$ expired:
     1. Increase timeout
@@ -113,19 +114,21 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}) \texttt{ and } (I \lt EmergencyMode):$
    1. $\texttt{if } (\mathsf{M^V} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
-      - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
-      - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
-      - $v^V, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}$
-      - $pk_\mathsf{M^V}, \sigma_\mathsf{M^V} \leftarrow \mathsf{SI}$
+      - $\texttt{set}:$
+        - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
+        - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
+        - $v^\mathsf{V}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}$
+        - $pk_\mathsf{M^V}, \sigma_\mathsf{M^V} \leftarrow \mathsf{SI}$
 
       1. $\texttt{if } (pk_{\mathsf{M^V}} \in \mathcal{C})$
-      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true):$
+      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true)$
+      3. $\texttt{and }(v^\mathsf{V} \in \{NoCandidate,Valid,Invalid\})$
          1. [*Propagate*][mx]$(\mathsf{M^V})$
-         2. $`\mathsf{SV}_{v^V} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^V}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
-         3. $Q =$ [*GetQuorum*][gq]$(v^V)$
-         4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^V}) \ge Q):$
+         2. $`\mathsf{SV}_{v^\mathsf{V}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{V}}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
+         3. $Q =$ [*GetQuorum*][gq]$(v^\mathsf{V})$
+         4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^\mathsf{V}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Validation, \tau_{Now}-\tau_{Start})$
-            2. $\texttt{output } (v^V, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^V})$
+            2. $\texttt{output } (v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}})$
 
  6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
     1. [*IncreaseTimeout*][it]$(Validation)$
