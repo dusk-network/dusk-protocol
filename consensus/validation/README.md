@@ -90,8 +90,8 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
-   1. $\texttt{if } (\mathsf{B}^c = NIL):$
-   2. $\texttt{or } (\mathsf{B}^c.PreviousBlock \ne Tip.Hash)$
+   1. $\texttt{if } (\mathsf{B}^c = NIL)$
+   2. $\texttt{or } (\mathsf{B}^c.PreviousBlock \ne Tip.Hash):$
       1. $v = NoCandidate$
    3. $\texttt{else}:$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
@@ -125,7 +125,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
       1. $\texttt{if } (pk_{\mathsf{M^V}} \in \mathcal{C})$
       2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true)$
-      3. $\texttt{and }(v^\mathsf{V} \in \{NoCandidate,Valid,Invalid\})$
+      3. $\texttt{and }(v^\mathsf{V} \in \{NoCandidate,Valid,Invalid\}):$
          1. [*Propagate*][mx]$(\mathsf{M^V})$
          2. $`\mathsf{SV}_{v^\mathsf{V}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{V}}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
          3. $Q =$ [*GetQuorum*][gq]$(v^\mathsf{V})$
