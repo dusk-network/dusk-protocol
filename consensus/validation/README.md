@@ -35,6 +35,7 @@ This procedure takes in input the round $R$, the iteration $I$, and the candidat
 The procedure performs two tasks: 
 
 1. If the node is part of the Validation committee $\mathcal{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a [`Validation`][vmsg] message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+If $\mathsf{B}^c$'s parent is not $Tip$, it is discarded (it likely belongs to a fork)[^2].
 
 2. It collects `Validation` messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
@@ -53,15 +54,16 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
 2. Start step timeout $\tau_{Validation}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
-   1. If candidate $\mathsf{B}^c$ is empty:
+   1. If candidate $\mathsf{B}^c$ is empty
+   2. or the previous block is not $Tip$:
       1. Set vote $v$ to $NoCandidate$
-   2. Otherwise:
+   3. Otherwise:
       1. Verify $\mathsf{B}^c$ against $Tip$
       2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
       3. Otherwise, set $v$ to $Invalid$
-   3. Set $VoteInfo$ to $(v, \eta_{\mathsf{B}^c})$
-   4. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
-   5. Broadcast $\mathsf{M}$
+   4. Set $VoteInfo$ to $(v, \eta_{\mathsf{B}^c})$
+   5. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
+   6. Broadcast $\mathsf{M}$
 
 4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
    1. Initialize $\mathsf{SV}_v$
@@ -89,13 +91,14 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $\texttt{if } (\mathsf{B}^c = NIL):$
+   2. $\texttt{or } (\mathsf{B}^c.PreviousBlock \ne Tip.Hash)$
       1. $v = NoCandidate$
-   2. $\texttt{else}:$
+   3. $\texttt{else}:$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
       2. $\texttt{if } (isValid = true) : v = Valid$
       3. $\texttt{else}: v = Invalid$
-   3. $\texttt{set}: \mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   4. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, \mathsf{VI})$
+   4. $\texttt{set}: \mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
+   5. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, \mathsf{VI})$
       | Field           | Value                 | 
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -106,7 +109,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       | $Signer$        | $pk_\mathcal{N}$      |
       | $Signature$     | $\sigma_\mathsf{M}$   |
 
-   5. [*Broadcast*][mx]$(\mathsf{M})$
+   6. [*Broadcast*][mx]$(\mathsf{M})$
 
 4. $\texttt{set}:$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
@@ -137,6 +140,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 <!----------------------- FOOTNOTES ----------------------->
 [^1]: remember that the quorum is calculated over the weight of the voters, not their number.
+[^2]: we do not consider a candidate block with the wrong parent as $Invalid$ because we do not want to punish the generator for being on a fork.
 
 <!------------------------- LINKS ------------------------->
 [val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
