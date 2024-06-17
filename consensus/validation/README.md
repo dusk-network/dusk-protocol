@@ -41,7 +41,7 @@ If $\mathsf{B}^c$'s parent is not $Tip$, it is discarded (it likely belongs to a
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
-   - if the timeout $\tau_{Validation}$ expires, the step outputs $NoQuorum$.
+   - if the timeout $\tau_{Val}$ expires, the step outputs $NoQuorum$.
 
 Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
 
@@ -52,7 +52,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 **Algorithm**
 1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
-2. Start step timeout $\tau_{Validation}$
+2. Start step timeout $\tau_{Val}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. If candidate $\mathsf{B}^c$ is empty
    2. or the previous block is not $Tip$:
@@ -68,7 +68,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
    1. Initialize $\mathsf{SV}_v$
 
-5. While timeout $\tau_{Validation}$ has not expired:
+5. While timeout $\tau_{Val}$ has not expired:
    1. If a $\mathsf{Validation}$ message $\mathsf{M^V}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M^V}$'s signature is valid
       2. and $\mathsf{M^V}$'s signer is in the committee $\mathcal{C}$
@@ -80,7 +80,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
             1. Store elapsed time
             2. Output $(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})$
 
- 6. If timeout $\tau_{Validation}$ expired:
+ 6. If timeout $\tau_{Val}$ expired:
     1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
@@ -115,7 +115,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Validation}) \texttt{ and } (I \lt EmergencyMode):$
+5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Val}) \texttt{ and } (I \lt EmergencyMode):$
    1. $\texttt{if } (\mathsf{M^V} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
       - $\texttt{set}:$
         - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
@@ -133,7 +133,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
             1. [*StoreElapsedTime*][set]$(Validation, \tau_{Now}-\tau_{Start})$
             2. $\texttt{output } (v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}})$
 
- 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Validation}):$
+ 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Val}):$
     1. [*IncreaseTimeout*][it]$(Validation)$
     2. $\texttt{output } (NoQuorum, NIL, NIL)$
 

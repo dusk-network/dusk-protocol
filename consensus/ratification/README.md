@@ -44,7 +44,7 @@ The procedure performs two tasks:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
-   - if the timeout $\tau_{Ratification}$ expires, the step outputs $NoQuorum$.
+   - if the timeout $\tau_{Rat}$ expires, the step outputs $NoQuorum$.
 
 Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
 
@@ -55,7 +55,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 **Algorithm**
 1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
-2. Start step timeout $\tau_{Ratification}$
+2. Start step timeout $\tau_{Rat}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. Create a $\mathsf{Ratification}$ message $\mathsf{M}$ for vote $v^\mathsf{V}$
    2. Broadcast $\mathsf{M}$
@@ -63,7 +63,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
    1. Initialize $\mathsf{SV}_v$
 
-5. While timeout $\tau_{Ratification}$ has not expired:
+5. While timeout $\tau_{Rat}$ has not expired:
    1. If a $\mathsf{Ratification}$ message $\mathsf{M^R}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M^R}$'s signature is valid
       2. and $\mathsf{M^R}$'s signer is in the committee $\mathcal{C}$
@@ -76,7 +76,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
             1. Store elapsed time
             2. Output $(v^\mathsf{R}, \mathsf{SV}_{v^\mathsf{R}})$
 
- 6. If timeout $\tau_{Ratification}$ expired:
+ 6. If timeout $\tau_{Rat}$ expired:
     1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
@@ -107,7 +107,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
    - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate, NoQuorum]:$
      - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
 
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Ratification}) \texttt{ and } (I \lt EmergencyMode):$
+5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Rat}) \texttt{ and } (I \lt EmergencyMode):$
    1. $\texttt{if } (\mathsf{M^R} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
       - $\texttt{set}:$
         - $`\mathsf{CI}, \mathsf{VI}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M^R}`$
@@ -128,7 +128,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
             1. [*StoreElapsedTime*][set]$(Ratification, \tau_{Now}-\tau_{Start})$
             2. $\texttt{output } (v^\mathsf{R}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{R}})$
 
- 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Ratification}):$
+ 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Rat}):$
     1. [*IncreaseTimeout*][it]$(Ratification)$
     2. $\texttt{output } (NoQuorum, NIL, NIL)$
 
