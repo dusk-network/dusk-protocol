@@ -90,23 +90,7 @@ Formally, the block generator ($\mathcal{G}$) for round $R$ and step $S$ is defi
 
 $$ \mathcal{G}_R^S = DS(R,S,1).$$
 
-### Subcommittees
-When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
-
-To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
-
-For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
-
-#### Bitsets
-We make use of *bitsets* (array of bits) to indicate which members are part of a given subcommittee. 
-Given a committee $\mathcal{C}$, a bitset indicates whether a member of $\mathcal{C}$ belongs to a subcommittee or not. 
-
-In particular, if the *i*th bit is set (i.e., $i=1$), then the *i*th member of $\mathcal{C}$ is part of the subcommittee.
-
-Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cenv]).
-
 ### Procedures
-
 #### *ExtractGenerator*
 This procedure extracts the block generator for the [Proposal][prop] step of round $R$ and iteration $I$ using the [*Deterministic Sortition*][ds] procedure.
 
@@ -153,6 +137,24 @@ $\textit{ExtractCommittee}(R,I, StepNum)$
 4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{P})$
 5. $\texttt{output } \mathcal{C}$
 
+<p><br></p>
+
+## Subcommittees
+When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
+
+To verify an aggregated vote, it is necessary therefore necessary to know the members of the corresponding subcommittee. This is achieved by means of *bitset*s. A bitset is simply a vector of bits that indicate for a given committee, which member is included and which not. 
+
+For instance, in a committee $C=[\mathcal{P}_0,\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3]$, a bitset $[0,1,0,1]$ would indicate the subcommittee including $\mathcal{P}_1$ and $\mathcal{P}_3$.
+
+### Bitsets
+We make use of *bitsets* (array of bits) to indicate which members are part of a given subcommittee. 
+Given a committee $\mathcal{C}$, a bitset indicates whether a member of $\mathcal{C}$ belongs to a subcommittee or not. 
+
+In particular, if the *i*th bit is set (i.e., $i=1$), then the *i*th member of $\mathcal{C}$ is part of the subcommittee.
+
+Note that a 64-bit bitset is enough to represent the maximum number of members in a committee (i.e., [*CommitteeCredits*][cenv]).
+
+### Procedures
 
 #### *BitSet*
 This procedure takes a committee $C$ and list of provisioners $\boldsymbol{P}$, and outputs the bitset corresponding to the subcommittee of $C$ including provisioners in $\boldsymbol{P}$.
