@@ -599,7 +599,7 @@ $\textit{AcceptPoolBlocks}():$
 [^1]: The current implementation does not fully support all non-Valid votes yet. Most likely, the vote type will be included in the `Attestation` structure.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md -->
 [env]: #environment
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
@@ -625,37 +625,36 @@ $\textit{AcceptPoolBlocks}():$
 [mw]:  #makewinning
 [vq]:  #VerifyQuorum
 
-<!-- Blockchain -->
-[b]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
-[lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Basics -->
-[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
-[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestations
-[sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
-[cc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
-[ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
+[blk]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blocks
+[lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chain
 
-<!-- Consensus -->
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
+[ec]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractCommittee
+[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetQuorum
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
+[cc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countcredits
+
+<!-- Protocol -->
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
 [eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#emergencyblock
 [ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#isemergencyblock
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
 [sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
 [sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
-[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
-[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
 
-[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
-<!-- Sortition -->
-[ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
-[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds 
 
 <!-- Messages -->
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block
-[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
-[sm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#sync-messages
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
+[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
+[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages

@@ -57,7 +57,7 @@ All operations are handled by the VM when performing the *state transition* of t
 The most basic reward is, for obvious reasons, the block reward, which is given to the generator of a candidate block that gets accepted into the chain.
 This reward consists of two parts: the assignment of newly-emitted coins, and a portion of the fees of the transactions included in the block (for more details on fee distribution see the [Economic Protocol][ep]). In particular, the block generator is assigned 90% of the block emission (see the Dusk [emission schedule][tok]).
 
-On the other hand, a small reward is also assigned to the voters of an accepted block[^3]. This not only incentivizes provisioners to stay online, but also disincentivizes skipping the vote at lower iterations. In fact, since the block producers of all iterations in the current round are known, if a block producer of a later iteration is in the voting committee of the current iteration, they might be incentivized to not vote in order to get to produce their block.
+On the other hand, a small reward is also assigned to the voters of an accepted block[^2]. This not only incentivizes provisioners to stay online, but also disincentivizes skipping the vote at lower iterations. In fact, since the block producers of all iterations in the current round are known, if a block producer of a later iteration is in the voting committee of the current iteration, they might be incentivized to not vote in order to get to produce their block.
 Additionally, we incentivize the block producer to include as many voters as possible by making a portion of the block reward proportional to the number of signatures in the block attestation. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
 
 Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
@@ -66,7 +66,7 @@ Rewards are not added to the provisioner stake, but they are collected into a $R
 The following behaviors are subject to slashing:
 - Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
 - Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
-- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures[^3];
+- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures[^2];
 - Double block: if a generator broadcasts two candidates for the same iteration; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures.
 
 Currently, the slash amount is equal to the block reward (which varies according to the [emission schedule][tok]).
@@ -79,4 +79,27 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 [^1]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
 
-[^3]: Note that rewards related to quorum voters are not yet implemented, so no specific reward amount has been yet decided. The same applies to slashing for double vote and double candidate.
+[^2]: Note that rewards related to quorum voters are not yet implemented, so no specific reward amount has been yet decided. The same applies to slashing for double vote and double candidate.
+
+<!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md -->
+
+[pro]: #provisioners-and-stakes
+[epo]: #epochs-and-eligibility
+[inc]: #incentives-and-penalties
+[rew]: #rewards
+[sla]: #slashing
+
+<!-- Protocol -->
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
+
+<!-- TODO: link to Stake Contract -->
+[c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
+
+[ep]: https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
+[tok]: https://docs.dusk.network/learn/economy/tokenomics/#token-emission-schedule

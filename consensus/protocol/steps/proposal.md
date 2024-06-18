@@ -146,33 +146,32 @@ Typically, the Generator's strategy will aim at maximizing profits by selecting 
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md -->
 [prop]:  #proposal
 [props]: #proposalstep
 [gb]:    #generateblock
 [st]:    #selecttransactions
 
 <!-- Basics -->
-[eg]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#extractgenerator
+[eg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractGenerator
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 
-<!-- Consensus -->
-[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[set]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
-[it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
-[sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
-[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
+<!-- Protocol -->
+[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[set]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
+[it]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
+[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
 
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 
-<!-- Sortition -->
-[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
-[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-
-<!-- TODO: Add ExecuteTransactions -->
-[est]: https://github.com/dusk-network/dusk-protocol/tree/main/
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 <!-- Messages -->
-[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
-[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
-[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate
+[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#msg
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
+
+<!-- TODO: Add ExecuteTransactions -->
+[est]:  https://github.com/dusk-network/dusk-protocol/tree/main/

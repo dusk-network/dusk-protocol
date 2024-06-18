@@ -237,7 +237,7 @@ This procedure represents a point-to-point message from the node to one of its p
 
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md -->
 [cinf]: #consensusinfo
 [vinf]: #voteinfo
 [sinf]: #signinfo
@@ -246,19 +246,18 @@ This procedure represents a point-to-point message from the node to one of its p
 [msg]:  #msg
 [sm]:   #sync-messages
 
-[net]: https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md
-
-<!-- Blockchain -->
-[b]:   https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
-
 <!-- Basics -->
-[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestations
-[att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestation
-[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+[b]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure
 
-<!-- Consensus -->
-[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
-[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 
+<!-- Protocol -->
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+
+<!-- Network -->
+[net]:  https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md
 

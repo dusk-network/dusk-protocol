@@ -4,7 +4,6 @@ The attestation process in the SA protocol is the part that handles agreement of
 When an agreement is reached on a candidate block, by a quorum of votes from both committees, the votes are collected, in aggregated form, into an *Attestation* structure, which serves as a proof of such an agreement.
 
 **ToC**
-- [Attestation](#attestation)
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
     - [Votes](#votes)
@@ -13,6 +12,8 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
     - [Procedures](#procedures)
       - [*ExtractGenerator*](#extractgenerator)
       - [*ExtractCommittee*](#extractcommittee)
+    - [*GetQuorum*](#getquorum)
+    - [*GetStepNum*](#getstepnum)
   - [Subcommittees](#subcommittees)
     - [Bitsets](#bitsets)
     - [Procedures](#procedures-1)
@@ -28,6 +29,7 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [`StepResult`](#stepresult)
     - [Procedures](#procedures-2)
       - [*AggregateVote*](#aggregatevote)
+
 
 
 
@@ -291,3 +293,41 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 1. $\mathsf{SV}.Votes =$ *BLS_Aggregate*$(\mathsf{SV}.Votes, \sigma)$
 2. $\mathsf{SV}.Voters =$ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathcal{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
+
+
+<!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md -->
+[vc]:   #voting-committees
+[sc]:   #step-committees
+[vot]:  #votes
+[sn]:   #step-numbers
+[bge]:  #block-generator-extraction
+[eg]:   #ExtractGenerator
+[ec]:   #ExtractCommittee
+[gq]:   #GetQuorum
+[gsn]:  #GetStepNum
+
+[subc]: #subcommittees
+[bits]: #bitsets
+[bs]:   #bitset
+[sb]:   #setbit
+[cb]:   #countsetbits
+[sc]:   #subcommittee
+[cc]:   #countcredits
+
+[atts]: #attestations
+[att]:  #attestation
+[sv]:   #stepvotes
+[sr]:   #stepresult
+[av]:   #aggregatevote
+
+<!-- Basics -->
+[pro]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
+
+<!-- Protocol -->
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds

@@ -216,17 +216,39 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 
 <!------------------------- LINKS ------------------------->
-[b]:  #block
-[bh]: #blockheader
-[lc]: #chain
-[tx]: #transaction
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md -->
+[blk]: #blocks
+[cb]:  #candidate-block
+[fb]:  #full-block
+[b]:   #block-structure
+[bh]:  #blockheader-structure
+
+[chn]: #chain
+[mc]:  #main-chain
+[lc]:  #local-chain
+
+[fin]: #finality
+[cs]:  #consensus-state
+[lfb]: #last-final-block
+[rf]:  #rolling-finality
+[gbs]: #getblockstate
+[crf]: #checkrollingfinality
+[hrf]: #hasrollingfinality
+[mcf]: #makechainfinal
 
 <!-- Basics -->
-[cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#candidate-block
-[att]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestation
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 
-<!-- Chain Management -->
-[cm]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md
-[fin]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#finality
-[cs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md#consensus-state
+<!-- Protocol -->
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
+[cm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md
+
+
+
