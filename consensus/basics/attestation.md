@@ -1,4 +1,31 @@
+# Attestation
+The attestation process in the SA protocol is the part that handles agreement of provisioners over blocks. In particular, the attestation of a block involves, at each round, selecting, among provisioners, a block generator, responsible for producing a candidate block, and two *voting committees*, responsible for verifying the block and reach agreement. 
 
+When an agreement is reached on a candidate block, by a quorum of votes from both committees, the votes are collected, in aggregated form, into an *Attestation* structure, which serves as a proof of such an agreement.
+
+**ToC**
+  - [Voting Committees](#voting-committees)
+    - [Step Committees](#step-committees)
+    - [Votes](#votes)
+    - [Step Numbers](#step-numbers)
+    - [Block Generator Extraction](#block-generator-extraction)
+    - [Subcommittees](#subcommittees)
+      - [Bitsets](#bitsets)
+    - [Procedures](#procedures)
+      - [*ExtractGenerator*](#extractgenerator)
+      - [*ExtractCommittee*](#extractcommittee)
+      - [*BitSet*](#bitset)
+      - [*SetBit*](#setbit)
+      - [*CountSetBits*](#countsetbits)
+      - [*SubCommittee*](#subcommittee)
+      - [*CountCredits*](#countcredits)
+  - [Attestations](#attestations)
+    - [Structures](#structures)
+      - [`Attestation`](#attestation-1)
+      - [`StepVotes`](#stepvotes)
+      - [`StepResult`](#stepresult)
+    - [Procedures](#procedures-1)
+      - [*AggregateVote*](#aggregatevote)
 
 
 ## Voting Committees
@@ -57,13 +84,11 @@ In this respect, we define the following parameters:
 | $RatStep$  | 2     |
 
 ### Block Generator Extraction
-To extract a block generator, a one-member committee is created, using the $Deterministic Sortition$ procedure with $credits = 1$, that is, by assigning a single credit. The provisioner being assigned such credit becomes the block generator for the iteration.
+The selection of the block generator is done throught the extraction of a one-member committee. Specifically, the $Deterministic Sortition$ procedure is executed to assign a single credit. The provisioner being assigned this credit becomes the block generator for the iteration.
 
-Formally, the block generator for round $R$ and step $S$ is defined as:
+Formally, the block generator ($\mathcal{G}$) for round $R$ and step $S$ is defined as:
 
 $$ \mathcal{G}_R^S = DS(R,S,1).$$
-
-<p><br></p>
 
 ### Subcommittees
 When votes of a committee reach a quorum they are aggregated into a single vote (i.e. a single, aggregated signature). The subset of the committee members whose vote is included in the aggregation is referred to as a *subcommittee*, or, if their votes reach a quorum, as a *quorum committee* (*q-committee* in short). 
@@ -171,6 +196,9 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
    1. $\texttt{if } (\boldsymbol{bs}[i]=1):$
    2. $credits = credits + \mathcal{C}[i].Power$
 2. $\texttt{output } credits$
+
+
+<p><br></p>
 
 
 ## Attestations
