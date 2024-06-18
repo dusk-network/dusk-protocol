@@ -4,16 +4,18 @@ The attestation process in the SA protocol is the part that handles agreement of
 When an agreement is reached on a candidate block, by a quorum of votes from both committees, the votes are collected, in aggregated form, into an *Attestation* structure, which serves as a proof of such an agreement.
 
 **ToC**
+- [Attestation](#attestation)
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
     - [Votes](#votes)
     - [Step Numbers](#step-numbers)
     - [Block Generator Extraction](#block-generator-extraction)
-    - [Subcommittees](#subcommittees)
-      - [Bitsets](#bitsets)
     - [Procedures](#procedures)
       - [*ExtractGenerator*](#extractgenerator)
       - [*ExtractCommittee*](#extractcommittee)
+  - [Subcommittees](#subcommittees)
+    - [Bitsets](#bitsets)
+    - [Procedures](#procedures-1)
       - [*BitSet*](#bitset)
       - [*SetBit*](#setbit)
       - [*CountSetBits*](#countsetbits)
@@ -24,8 +26,9 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [`Attestation`](#attestation-1)
       - [`StepVotes`](#stepvotes)
       - [`StepResult`](#stepresult)
-    - [Procedures](#procedures-1)
+    - [Procedures](#procedures-2)
       - [*AggregateVote*](#aggregatevote)
+
 
 
 ## Voting Committees
@@ -136,6 +139,32 @@ $\textit{ExtractCommittee}(R,I, StepNum)$
 3. $\boldsymbol{P} = Provisioners - \mathcal{G}_{R,I}$
 4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{P})$
 5. $\texttt{output } \mathcal{C}$
+
+
+### *GetQuorum*
+This procedure returns the quorum target depending on the vote $v$
+
+**Parameters**
+- $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
+
+**Procedure**
+
+$\textit{GetQuorum}(v):$
+- $\texttt{if } (v = Valid): \texttt{output } Supermajority$
+- $\texttt{else}: \texttt{output } Majority$
+
+### *GetStepNum*
+This procedure returns the absolute step number within the round. It is used for the [*DS*][ds] procedure.
+
+**Parameters**
+- $I$: the iteration number
+- $StepNum$: the relative step number ($PropStep$, $ValStep$, $RatStep$)
+
+**Procedure**
+
+$\textit{GetStepNum}(I, Step):$
+- $\texttt{output } I \times + StepNum$ 
+
 
 <p><br></p>
 

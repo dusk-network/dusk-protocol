@@ -383,33 +383,6 @@ $\textit{SAIteration}(R, I):$
    6. $\texttt{else}:$
       1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
 
-<p><br></p>
-
-### *GetQuorum*
-This procedure returns the quorum target depending on the vote $v$
-
-**Parameters**
-- $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
-
-**Procedure**
-
-$\textit{GetQuorum}(v):$
-- $\texttt{if } (v = Valid): \texttt{output } Supermajority$
-- $\texttt{else}: \texttt{output } Majority$
-
-### *GetStepNum*
-This procedure returns the absolute step number within the round. It is used for the [*DS*][ds] procedure.
-
-**Parameters**
-- $I$: the iteration number
-- $StepNum$: the relative step number ($PropStep$, $ValStep$, $RatStep$)
-
-**Procedure**
-
-$\textit{GetStepNum}(I, Step):$
-- $\texttt{output } I \times + StepNum$ 
-
-
 
 
 <!----------------------- FOOTNOTES ----------------------->
