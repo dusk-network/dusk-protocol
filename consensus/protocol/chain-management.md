@@ -26,10 +26,6 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 
-
-
-
-
 ## Block Verification
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
@@ -178,6 +174,7 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
+<p><br></p>
 
 ## Block Handling
 At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
@@ -386,6 +383,7 @@ $\textit{Fallback}():$
 3. $State = VM.Revert(\mathsf{B}_\eta)$
 4. $Provisioners = State.Provisioners$
 
+<p><br></p>
 
 ## Synchronization
 The *synchronization* process allows a node to catch up with a peer's chain. The process, handled by the [*SyncBlock*][sb] procedure, is triggered when receiving a block at a higher height than the $Tip$.
