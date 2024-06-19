@@ -256,8 +256,9 @@ $\textit{HandleBlock}():$
                 4. $\texttt{start}($[*SALoop*][sl]$)$
 
 #### *HandleQuorum*
-This procedure manages `Quorum` messages for the current round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated.
-The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
+This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated. The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
+
+If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
 
 **Parameters**
 - [SA Environment][cenv]
@@ -266,16 +267,19 @@ The corresponding candidate block is then marked as the winning block of the rou
 **Algorithm**
 1. Loop:
    1. If a $\mathsf{Quorum}$ message $\mathsf{M}^Q$ is received for round $R$:
-      1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
-      2. If valid:
-         1. Propagate $\mathsf{M}^Q$
-         2. If the quorum vote is $Valid$
-            1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
-            2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
-            3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Attestation$
-         3. Otherwise
-            1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
-         4. Stop [*SAIteration*][sai]
+      1. If $\mathsf{M}^Q.Round$ is $Tip$'s height:
+         1. Stop
+      2. Otherwise:
+         1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
+         2. If valid:
+            1. Propagate $\mathsf{M}^Q$
+            2. If the quorum vote is $Valid$
+               1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
+               2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
+               3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Attestation$
+            3. Otherwise
+               1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+            4. Stop [*SAIteration*][sai]
 
 **Procedure**
 <!-- TODO: define candidate pool/db and functions, eg FetchCandidate -->
@@ -657,6 +661,7 @@ $\textit{AcceptPoolBlocks}():$
 <!-- Messages -->
 [mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
+[qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
