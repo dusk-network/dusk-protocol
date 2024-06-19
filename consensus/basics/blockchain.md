@@ -250,7 +250,7 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [mc]:  #main-chain
 [lc]:  #local-chain
 [chb]: #chainblock-structure
-[ss]:  #system-state
+[sys]: #system-state
 [vms]: #vmstate-structure
 
 [fin]: #finality
