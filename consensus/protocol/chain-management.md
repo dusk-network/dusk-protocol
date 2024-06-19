@@ -661,4 +661,5 @@ $\textit{AcceptPoolBlocks}():$
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
 
-[xt]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine <!-- TODO -->
+<!-- TODO -->
+[xt]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

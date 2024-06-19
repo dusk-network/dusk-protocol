@@ -250,6 +250,8 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [mc]:  #main-chain
 [lc]:  #local-chain
 [chb]: #chainblock-structure
+[ss]:  #system-state
+[vms]: #vmstate-structure
 
 [fin]: #finality
 [cs]:  #consensus-state
@@ -267,12 +269,16 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
+
 [cm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md
+[fal]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#fallback
 
 
 

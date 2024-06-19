@@ -90,6 +90,9 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 [rew]: #rewards
 [sla]: #slashing
 
+<!-- Basics -->
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md

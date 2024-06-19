@@ -85,7 +85,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 |----------------------|------------------------|----------------------------------------|
 | $\textbf{Chain}$     | [`ChainBlock`][chb][ ] | The [local chain][lc] of the node      |
 | $Tip$                | [`Block`][b]           | The local chain tip (last block)       |
-| $SystemState$        | [`VMState`][vms]       | Current [system state][ss]             |
+| $SystemState$        | [`VMState`][vms]       | Current [system state][sys]            |
 | $Provisioners$       | [*Provisioner*][pro]   | Current set of (eligible) provisioners |
 
 **Round State**
@@ -413,8 +413,11 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 <!-- Basics -->
 [bas]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md
 
+[b]:     https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure
 [lc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 [chb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chainblock-structure
+[sys]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#system-state
+[vms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#vmstate-structure
 [fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#finality
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
