@@ -641,7 +641,7 @@ $\textit{AcceptPoolBlocks}():$
 [inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives-and-penalties
 
 <!-- Protocol -->
-[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#sa-algorithm
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
 [eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
 [ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#isemergencyblock
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment

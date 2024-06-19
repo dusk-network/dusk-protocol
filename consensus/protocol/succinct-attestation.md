@@ -7,13 +7,13 @@ Provisioners participate in turns, based on the [*Deterministic Sortition*][ds] 
 Before reading, please make sure you are familiar with the system [basics][bas] and the document [notation][not].
 
 **ToC**
-  - [SA Algorithm](#sa-algorithm)
-  - [Environment](#environment)
-  - [Procedures](#procedures)
-    - [*SAInit*](#sainit)
-    - [*SALoop*](#saloop)
-    - [*SARound*](#saround)
-    - [*SAIteration*](#saiteration)
+  - [Overview](#overview)
+    - [Environment](#environment)
+    - [Procedures](#procedures)
+      - [*SAInit*](#sainit)
+      - [*SALoop*](#saloop)
+      - [*SARound*](#saround)
+      - [*SAIteration*](#saiteration)
   - [Step Timeouts](#step-timeouts)
     - [Adaptive Timeout](#adaptive-timeout)
     - [Design](#design)
@@ -31,7 +31,7 @@ Before reading, please make sure you are familiar with the system [basics][bas] 
 
 
 
-## SA Algorithm
+## Overview
 The SA protocol proceeds in ***rounds***, with each round adding a new block to the chain.
 In turn, each round proceeds in ***iterations***, with each iteration aiming at generating a candidate block and reaching agreement among provisioners.
 
@@ -381,11 +381,6 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 - $\texttt{and} (\mathsf{B}.Transactions = NIL)$
 - $\texttt{and} (\mathsf{B}.Generator = DuskKey):$
   - $\texttt{output} true$
-
-<p><br></p>
-
-
-
 
 
 <!----------------------- FOOTNOTES ----------------------->
