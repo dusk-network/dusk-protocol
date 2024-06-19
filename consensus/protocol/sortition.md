@@ -1,7 +1,7 @@
 # Deterministic Sortition
 *Deterministic Sortition* (*DS* in short) is the non-interactive process used in the [Succinct Attestation][sa] protocol to select the *Block Generator* for the [*Proposal*][prop] phase, and the members of the *Voting Committees* for the [*Validation*][val] and [*Ratification*][rat] phases.
 
-### ToC
+**ToC**
   - [Overview](#overview)
     - [Score](#score)
     - [Seed](#seed)
@@ -151,20 +151,21 @@ $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
 [^1]: We will use *SHA3* to denote SHA3-256.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md  -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md  -->
 [ds]: #deterministic-sortition-ds
 [de]: #deterministic-extraction-de
 
-<!-- Blockchain -->
-[bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#blockheader
-<!-- Consensus -->
-[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md
-[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-
-[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md
-[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
-
 <!-- Basics -->
-[pro]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md##provisioners-and-stakes
-[com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#voting-committees
+[bh]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blockheader-structure
+
+[pro]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
+
+[com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
+
+<!-- Protocol -->
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+
+[prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md

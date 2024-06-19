@@ -1,34 +1,24 @@
 # Chain Management
 This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
-### ToC
-  - [Finality](#finality)
-    - [Consensus State](#consensus-state)
-    - [Last Final Block](#last-final-block)
-    - [Rolling Finality](#rolling-finality)
-    - [Environment](#environment)
+**ToC**
+  - [Block Verification](#block-verification)
     - [Procedures](#procedures)
-      - [*GetBlockState*](#getblockstate)
-      - [*CheckRollingFinality*](#checkrollingfinality)
-      - [*HasRollingFinality*](#hasrollingfinality)
-      - [*MakeChainFinal*](#makechainfinal)
-  - [Verification](#verification)
-    - [Procedures](#procedures-1)
       - [*VerifyBlock*](#verifyblock)
       - [*VerifyBlockHeader*](#verifyblockheader)
       - [*VerifyAttestation*](#verifyattestation)
       - [*VerifyVotes*](#verifyvotes)
   - [Block Handling](#block-handling)
-    - [Environment](#environment-1)
-    - [Procedures](#procedures-2)
+    - [Environment](#environment)
+    - [Procedures](#procedures-1)
       - [*HandleBlock*](#handleblock)
       - [*HandleQuorum*](#handlequorum)
       - [*MakeWinning*](#makewinning)
       - [*AcceptBlock*](#acceptblock)
       - [*Fallback*](#fallback)
   - [Synchronization](#synchronization)
-    - [Environment](#environment-2)
-    - [Procedures](#procedures-3)
+    - [Environment](#environment-1)
+    - [Procedures](#procedures-2)
       - [*SyncBlock*](#syncblock)
       - [*PreSync*](#presync)
       - [*StartSync*](#startsync)
@@ -36,113 +26,7 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
 
-## Finality
-Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
-
-When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
-However, when multiple same-height blocks are received, nodes always choose the lowest-iteration one. This mechanism allows to automatically resolve forks as soon as all conflicting blocks are received by all nodes.
-
-As a consequence of the above, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus (see [*Fallback*][fal]). Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
-
-### Consensus State
-To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
-In particular, Blocks in the [local chain][lc] can be in three states:
-
-  - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a [Failed Attestation][atts]. 
-
-  - *Attested*: the block has a Valid Quorum and all previous iterations have a Failed Attestation; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
-  
-  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
-
-### Last Final Block
-At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to Final (see [Rolling Finality][rf]. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
-
-Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
-
-
-### Rolling Finality
-*Rolling Finality* is the mechanism by which non-final blocks become final.
-
-The mechanism is based on the following observations:
- - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
- - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any attestation for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
- - Since each committee is randomly extracted with [Deterministic Sortition][ds], it can be considered as a random sampling of the provisioner set.
- - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
- - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
- - While all blocks succeeding $B^A$ include Attestations confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Attestations are enough to consider $B^A$ as Final.
-
-Considering only Attested blocks allow minimizing the risk of accounting for "confirmations" that are then replaced by a fork.
-
-Based on the above, nodes follow the following rule: 
-> Any accepted block $B^A$ in the local chain is marked as Final if 5 consecutive Attested blocks are accepted afterwards.
-
-In other words, 5 consecutive Attested blocks finalize all previous Accepted blocks. In turn, the 5 Attested blocks also become Final (because the previous Accepted block is now Final), thus making the whole chain Final.
-
-Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
-<!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
-
-### Environment
-<!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
-
-| Name               | Value          | Description                                          |
-|--------------------|----------------|------------------------------------------------------|
-| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
-
-### Procedures
-
-#### *GetBlockState*
-The block state is computed according to the [Finality][fin] rules.
-
-**Parameters**
-- $\mathsf{B}$: the block being accepted to the chain
-
-**Algorithm**
-1. If all failed iterations have a [Failed Attestation][atts]:
-   1. Set $cstate$ to "Attested"
-   2. If $\mathsf{B}$'s parent is Final
-      1. Set $cstate$ to "Final"
-2. Otherwise, set $cstate$ to "Accepted"
-3. Output $cstate$
-
-**Procedure**
-
-$\textit{GetBlockState}(\mathsf{B}):$
-- $\texttt{set } h = \mathsf{H_B}.Height$
-1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
-   1. $\texttt{set } cstate = \text{"Attested"}$
-   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
-      1. $\texttt{set } cstate = \text{"Final"}$
-2. $\texttt{else } :$
-   1. $\texttt{set } cstate = \text{"Accepted"}$
-3. $\texttt{output } cstate$
-
-
-#### *CheckRollingFinality*
-This procedure checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
-
-**Procedure**
-$\textit{CheckRollingFinality}():$
-1. $rf =$ *HasRollingFinality*$()$
-2. $\texttt{if } (rf = true) :$
-   1. *MakeChainFinal*$()$
-
-#### *HasRollingFinality*
-This procedure outputs true if the last $RollingFinality$ are all Attested and false otherwise.
-
-**Procedure**
-$\textit{HasRollingFinality}():$
-- $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
-1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
-   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
-      1. $\texttt{output } false$
-2. $\texttt{output } true$ 
-
-#### *MakeChainFinal*
-This procedure set to "Final" the state of all non-final blocks in $\textbf{Chain}$
-
-
-
-## Verification
+## Block Verification
 We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
 
 ### Procedures
@@ -290,6 +174,7 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
+<p><br></p>
 
 ## Block Handling
 At node level, there are two ways for blocks to be added to the [local chain][lc]: being the winning candidate of a [consensus round][sa] or being an attested block from the network. In the first case, the candidate block, for which a quorum has been reached in both [Validation][val] and [Ratification][rat] steps, becomes a *winning block* and is therefore added to the chain as the new tip (see [*AcceptBlock*][ab]).
@@ -442,7 +327,7 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 
 **Algorithm**
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
-2. Update $State$ by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
+2. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
 3. Update the $Provisioners$ set
 4. Set $Tip$ to block $\mathsf{B}$
 5. Compute the consensus state $s$ of $\mathsf{B}$
@@ -457,8 +342,8 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $State =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
-3. $Provisioners = State.Provisioners$
+2. $SystemState =$ [*ExecuteTransactions*][xt]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
+3. $Provisioners = SystemState.Provisioners$
 4. $Tip = \mathsf{B}$
 5. $s =$ *GetBlockState*$(\mathsf{B})$
 6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
@@ -473,7 +358,7 @@ It is triggered by [*HandleBlock*][hb] when receiving a block with height equal 
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
-Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
+Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
 
 **Parameters**
 - $\eta$: the hash of the block to which to revert
@@ -495,9 +380,10 @@ $\textit{Fallback}():$
    2. $\textbf{Chain}[i] = NIL$
    3. $Blacklist = Blacklist \cup \mathsf{B}_i$
 2. $Tip = \mathsf{B}_\eta$
-3. $State = VM.Revert(\mathsf{B}_\eta)$
-4. $Provisioners = State.Provisioners$
+3. $SystemState = VM.Revert(\mathsf{B}_\eta)$
+4. $Provisioners = SystemState.Provisioners$
 
+<p><br></p>
 
 ## Synchronization
 The *synchronization* process allows a node to catch up with a peer's chain. The process, handled by the [*SyncBlock*][sb] procedure, is triggered when receiving a block at a higher height than the $Tip$.
@@ -713,7 +599,7 @@ $\textit{AcceptPoolBlocks}():$
 [^1]: The current implementation does not fully support all non-Valid votes yet. Most likely, the vote type will be included in the `Attestation` structure.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/chain-management/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md -->
 [env]: #environment
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
@@ -739,37 +625,41 @@ $\textit{AcceptPoolBlocks}():$
 [mw]:  #makewinning
 [vq]:  #VerifyQuorum
 
-<!-- Blockchain -->
-[b]:  https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#block
-[lc]: https://github.com/dusk-network/dusk-protocol/tree/main/blockchain/README.md#chain
 
 <!-- Basics -->
-[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#stepvotes
-[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#attestations
-[sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#subcommittee
-[cc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#countcredits
-[ec]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#ExtractCommittee
+[blk]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blocks
+[lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chain
 
-<!-- Consensus -->
-[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
-[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#emergencyblock
-[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#isemergencyblock
-[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
-[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
-[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetQuorum
-[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
+[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
+[ec]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractCommittee
+[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetQuorum
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
+[atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
+[cc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countcredits
 
-[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
-[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/ratification/README.md
+[inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives-and-penalties
 
-<!-- Sortition -->
-[ds]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
-[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds 
+<!-- Protocol -->
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
+[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
+[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#isemergencyblock
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saloop
+[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
+
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds 
 
 <!-- Messages -->
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#block
-[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#getcandidate
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
-[sm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#sync-messages
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
+[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
+[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
+
+<!-- TODO -->
+[xt]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

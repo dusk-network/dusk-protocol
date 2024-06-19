@@ -1,7 +1,7 @@
  # Proposal
 *Proposal* is the first step in an [*SA iteration*][sai]. In this step, a randomly-extracted provisioner is appointed to generate a new *candidate* block to add to the ledger. In the same step, other provisioners wait for the candidate block produced by the generator.
 
-#### ToC
+**ToC**
   - [Overview](#overview)
   - [Procedures](#procedures)
     - [*ProposalStep*](#proposalstep)
@@ -109,11 +109,11 @@ It is called by [*ProposalStep*][props], which will broadcast the returned block
 
 $\textit{GenerateBlock}(R,I)$
 1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
-2. $State_R =$ [*ExecuteStateTransition*][est]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+2. $SystemState_R =$ [*ExecuteStateTransition*][est]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
 3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
 4. $`Seed_R = Sign_{BLS}(sk_\mathcal{N}, Seed_{R-1})`$
 5. $`\mathsf{H}_{\mathsf{B}^c_{R,I}} = (V,R,\tau_{now},BlockGas,I,\eta_{\mathsf{B}_{R-1}},Seed_R,pk_\mathcal{N},$
-   $TxRoot_R,State_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedAttestations})`$
+   $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedAttestations})`$
     | Field                  | Value                              | 
     |------------------------|------------------------------------|
     | $Version$              | $V$                                |
@@ -125,7 +125,7 @@ $\textit{GenerateBlock}(R,I)$
     | $Seed$                 | $Seed_R$                           |
     | $Generator$            | $pk_\mathcal{N}$                   |
     | $TxRoot$               | $TxRoot_R$                         |
-    | $State$                | $State_R$                          |
+    | $State$                | $SystemState_R$                    |
     | $PrevBlockCertificate$ | $\mathsf{B}_{R-1}.Attestation$     | 
     | $FailedIterations$     | $\boldsymbol{FailedAttestations}$  |
     
@@ -133,7 +133,7 @@ $\textit{GenerateBlock}(R,I)$
     | Field          | Value                       | 
     |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
-    | $Transactions$ | $\boldsymbol{txs}$           |
+    | $Transactions$ | $\boldsymbol{txs}$          |
 7. $\texttt{output } \mathsf{B}^c_{R,I}$
 
 <p><br></p>
@@ -146,33 +146,32 @@ Typically, the Generator's strategy will aim at maximizing profits by selecting 
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/proposal/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md -->
 [prop]:  #proposal
 [props]: #proposalstep
 [gb]:    #generateblock
 [st]:    #selecttransactions
 
 <!-- Basics -->
-[eg]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md#extractgenerator
+[eg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractGenerator
+[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 
-<!-- Consensus -->
-[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[set]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
-[it]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
-[sai]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
-[gsn]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#GetStepNum
+<!-- Protocol -->
+[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[set]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#storeelapsedtime
+[it]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#increasetimeout
+[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
 
-[val]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/validation/README.md
+[val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 
-<!-- Sortition -->
-[ds]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md
-[dsp]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/sortition/README.md#deterministic-sortition-ds
-
-<!-- TODO: Add ExecuteTransactions -->
-[est]: https://github.com/dusk-network/dusk-protocol/tree/main/
+[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
+[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 <!-- Messages -->
-[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#signatures
-[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#msg
-[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#procedures
-[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/messages/README.md#candidate
+[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#msg
+[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
+
+<!-- TODO: Add ExecuteTransactions -->
+[est]:  https://github.com/dusk-network/dusk-protocol/tree/main/
