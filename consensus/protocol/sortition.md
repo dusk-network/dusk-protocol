@@ -163,8 +163,8 @@ $`DE(Score_i^{R,S}, \boldsymbol{P})`$:
 [com]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 
 <!-- Protocol -->
-[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md
-[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[sa]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md
+[env]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md

@@ -148,10 +148,10 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!-- Protocol -->
-[env]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[set]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#storeelapsedtime
-[it]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#increasetimeout
-[sai]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[env]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[set]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#storeelapsedtime
+[it]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#increasetimeout
+[sai]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
 
 [prop]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [props]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md#proposalstep

@@ -91,7 +91,7 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 [sla]: #slashing
 
 <!-- Protocol -->
-[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md

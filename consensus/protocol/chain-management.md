@@ -641,12 +641,12 @@ $\textit{AcceptPoolBlocks}():$
 [inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives-and-penalties
 
 <!-- Protocol -->
-[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#sa-algorithm
-[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#emergencyblock
-[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#isemergencyblock
-[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
-[sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saloop
-[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#saiteration
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#sa-algorithm
+[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
+[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#isemergencyblock
+[cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saloop
+[sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
 
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md

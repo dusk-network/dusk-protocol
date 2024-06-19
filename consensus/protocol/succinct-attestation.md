@@ -393,7 +393,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [^1]: For the sake of simplicity, we assume the node handles a single provisioner identity.
 
 <!------------------------- LINKS ------------------------->
-<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md -->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md -->
 [sa]:   #overview
 
 [em]:   #emergency-mode
