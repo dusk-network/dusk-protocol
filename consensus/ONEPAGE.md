@@ -84,7 +84,7 @@ However, when multiple same-height blocks are received, nodes always choose the 
 
 As a consequence of the above, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus. Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
 
-To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
+To handle forks, we use the concept of *Consensus State*, which defines whether a block can or cannot be replaced by another one from the network.
 In particular, Blocks in the local chain can be in three states:
 
   - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a Failed Attestation. 

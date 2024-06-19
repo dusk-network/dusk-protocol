@@ -11,6 +11,7 @@ This section formally describes the the Dusk blockchain and block finality.
   - [**Chain**](#chain)
       - [Main Chain](#main-chain)
       - [Local Chain](#local-chain)
+        - [`ChainBlock` Structure](#chainblock-structure)
   - [Finality](#finality)
     - [Consensus State](#consensus-state)
     - [Last Final Block](#last-final-block)
@@ -21,6 +22,7 @@ This section formally describes the the Dusk blockchain and block finality.
       - [*CheckRollingFinality*](#checkrollingfinality)
       - [*HasRollingFinality*](#hasrollingfinality)
       - [*MakeChainFinal*](#makechainfinal)
+
 
 
 ## Blocks
@@ -92,11 +94,11 @@ To help eliminate ambiguities and make node identify blocks that reached a defin
 <!-- TODO: Describe the Genesis Block and its contents -->
 
 #### Local Chain
-The *local chain* is the copy of the blockchain stored by a node, and is defined as a vector of [blocks](#block) along with their *consensus status* label indicating their status with respect to [finality][fin] rules:
+The *local chain* is the copy of the blockchain stored by a node, and is defined as a vector of [blocks](#block) along with their *consensus state* label indicating their state with respect to [finality][fin] rules:
 
-$$\textbf{Chain}: [(\mathsf{B}_{Genesis}, "Final"), \text{ }\dots, (\mathsf{B}_i, Status_i)], \dots ,$$
+$$\textbf{Chain}: [(\mathsf{B}_{Genesis}, "Final"), \text{ }\dots, (\mathsf{B}_i, State_i)], \dots ,$$
 
-where $\mathsf{B}_{Genesis}$ is the *Genesis Block*, $\mathsf{B}_i$ is the block at height $i$ and $Status_i$ is its consensus status.
+where $\mathsf{B}_{Genesis}$ is the *Genesis Block*, $\mathsf{B}_i$ is the block at height $i$ and $State_i$ is its consensus status.
 
 **Notation**
  - We use $\textbf{Chain}[i]$ to indicate the *i*th element of the chain.
@@ -105,6 +107,27 @@ where $\mathsf{B}_{Genesis}$ is the *Genesis Block*, $\mathsf{B}_i$ is the block
 
 Finally, we use $Tip$ to refer to the last block in the local chain.
 
+##### `ChainBlock` Structure
+For convenience, we define the `ChainBlock` structure as:
+| Field            | Type         | Description                        |
+|------------------|--------------|------------------------------------|
+| $Block$          | [`Block`][b] | A full block accepted in the chain |
+| $ConsensusState$ | String       | The block [consensus state][cs]    |
+
+### System State
+With the term *system state* we indicate the state of the underlying Virtual Machine (VM) resulting from the execution of all transactions included in the block of the local chain. In particular, we define a variable $VMState$ for each heigh $H$ (indicated as $VMState_H$).
+
+#### `VMState` Structure
+<!-- TODO: This should be expanded with more detailed info -->
+This structure contains the information of the system state at a certain height $H$.
+
+| Field          | Description                                     |
+|----------------|-------------------------------------------------|
+| $Provisioners$ | A full block accepted in the chain              |
+| $Contracts$    | All existing contracts and their state (memory) |
+| $Notes$        | Existing notes (both spent and unspent)         |
+
+Note that this is an incomplete description of the system state, with several parts omitted, as they are irrelevant to the consensus protocol description.
 
 ## Finality
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
@@ -180,7 +203,7 @@ $\textit{GetBlockState}(\mathsf{B}):$
 - $\texttt{set } h = \mathsf{H_B}.Height$
 1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
    1. $\texttt{set } cstate = \text{"Attested"}$
-   2. $\texttt{if } (\textbf{Chain}[h{-}1].State = \text{"Final"}) :$
+   2. $\texttt{if } (\textbf{Chain}[h{-}1].ConsensusState = \text{"Final"}) :$
       1. $\texttt{set } cstate = \text{"Final"}$
 2. $\texttt{else } :$
    1. $\texttt{set } cstate = \text{"Accepted"}$
@@ -203,7 +226,7 @@ This procedure outputs true if the last $RollingFinality$ are all Attested and f
 $\textit{HasRollingFinality}():$
 - $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
 1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
-   1. $\texttt{if } \textbf{Chain}[i].State \ne \text{"Attested"}$
+   1. $\texttt{if } \textbf{Chain}[i].ConsensusState \ne \text{"Attested"}$
       1. $\texttt{output } false$
 2. $\texttt{output } true$ 
 
@@ -226,6 +249,7 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [chn]: #chain
 [mc]:  #main-chain
 [lc]:  #local-chain
+[chb]: #chainblock-structure
 
 [fin]: #finality
 [cs]:  #consensus-state

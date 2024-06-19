@@ -2,37 +2,36 @@
 **Succinct Attestation** (**SA**) is a permissionless, committee-based Proof-of-Stake consensus protocol. 
 The protocol is run by Dusk stakers, known as ***provisioners***, which are responsible for generating and validating new blocks.
 
-Provisioners participate in turns to the production and validation of each new block of the ledger. Participation is determined by the [*Deterministic Sortition*][ds] (*DS* in short) algorithm, which is used to extract a unique *block generator* and unique *voting committees* among provisioners, in a decentralized, non-interactive way.
+Provisioners participate in turns, based on the [*Deterministic Sortition*][ds] (*DS* in short) algorithm, which is used to select a unique *block generator* and unique *voting committees* among provisioners for each new block, in a decentralized, non-interactive way.
 
-Before reading, please make sure you are familiar with the system [Basics][bas] and the document [Notation][not].
+Before reading, please make sure you are familiar with the system [basics][bas] and the document [notation][not].
 
 **ToC**
-  - [Overview](#overview)
+  - [SA Algorithm](#sa-algorithm)
+  - [Environment](#environment)
+  - [Procedures](#procedures)
+    - [*SAInit*](#sainit)
+    - [*SALoop*](#saloop)
+    - [*SARound*](#saround)
+    - [*SAIteration*](#saiteration)
   - [Step Timeouts](#step-timeouts)
     - [Adaptive Timeout](#adaptive-timeout)
     - [Design](#design)
-    - [Environment](#environment)
-    - [Procedures](#procedures)
+    - [Environment](#environment-1)
+    - [Procedures](#procedures-1)
       - [*SetRoundTimeouts*](#setroundtimeouts)
       - [*StoreElapsedTime*](#storeelapsedtime)
       - [*AdjustBaseTimeout*](#adjustbasetimeout)
       - [*IncreaseTimeout*](#increasetimeout)
   - [Emergency Mode](#emergency-mode)
     - [Emergency Block](#emergency-block)
-    - [Procedures](#procedures-1)
+    - [Procedures](#procedures-2)
       - [*BroadcastEmergencyBlock*](#broadcastemergencyblock)
       - [*isEmergencyBlock*](#isemergencyblock)
-  - [Environment](#environment-1)
-  - [Procedures](#procedures-2)
-    - [*SAInit*](#sainit)
-    - [*SALoop*](#saloop)
-    - [*SARound*](#saround)
-    - [*SAIteration*](#saiteration)
-    - [*GetQuorum*](#getquorum)
-    - [*GetStepNum*](#getstepnum)
 
 
-## Overview
+
+## SA Algorithm
 The SA protocol proceeds in ***rounds***, with each round adding a new block to the chain.
 In turn, each round proceeds in ***iterations***, with each iteration aiming at generating a candidate block and reaching agreement among provisioners.
 
@@ -51,6 +50,209 @@ Conversely, if the Ratification result is a failure or unknown, a new iteration 
 The round terminates when an iteration is successful.
 
 A maximum number of 255 iterations is executed within a single round.
+
+### Environment
+We here define global parameters and state variables of the SA protocol, used and shared by all consensus procedures.
+
+The SA environment is composed of:
+- *global parameters*: network-wide parameters used by all nodes of the network using a particular protocol version;
+- *chain state*: represents the current system state, as per result of the execution of all transactions in the blockchain;
+- *round state*: local variables used to handle the consensus state 
+
+Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^1] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
+
+**Global Parameters**
+All global values (except for the genesis block) refer to version $0$ of the protocol.
+
+| Name               | Value                                    | Description                                                    |
+|--------------------|------------------------------------------|----------------------------------------------------------------|
+| $Version$          | 0                                        | Protocol version number                                        |
+| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                                   |
+| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)                             |
+| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                                   |
+| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)                     |
+| $Epoch$            | 2160                                     | Epoch duration in number of blocks                             |
+| $CommitteeCredits$ | 64                                       | Total credits in a voting committee                            |
+| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                              |
+| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                                   |
+| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round                 |
+| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which [Emergency Mode][em] starts                 |
+| $DuskKey$          | $pk_\mathcal{Dusk}$                      | A Dusk-owned public key used to sign the [Emergency Block][eb] |
+
+
+**Chain State**
+| Name                 | Type                   | Description                            |
+|----------------------|------------------------|----------------------------------------|
+| $\textbf{Chain}$     | [`ChainBlock`][chb][ ] | The [local chain][lc] of the node      |
+| $Tip$                | [`Block`][b]           | The local chain tip (last block)       |
+| $SystemState$        | [`VMState`][vms]       | Current [system state][ss]             |
+| $Provisioners$       | [*Provisioner*][pro]   | Current set of (eligible) provisioners |
+
+**Round State**
+| Name                              | Type                    | Description                       |
+|-----------------------------------|-------------------------| ----------------------------------|
+| $Round$                           | Integer                 | Current round number              |
+| $Iteration$                       | Integer                 | Current iteration number          |
+| $\mathsf{B}^c$                    | [`Block`][b]            | Candidate block                   |
+| $\mathsf{B}^w$                    | [`Block`][b]            | Winning block                     |
+| $\boldsymbol{FailedAttestations}$ | [`Attestation`][att][ ] | Attestations of failed iterations |
+
+
+### Procedures
+The SA consensus is defined by the [*SAInit*][init] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
+The consensus loop could be interrupted when receiving a valid [`Block`][bmsg] message (see [*HandleBlock*][hb]) which could trigger the [*fallback*][fal] or [*synchronization*][syn] procedures.
+Similarly, receiving a [`Quorum`][qmsg] message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
+
+
+#### *SAInit*
+This procedure is the entry point of a consensus node. 
+Upon boot, the node checks if there is a local state saved and, if so, loads it. Otherwise, it sets the local $Tip$ to *GenesisBlock*. 
+Then, it probes the network to check if it is in sync or not with the main chain. If not, it starts a synchronization procedure. 
+
+When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages. 
+
+**Algorithm**
+
+1. Load local state $S$
+2. If there is no saved state
+   1. Set $Tip$ to $GenesisBlock$
+3. Otherwise
+   1. Check $S$'s validity
+   2. Set $SystemState$ to $S$
+   3. Set $Tip$ to last block
+4. Start SA loop ([*SALoop*][sal])
+5. Start Block message handler ([*HandleBlock*][hb])
+
+**Procedure**
+
+$\textit{SAInit}():$
+1. $S =$ *LoadState*$()$
+2. $\texttt{if } (S = NIL):$
+   1. $Tip = GenesisBlock$
+3. $\texttt{else}:$
+   1. *ValidateState*$(S)$    <!-- TODO -->
+   2. $SystemState = S.SystemState$
+   3. $Tip = S.Tip$
+4. $\texttt{start}$([*SALoop*][sal])
+5. $\texttt{start}$([*HandleBlock*][hb])
+
+<p><br></p>
+
+#### *SALoop*
+This procedure executes an infinite loop of consensus rounds ([*SARound*][sar]). 
+It is initially started by [*SAInit*][init] but it can be stopped and restarted due to [fallback][fal] or [synchronization][syn].
+
+**Algorithm**
+
+1. Loop:
+   1. Set $Round$ to $Tip$'s height plus one
+   2. Execute Round $Round$ to produce winning block $\mathsf{B}^w$
+
+**Procedure**
+
+$\textit{SALoop}():$
+1. $\texttt{loop}:$
+   1. $Round = Tip.Height + 1$
+   2. [*SARound*][sar]$(Round)$
+
+<p><br></p>
+
+#### *SARound*
+This procedure executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle [`Quorum`][qmsg] messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
+If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a `Quorum` message, it is accepted to the [local chain][lc] and the round ends. 
+If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
+
+**Algorithm**
+
+1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
+2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
+3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
+4. For $Iteration$ from 0 to $MaxIterations$
+   1. If in Emergency Mode:
+      1. Start [*SAIteration*][sai] as a thread
+      2. Wait $MaxStepTimeout$ for each step
+   2. If not in Emergency Mode:
+      1. Execute SA iteration ([*SAIteration*][sai])
+   3. If a winning block $\mathsf{B}^w$ has been produced 
+      1. Broadcast $\mathsf{B}^w$
+      2. Accept $\mathsf{B}^w$ into the chain
+      3. End round
+5. If we reached $MaxIterations$ without a winning block
+   1. If we are a Dusk-owned node
+      1. Produce an Emergency Block
+   2. Otherwise, stop the SA loop (and wait for some block to be received)
+
+**Procedure**
+
+$\textit{SARound}():$
+1. $\texttt{set }$:
+   - $\mathsf{B}^c, \mathsf{B}^w = NIL$
+2. [*SetRoundTimeouts*][srt]$()$
+3. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
+4. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
+   1. $\texttt{if } (I \ge EmergencyMode):$
+      1. $\texttt{start}($[*SAIteration*][sai]$(Round, Iteration))$
+      2. $\texttt{wait} (3 \times MaxStepTimeout)$
+   2. $\texttt{else}:$
+      1. [*SAIteration*][sai]$(Round, Iteration)$
+   3. $\texttt{if }(\mathsf{B}^w \ne NIL):$
+      1. [*Broadcast*][mx]$(\mathsf{B}^w)$
+      2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
+      3. $\texttt{break}$
+5. $\texttt{if } (\mathsf{B}^w = NIL)$
+   1. If $\mathcal{N} = DuskKey$
+      1. [*BroadcastEmergencyBlock*][beb]$()$
+   2. $\texttt{stop}($[*SALoop*][sal]$)$
+
+<p><br></p>
+
+#### *SAIteration*
+This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
+
+If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
+
+**Algorithm**
+1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
+2. Run *Validation* on $\mathsf{B}^c$
+3. Run *Ratification* on the Validation result
+4. If Ratification reached a quorum on $v$: 
+   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
+   2. Set vote to $(v, \eta_{\mathsf{B}^c})$
+      1. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
+   3. Broadcast $\mathsf{M^Q}$
+   4. If the Ratification result is $Success$:
+      1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
+   5. If the Ratification result is $Fail$
+      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+
+**Procedure**
+$\textit{SAIteration}(R, I):$
+1. $\mathsf{B}^c =$ [*ProposalStep*][props]$(R, I)$
+2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
+3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
+- $\texttt{set}:$
+  - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
+  - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
+4. $\texttt{if } (v \ne NoQuorum):$
+   1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
+   2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
+   3. $\mathsf{M^Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
+      | Field           | Value                 |
+      |-----------------|-----------------------|
+      | $PrevHash$      | $\eta_{Tip}$          |
+      | $Round$         | $R$                   |
+      | $Iteration$     | $I$                   |
+      | $Vote$          | $v$                   |
+      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
+      | $Attestation$   | $\mathsf{A}$          |
+   4. [*Broadcast*][mx]$(\mathsf{M^Q})$
+   5. $\texttt{if } (v = Success):$
+      1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
+   6. $\texttt{else}:$
+      1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
+
+<p><br></p>
 
 ## Step Timeouts
 Each step of the [SA iteration][sai] has a limited timeout, within which the step can succeed. If the timeout expires, the step fails.
@@ -84,12 +286,12 @@ At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. 
 
 **Parameters**
 
-| Name                 | Value  | Description                                  |
-|----------------------|--------|----------------------------------------------|
-| $TimeoutIncrease$    | 2  sec | Increase amount in case of timeout           |
-| $MinStepTimeout$     | 2 sec  | Minimum timeout for a single step            |
-| $MaxStepTimeout$     | 30 sec | Maximum timeout for a single step            |
-| $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored |
+| Name                 | Value  | Description                                            |
+|----------------------|--------|--------------------------------------------------------|
+| $TimeoutIncrease$    | 2      | Increase amount in case of timeout (seconds)           |
+| $MinStepTimeout$     | 2      | Minimum timeout for a single step (seconds)            |
+| $MaxStepTimeout$     | 30     | Maximum timeout for a single step (seconds)            |
+| $MaxElapsedTimes$    | 5      | Maximum number of elapsed time values stored (seconds) |
 
 **State Variables**
 
@@ -147,6 +349,8 @@ This procedure increases a step timeout by $TimeoutIncrease$ seconds up to $MaxS
 $\textit{IncreaseTimeout}(Step):$
 - $\tau_{Step} =$ *Max*$(\tau_{Step} + TimeoutIncrease, MaxStepTimeout)$
 
+<p><br></p>
+
 ## Emergency Mode
 In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
 
@@ -180,208 +384,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 
 <p><br></p>
 
-## Environment
-We here define global parameters and state variables of the SA protocol, used and shared by all consensus procedures.
 
-The SA environment is composed of:
-- *global parameters*: network-wide parameters used by all nodes of the network using a particular protocol version;
-- *chain state*: represents the current system state, as per result of the execution of all transactions in the blockchain;
-- *round state*: local variables used to handle the consensus state 
-
-Additionally, we denote the node running the protocol with $\mathcal{N}$ and refer to its provisioner[^1] keys as $sk_\mathcal{N}$ and $pk_\mathcal{N}$.
-
-**Global Parameters**
-All global values (except for the genesis block) refer to version $0$ of the protocol.
-
-| Name               | Value                                    | Description                                                    |
-|--------------------|------------------------------------------|----------------------------------------------------------------|
-| $Version$          | 0                                        | Protocol version number                                        |
-| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                                   |
-| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)                             |
-| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                                   |
-| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)                     |
-| $Epoch$            | 2160                                     | Epoch duration in number of blocks                             |
-| $CommitteeCredits$ | 64                                       | Total credits in a voting committee                            |
-| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                              |
-| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                                   |
-| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round                 |
-| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which [Emergency Mode][em] starts                 |
-| $DuskKey$         | $pk_\mathcal{Dusk}$                      | A Dusk-owned public key used to sign the [Emergency Block][eb] |
-
-
-**Chain State**
-<!-- TODO: Add Type column -->
-| Name                 | Description                             |
-|----------------------|-----------------------------------------|
-| $\textbf{Chain}$     | The [local chain][lc] of the node       |
-| $Tip$                | Current chain tip (last block)          |
-| $State$              | Current system state                    |
-| $Provisioners$       | Current set of (eligible) provisioners  |
-
-**Round State**
-| Name                              | Description                          |
-|-----------------------------------|--------------------------------------|
-| $Round$                           | Current round number                 |
-| $Iteration$                       | Current iteration number             |
-| $\mathsf{B}^c$                    | Candidate block                      |
-| $\mathsf{B}^w$                    | Winning block                        |
-| $\boldsymbol{FailedAttestations}$ | Attestations of failed iterations    |
-
-<p><br></p>
-
-## Procedures
-The SA consensus is defined by the [*SAInit*][init] procedure, which executes an infinite loop ([*SALoop*][sal]) of rounds ([*SARound*][sar]), each executing one or more iterations ([*SAIteration*][sai]) until a *winning block* ($\mathsf{B}^w$) is produced for the round, becoming the new $Tip$ of the chain ([*AcceptBlock*][ab]).
-The consensus loop could be interrupted when receiving a valid [`Block`][bmsg] message (see [*HandleBlock*][hb]) which could trigger the [*fallback*][fal] or [*synchronization*][syn] procedures.
-Similarly, receiving a [`Quorum`][qmsg] message could interrupt a consensus round by accepting a candidate as the new $Tip$ (see [*HandleQuorum*][hq]).
-
-
-### *SAInit*
-This procedure is the entry point of a consensus node. 
-Upon boot, the node checks if there is a local state saved and, if so, loads it. Otherwise, it sets the local $Tip$ to *GenesisBlock*. 
-Then, it probes the network to check if it is in sync or not with the main chain. If not, it starts a synchronization procedure. 
-
-When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages. 
-
-**Algorithm**
-
-1. Load local state $S$
-2. If there is no saved state
-   1. Set $Tip$ to $GenesisBlock$
-3. Otherwise
-   1. Check $S$'s validity
-   2. Set $State$ to $S$
-   3. Set $Tip$ to last block
-4. Start SA loop ([*SALoop*][sal])
-5. Start Block message handler ([*HandleBlock*][hb])
-
-**Procedure**
-
-$\textit{SAInit}():$
-1. $S =$ *LoadState*$()$
-2. $\texttt{if } (S = NIL):$
-   1. $Tip = GenesisBlock$
-3. $\texttt{else}:$
-   1. *ValidateState*$(S)$    <!-- TODO -->
-   2. $State = S.State$
-   3. $Tip = S.Tip$
-4. $\texttt{start}$([*SALoop*][sal])
-5. $\texttt{start}$([*HandleBlock*][hb])
-
-<p><br></p>
-
-### *SALoop*
-This procedure executes an infinite loop of consensus rounds ([*SARound*][sar]). 
-It is initially started by [*SAInit*][init] but it can be stopped and restarted due to [fallback][fal] or [synchronization][syn].
-
-**Algorithm**
-
-1. Loop:
-   1. Set $Round$ to $Tip$'s height plus one
-   2. Execute Round $Round$ to produce winning block $\mathsf{B}^w$
-
-**Procedure**
-
-$\textit{SALoop}():$
-1. $\texttt{loop}:$
-   1. $Round = Tip.Height + 1$
-   2. [*SARound*][sar]$(Round)$
-
-<p><br></p>
-
-### *SARound*
-This procedure executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle [`Quorum`][qmsg] messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
-If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a `Quorum` message, it is accepted to the [local chain][lc] and the round ends. 
-If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
-
-**Algorithm**
-
-1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
-3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-4. For $Iteration$ from 0 to $MaxIterations$
-   1. If in Emergency Mode:
-      1. Start [*SAIteration*][sai] as a thread
-      2. Wait $MaxStepTimeout$ for each step
-   2. If not in Emergency Mode:
-      1. Execute SA iteration ([*SAIteration*][sai])
-   3. If a winning block $\mathsf{B}^w$ has been produced 
-      1. Broadcast $\mathsf{B}^w$
-      2. Accept $\mathsf{B}^w$ into the chain
-      3. End round
-5. If we reached $MaxIterations$ without a winning block
-   1. If we are a Dusk-owned node
-      1. Produce an Emergency Block
-   2. Otherwise, stop the SA loop (and wait for some block to be received)
-
-**Procedure**
-
-$\textit{SARound}():$
-1. $\texttt{set }$:
-   - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-2. [*SetRoundTimeouts*][srt]$()$
-3. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
-4. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
-   1. $\texttt{if } (I \ge EmergencyMode):$
-      1. $\texttt{start}($[*SAIteration*][sai]$(Round, Iteration))$
-      2. $\texttt{wait} (3 \times MaxStepTimeout)$
-   2. $\texttt{else}:$
-      1. [*SAIteration*][sai]$(Round, Iteration)$
-   3. $\texttt{if }(\mathsf{B}^w \ne NIL):$
-      1. [*Broadcast*][mx]$(\mathsf{B}^w)$
-      2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
-      3. $\texttt{break}$
-5. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. If $\mathcal{N} = DuskKey$
-      1. [*BroadcastEmergencyBlock*][beb]$()$
-   2. $\texttt{stop}($[*SALoop*][sal]$)$
-
-<p><br></p>
-
-### *SAIteration*
-This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
-The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
-
-If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
-
-**Algorithm**
-1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
-2. Run *Validation* on $\mathsf{B}^c$
-3. Run *Ratification* on the Validation result
-4. If Ratification reached a quorum on $v$: 
-   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
-   2. Set vote to $(v, \eta_{\mathsf{B}^c})$
-      1. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
-   3. Broadcast $\mathsf{M^Q}$
-   4. If the Ratification result is $Success$:
-      1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
-   5. If the Ratification result is $Fail$
-      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
-
-**Procedure**
-$\textit{SAIteration}(R, I):$
-1. $\mathsf{B}^c =$ [*ProposalStep*][props]$(R, I)$
-2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
-3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
-- $\texttt{set}:$
-  - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
-  - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
-4. $\texttt{if } (v \ne NoQuorum):$
-   1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
-   2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M^Q} =$ [*Msg*][msg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
-      | Field           | Value                 |
-      |-----------------|-----------------------|
-      | $PrevHash$      | $\eta_{Tip}$          |
-      | $Round$         | $R$                   |
-      | $Iteration$     | $I$                   |
-      | $Vote$          | $v$                   |
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
-      | $Attestation$   | $\mathsf{A}$          |
-   4. [*Broadcast*][mx]$(\mathsf{M^Q})$
-   5. $\texttt{if } (v = Success):$
-      1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
-   6. $\texttt{else}:$
-      1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
 
 
 
@@ -415,15 +418,18 @@ $\textit{SAIteration}(R, I):$
 <!-- Basics -->
 [bas]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md
 
-[lc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chain
+[lc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
+[chb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chainblock-structure
 [fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#finality
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
+[pro]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
 [sla]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#slashing
 
 [gq]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetQuorum
 [gsn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 [atts]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[att]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [sb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#setbit
 

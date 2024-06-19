@@ -327,7 +327,7 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 
 **Algorithm**
 1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
-2. Update $State$ by applying $Transactions$ on the current $State$, and assigning the block reward to $Generator$
+2. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
 3. Update the $Provisioners$ set
 4. Set $Tip$ to block $\mathsf{B}$
 5. Compute the consensus state $s$ of $\mathsf{B}$
@@ -342,8 +342,8 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $State =$ *ExecuteTransactions*$(State, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
-3. $Provisioners = State.Provisioners$
+2. $SystemState =$ [*ExecuteTransactions*][xt]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
+3. $Provisioners = SystemState.Provisioners$
 4. $Tip = \mathsf{B}$
 5. $s =$ *GetBlockState*$(\mathsf{B})$
 6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
@@ -358,7 +358,7 @@ It is triggered by [*HandleBlock*][hb] when receiving a block with height equal 
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
-Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $State$ and $Provisioners$ are updated accordingly.
+Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
 
 **Parameters**
 - $\eta$: the hash of the block to which to revert
@@ -380,8 +380,8 @@ $\textit{Fallback}():$
    2. $\textbf{Chain}[i] = NIL$
    3. $Blacklist = Blacklist \cup \mathsf{B}_i$
 2. $Tip = \mathsf{B}_\eta$
-3. $State = VM.Revert(\mathsf{B}_\eta)$
-4. $Provisioners = State.Provisioners$
+3. $SystemState = VM.Revert(\mathsf{B}_\eta)$
+4. $Provisioners = SystemState.Provisioners$
 
 <p><br></p>
 
@@ -638,8 +638,10 @@ $\textit{AcceptPoolBlocks}():$
 [sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [cc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countcredits
 
+[inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives-and-penalties
+
 <!-- Protocol -->
-[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#overview
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#sa-algorithm
 [eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#emergencyblock
 [ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#isemergencyblock
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/README.md#environment
@@ -658,3 +660,5 @@ $\textit{AcceptPoolBlocks}():$
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
+
+[xt]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine <!-- TODO -->
