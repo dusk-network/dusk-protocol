@@ -276,7 +276,7 @@ If the `Quorum` message is for the previous round (the $Tip$'s one), meaning tha
             2. If the quorum vote is $Valid$
                1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
                2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
-               3. Set the winning block $\mathsf{B}^w$ to $\mathsf{B}^c$ with $\mathsf{M}^Q.Attestation$
+               3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
                1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
             4. Stop [*SAIteration*][sai]
@@ -292,17 +292,20 @@ $\textit{HandleQuorum}( R ):$
           - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
           - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
-       1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}, \upsilon)$
-       2. $\texttt{if } (isValid = true) :$
-          1. $\texttt{stop}$([*SAIteration*][sai])
-          2. [*Propagate*][mx]$(\mathsf{M}^Q)$
-          3. $\texttt{if } (v = Valid) :$
-             1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
-             2. $\texttt{if } (\mathsf{B}^c = NIL) :$
-               - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
-             3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
-          4. $\texttt{else } :$
-             1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
+       1. $\texttt{if } (R_{\mathsf{M}} = Tip.Height):$
+          1. $\texttt{break}$
+       2. $\texttt{else}:$
+          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}, \upsilon)$
+          2. $\texttt{if } (isValid = true) :$
+             1. [*Propagate*][mx]$(\mathsf{M}^Q)$
+             2. $\texttt{if } (v = Valid) :$
+                1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
+                2. $\texttt{if } (\mathsf{B}^c = NIL) :$
+                  - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
+                3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
+             3. $\texttt{else } :$
+                1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
+             4. $\texttt{stop}$([*SAIteration*][sai])
 
 
 #### *MakeWinning*
