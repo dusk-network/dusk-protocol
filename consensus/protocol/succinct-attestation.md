@@ -160,7 +160,7 @@ $\textit{SALoop}():$
 #### *SARound*
 This procedure executes a single consensus round. First, it initializes the [*Round State*][cenv] variables; then, it starts the [*HandleQuorum*][hq] process in the background, to handle [`Quorum`][qmsg] messages for the round, and starts executing consensus iterations ([*SAIteration*][sai]). 
 If, at any time, a winning block $\mathsf{B}^w$ is produced, as the result of a successful iteration or due to a `Quorum` message, it is accepted to the [local chain][lc] and the round ends. 
-If, for any reason, the round ends without a winning block, the consensus is deemed unsafe and the whole protocol is halted. Such an event requires a manual recovery procedure.
+If, for any reason, the round ends without a winning block, the node halts the consensus loop ([*SALoop*][sal]) and waits for an Emergency Block signed by Dusk. A Dusk node would instead produce and broadcast an Emergency Block for the round.
 
 **Algorithm**
 
