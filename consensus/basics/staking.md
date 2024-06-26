@@ -2,6 +2,7 @@
 This section describes staking in Dusk. In particular, it formally defines stakers, known as *provisioners*, and describes the incentive system aimed at fostering participation and discouraging misbehaving.
 
 **ToC**
+<!-- TODO: Add "Roles" section, describing Block Generator and Voters -->
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
   - [Incentives](#incentives)
@@ -55,12 +56,14 @@ To minimize the risk of failure, provisioners are incentivized (or, equally, dis
 
 The information required to apply rewards and penalties is always included in a block. In particular, we use [attestations][atts] as a single source of truth, with the addition of *proofs of faults* to demonstrate some misbehaviors. All incentives are handled by the [VM][vm] when performing the *state transition* of the accepted block.
 
-### Rewards 
-The most basic reward is, for obvious reasons, the block reward, which is given to the generator of a candidate block that gets accepted into the chain.
-This reward consists of two parts: the assignment of newly-emitted coins, and a portion of the fees of the transactions included in the block (for more details on fee distribution see the [Economic Protocol][ep]). In particular, the block generator is assigned 90% of the block emission (see the Dusk [emission schedule][tok]).
+### Rewards
+Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees. In particular, the block reward is split into two portions: the *generator reward*, consisting of th 90% of the block reward, and the *voters reward*, consisting of the remaining 10%.
 
-On the other hand, a small reward is also assigned to the voters of an accepted block[^2]. This not only incentivizes provisioners to stay online, but also disincentivizes skipping the vote at lower iterations. In fact, since the block producers of all iterations in the current round are known, if a block producer of a later iteration is in the voting committee of the current iteration, they might be incentivized to not vote in order to get to produce their block.
-Additionally, we incentivize the block producer to include as many voters as possible by making a portion of the block reward proportional to the number of signatures in the block attestation. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
+<!-- (for more details on fee distribution see the [Economic Protocol][ep]).  -->
+
+These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the incentive that future-iteration generators might ¡have to omit their vote on competing candidates (i.e., those from lower iterations). In fact, within a single round, all block generators (that is, for all iterations in the round) are known; hence, if a generator from a non-zero iteration is selected on a lower-iteration voting committee, it might skip voting in the hope of producing its block (and get the generator reward). Assigning rewards to voters is a way to reduce such an incentive. 
+
+In addition, we also incentivize the block generator to include as many votes as possible in the [block certificate][cert] by making a portion of the block reward subject to the number of signatures included. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
 
 Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
 
@@ -81,7 +84,6 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 [^1]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
 
-[^2]: Note that rewards related to quorum voters are not yet implemented, so no specific reward amount has been yet decided. The same applies to slashing for double vote and double candidate.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md -->
@@ -94,6 +96,7 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 <!-- Basics -->
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment

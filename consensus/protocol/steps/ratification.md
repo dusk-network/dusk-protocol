@@ -124,7 +124,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
          1. [*Propagate*][mx]$(\mathsf{M^R})$
          2. $`\mathsf{SV}_{v^\mathsf{R}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{R}}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )`$
          3. $Q =$ [*GetQuorum*][gq]$(v^\mathsf{R})$
-         4. $\texttt{if }($[*countSetBits*][cb]$(\boldsymbol{bs}_{v^\mathsf{R}}) \ge Q):$
+         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{v^\mathsf{R}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Ratification, \tau_{Now}-\tau_{Start})$
             2. $\texttt{output } (v^\mathsf{R}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{R}})$
 
@@ -149,7 +149,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [gq]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetQuorum
 [gsn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittees
-[cb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countsetbits
+[csb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countsetbits
 [sr]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepresult
 [sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 [av]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#aggregatevote
