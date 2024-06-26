@@ -57,15 +57,28 @@ To minimize the risk of failure, provisioners are incentivized (or, equally, dis
 The information required to apply rewards and penalties is always included in a block. In particular, we use [attestations][atts] as a single source of truth, with the addition of *proofs of faults* to demonstrate some misbehaviors. All incentives are handled by the [VM][vm] when performing the *state transition* of the accepted block.
 
 ### Rewards
-Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees. In particular, the block reward is split into two portions: the *generator reward*, consisting of th 90% of the block reward, and the *voters reward*, consisting of the remaining 10%.
+Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among Dusk and the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees.
+In particular, as Dusk is assigned 10% of the block reward, the remainder is divided into two portions: the 90% goes the generator (we call this amount the *generator reward*), and the 10% goes to the block voters (we call this amount the *voters reward*).
 
 <!-- (for more details on fee distribution see the [Economic Protocol][ep]).  -->
 
-These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the incentive that future-iteration generators might ¡have to omit their vote on competing candidates (i.e., those from lower iterations). In fact, within a single round, all block generators (that is, for all iterations in the round) are known; hence, if a generator from a non-zero iteration is selected on a lower-iteration voting committee, it might skip voting in the hope of producing its block (and get the generator reward). Assigning rewards to voters is a way to reduce such an incentive. 
+These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the incentive that future-iteration generators might ¡have to omit their vote on competing candidates (i.e., those from lower iterations). In fact, within a single round, all block generators (that is, for all iterations in the round) are known; hence, if a generator from a non-zero iteration is selected on a lower-iteration voting committee, it might skip voting in the hope of producing its block (and get the generator reward). Assigning rewards to voters is a way to reduce such an incentive.
 
 In addition, we also incentivize the block generator to include as many votes as possible in the [block certificate][cert] by making a portion of the block reward subject to the number of signatures included. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
 
 Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
+
+#### Generator Reward
+The *generator reward* constitutes the 80% of the block reward. This amount is further split into two: a fixed part (70% of the block reward) and variable part (10% of the block reward) subject to the inclusion of extra votes in the block certificate.
+
+In particular, we give a quota of the variable part for each extra credit beyond the quorum threshold. In other words, considering two committees (Validation and Ratification) of 64 credits and quorum of 43 credits, we split the variable part of the generator reward into 42 quotas. The block generator will receive as many quotas as the number of credits beyond 86 (43 for each committee).
+
+For instance, if the votes in the certificate sum up to 100 credits, the generator will get 70% of the block reward plus 14/42 of the variable part (i.e. 3.33%), for a total reward of 73.33% of the block reward. Including all votes earns the generator the full generator reward (80% of the block reward).
+
+<!-- TODO: Include formula from Pol Audit -->
+
+#### Voters Reward
+
 
 ### Slashing
 The following behaviors are subject to slashing:
