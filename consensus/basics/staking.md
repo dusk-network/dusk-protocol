@@ -114,19 +114,48 @@ Note that, if the certificate contains less credits then the size of both commit
 
 
 ### Penalties
-There are two forms of penalties
+We currently employ two forms of penalties: *suspension* and *slashing*. Suspension is the exclusion of a misbehaving provisioner from the eligible set for a certain number of blocks. In contrast, slashing is the act of forcibly removing a certain amount from the provisioner stake.
+In turn, slashing is divided into *soft slashing*, which simply moves part of the stake to the provisioner $Reward$ amount (which do not count in the [sortition][ds] process), and *hard slashing* which effectively burns part of the stake.
 
-The following behaviors are subject to slashing:
-- Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
-- Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
-- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures;
-- Double block: if a generator broadcasts two candidates for the same iteration; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures.
+#### Faults
+The application of penalties is based on the type of misbheavior, or *fault*. We currently consider two degree of faults: *minor faults* and *major faults*. Minor faults are punished with suspension and soft slashing; in contrast major faults are punished with hard slashing.
 
-Currently, the slash amount is equal to the block reward (which varies according to the [emission schedule][tok]).
+Minor faults are:
+- Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the punishment takes effect when accepting a block that includes a [Failed Attestation][atts] of $NoCandidate$ quorum;
 
-Slashing is applied to the provisioner's reward first and then to the actual stake. That is, if the provisioner previously earned some rewards, then slashing affects this amount first. If the reward amount reaches zero, then slashing is applied to the actual stake.
+Major faults are:
+- Invalid block: if a candidate block is deemed invalid by the [Validation][val] committee, and it's confirmed in the [Ratification][rat] step; the punishment takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
+- Double voting: if a provisioner publish two conflicting votes for the same candidate block; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block;
+- Double block: if a generator broadcasts two different candidates for the same iteration; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block.
 
+
+#### Suspension
+This measure consists in removing a provisioner from the [eligible set][epo] for a number of [*epochs*][epo]. Doing this excludes the provisioner from the [Deterministic Sortition][ds] process, preventing it from being selected as block generator or committee member. This measure primarily aims at excluding offline provisioners from consensus, improving liveness and stability.
+
+Suspension works as follows:
+ - each provisioner has a number of *warnings* ($Warnings_\mathcal{P}$) before being penalized; at each fault, $Warnings_\mathcal{P}$ is decreased and, when reaching 0, the fault is penalized with suspension. We currently consider an initial value of $Warnings_\mathcal{P} = 1$ (i.e., each provisioner can commit one fault without incurring in any penalty);
+ - when punished, the provisioner is excluded for 1 epoch
+ - when becoming eligible again:
+   - if the provisioner produces a block or a vote, $Warnings_\mathcal{P}$ is reset to its initial value,
+   - if the provisioner commits a new fault, it gets suspended for as many epochs as the consecutive number of faults it committed; in other words, if the provisioner is suspended of the $n$th consecutive time, its suspension is of $n$ epochs.
+
+#### Soft Slashing
+When a provisioner gets suspended, a part of its stake is moved to its $Rewards$ amount. By doing so, the provisioner does not lose money but it weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
+
+The slashed amount follows this rule: if this is the $n$th consecutive suspension, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again.
+
+Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 would get frozen after a single suspension.
+Instead, a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, 10 is the upper bound of possible faults before getting frozen (since after 10 suspensions, the stake is reduced by 100%).
+
+
+#### Hard Slashing
+Hard slashing consists in the burning of part of a provisioner stake. 
+
+We distinguish between the Invalid Block fault, and the Double block/double vote faults. In the Invalid Block case, the slashed amount is incremental with the number of consecutive invalid blocks: with the first invalid block the stake is slashed by 10%, with the second one is slashed by 20%, and so on. This approach is meant to take into account the fact that invalid blocks can result from outdated client versions and give provisioners time to fix the situation.
+On the other hand, publishing double blocks or double votes is considered as an attack and punished by a slash of the 25% of the initial stake. This means that 4 consecutive faults of these types will bring the stake to 0. As previously mentioned, the slashed amount in these cases is burned.
 Note that slashing has an immediate effect, in contrast with [staking][pro], which takes effect at the beginning of the second epoch after the stake operation.
+
+In addition to hard slashing, major faults are also punished with suspension. Note however that no warnings are permitted in this case.
 
 <!----------------------- FOOTNOTES ----------------------->
 
