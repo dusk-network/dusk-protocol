@@ -117,7 +117,7 @@ Note that, if the certificate contains less credits then the size of both commit
 The following behaviors are subject to slashing:
 - Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
 - Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
-- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures[^2];
+- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures;
 - Double block: if a generator broadcasts two candidates for the same iteration; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures.
 
 Currently, the slash amount is equal to the block reward (which varies according to the [emission schedule][tok]).
