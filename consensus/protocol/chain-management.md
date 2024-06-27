@@ -281,6 +281,10 @@ If the `Quorum` message is for the previous round (the $Tip$'s one), meaning tha
                1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
             4. Stop [*SAIteration*][sai]
 
+<!-- TODO: when receiving a Valid Quorum, we should stop SARound (all iterations)
+           when receiving a non-Valid Quorum, we should stop the corresponding Iteration
+ -->
+
 **Procedure**
 <!-- TODO: define candidate pool/db and functions, eg FetchCandidate -->
 $\textit{HandleQuorum}( R ):$
@@ -645,7 +649,7 @@ $\textit{AcceptPoolBlocks}():$
 [sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [cc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countcredits
 
-[inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives-and-penalties
+[inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives
 
 <!-- Protocol -->
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview

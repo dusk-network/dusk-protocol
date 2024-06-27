@@ -2,12 +2,14 @@
 This section describes staking in Dusk. In particular, it formally defines stakers, known as *provisioners*, and describes the incentive system aimed at fostering participation and discouraging misbehaving.
 
 **ToC**
+<!-- TODO: Add "Roles" section, describing Block Generator and Voters -->
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
-  - [Incentives and Penalties](#incentives-and-penalties)
+  - [Incentives](#incentives)
     - [Rewards](#rewards)
     - [Slashing](#slashing)
 
+<p><br></p>
 
 ## Provisioners and Stakes
 A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
@@ -46,27 +48,76 @@ $$Epoch \lt M \le 2{\times}Epoch.$$
 Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
 Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
 
-## Incentives and Penalties
-Given the nature of the SA consensus protocol, it is of paramount importance that provisioners participate when selected. In fact, offline provisioners can slow down the network, and, in extreme cases, even stop block production. Specifically, the provisioner selected for the Proposal step must be online to produce the candidate block; similarly, a supermajority of voters is required to be online when the Validation or Ratification steps occur, to reach a quorum on the candidate block. If any of the two conditions are not met, the iteration fails and a new one is needed to create a new block.
-To minimize the risk of failure, a number of incentives, in the form of *rewards*, and penalties, in the form of *slashing*, are included.
+<p><br></p>
 
-Many of these rewards and slashes are decided based on the block [attestations][atts], which are used as the source of truth when deciding on good or bad behaviors.
-All operations are handled by the VM when performing the *state transition* of the accepted block.
+## Incentives
+Given the nature of the SA consensus protocol, it is of paramount importance that provisioners participate when selected by the [Deterministic Sortition][ds] algorithm. In fact, offline provisioners can slow down the network, and, in extreme cases, even stop block production. Specifically, the provisioner selected for the [Proposal][prop] step must be online to produce the candidate block; similarly, a supermajority of voters is required to be online when the [Validation][val] or [Ratification][rat] steps occur, to reach a quorum on the candidate block. If any of the two conditions are not met, the iteration fails and a new one is needed to create a new block.
+To minimize the risk of failure, provisioners are incentivized (or, equally, disincentivized) by means of *rewards* and *penalties*.
 
-### Rewards 
-The most basic reward is, for obvious reasons, the block reward, which is given to the generator of a candidate block that gets accepted into the chain.
-This reward consists of two parts: the assignment of newly-emitted coins, and a portion of the fees of the transactions included in the block (for more details on fee distribution see the [Economic Protocol][ep]). In particular, the block generator is assigned 90% of the block emission (see the Dusk [emission schedule][tok]).
+The information required to apply rewards and penalties is always included in a block. In particular, we use [attestations][atts] as a single source of truth, with the addition of *proofs of faults* to demonstrate some misbehaviors. All incentives are handled by the [VM][vm] when performing the *state transition* of the accepted block.
 
-On the other hand, a small reward is also assigned to the voters of an accepted block[^2]. This not only incentivizes provisioners to stay online, but also disincentivizes skipping the vote at lower iterations. In fact, since the block producers of all iterations in the current round are known, if a block producer of a later iteration is in the voting committee of the current iteration, they might be incentivized to not vote in order to get to produce their block.
-Additionally, we incentivize the block producer to include as many voters as possible by making a portion of the block reward proportional to the number of signatures in the block attestation. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
+### Rewards
+Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among Dusk and the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees.
+In particular, as Dusk is assigned 10% of the block reward, the remainder is divided into two portions: the 90% goes the generator (we call this amount the *generator reward*), and the 10% goes to the block voters (we call this amount the *voters reward*).
+
+<!-- (for more details on fee distribution see the [Economic Protocol][ep]).  -->
+
+These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the incentive that future-iteration generators might ¡have to omit their vote on competing candidates (i.e., those from lower iterations). In fact, within a single round, all block generators (that is, for all iterations in the round) are known; hence, if a generator from a non-zero iteration is selected on a lower-iteration voting committee, it might skip voting in the hope of producing its block (and get the generator reward). Assigning rewards to voters is a way to reduce such an incentive.
+
+In addition, we also incentivize the block generator to include as many votes as possible in the [block certificate][cert] by making a portion of the block reward subject to the number of signatures included. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
 
 Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
+
+#### Generator Reward
+The *generator reward* constitutes the 80% of the block reward. This amount is further split into two: a fixed part (70% of the block reward) and variable part (10% of the block reward) subject to the inclusion of extra votes in the block certificate.
+
+In particular, we give a quota of the variable part for each extra credit beyond the quorum threshold. In other words, considering two committees (Validation and Ratification) of 64 credits and quorum of 43 credits, we split the variable part of the generator reward into 42 quotas. The block generator will receive as many quotas as the number of credits beyond 86 (43 for each committee).
+
+Formally:
+
+ $$ GeneratorReward = (BlockReward{\times}0.7) + [Quota_{GR} \times (CertificateCredits-QuorumCredits)],$$
+
+ where: $BlockReward$ is the sum of the block emission and transaction fees, $CertificateCredits$ is the total number of credits in the block certificate, and:
+ 
+ $$ QuorumCredits = Supermajority \times 2 ,$$
+ 
+ $$ ExtraCredits = (CommitteeCredits - Supermajority) \times 2 ,$$
+
+ $$ Quota_{GR} = \frac{BlockReward{\times}0.1}{ExtraCredits} ,$$
+
+where $CommitteeCredits$ and $Supermajority$ are defined as [global parameters][cenv].
+
+
+For instance, if the votes in the certificate sum up to 100 credits, the generator will get 70% of the block reward plus 14/42 of the variable part (i.e. 3.33%), for a total reward of 73.33% of the block reward. Including all votes earns the generator the full generator reward (80% of the block reward).
+
+
+
+#### Voters Reward
+The *voters reward* assign the 10% of the block reward to the provisioners whose vote is included in the certificate. Note that this means this reward is earned by voters of the previous block, instead of the current one. This delay is necessary because the certificate of a block, which establish a definitive set of votes, is only included in the next block.
+
+The reward is distributed in the following way: the amount is split into as many quotas as the number of credits (64 per committee, hence 128 quotas in total); each voter in the certificate gets as many quotas as the credits it has in the committee. 
+
+Formally:
+
+ $$ VoterReward = Quota_{VR} \times VoterPower ,$$
+
+ where: $VoterPower$ is the [*power*][vc] (i.e. the number of credits) of the voter in the committee, and $Quota_{VR}$ is defined as follows:
+
+ $$ Quota_{VR} = \frac{BlockReward{\times}0.1}{CommitteeCredits},$$
+ 
+ where: $BlockReward$ is the sum of the block emission and transaction fees, and $CommitteeCredits$ is defined as [global parameter][cenv].
+
+By giving rewards proportionally to the voters' credits we acknowledge the fact that votes from more powerful members (i.e. with more credits in the committee) are indeed more relevant to reach the quorum, so it makes sense to give them a bigger incentive.
+Moreover, voters with more credits are also more likely to be generators in the following iterations; by giving them a bigger incentive, we disincentivize their temptation to skip voting.
+
+Note that, if the certificate contains less credits then the size of both committees, some quotas are not assigned. In particular, unassigned quotas get effectively burned. This strategy entails a fixed amount is given to each voter, regardless of how many voters are in the certificate. In tur, this prevents possible incentives for provisioners to misbehave in order to accrue their share of the reward. The conditional part of the generator reward, which is tied to the inclusion of as many votes as possible, is also closely related to this point.
+
 
 ### Slashing
 The following behaviors are subject to slashing:
 - Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
 - Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
-- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures[^2];
+- Double voting: if a provisioner signs for two different votes regarding the same candidate block; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures;
 - Double block: if a generator broadcasts two candidates for the same iteration; the slash takes effect when an ad-hoc transaction is included in a block, containing the two conflicting signatures.
 
 Currently, the slash amount is equal to the block reward (which varies according to the [emission schedule][tok]).
@@ -79,19 +130,20 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 [^1]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
 
-[^2]: Note that rewards related to quorum voters are not yet implemented, so no specific reward amount has been yet decided. The same applies to slashing for double vote and double candidate.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md -->
 
 [pro]: #provisioners-and-stakes
 [epo]: #epochs-and-eligibility
-[inc]: #incentives-and-penalties
+[inc]: #incentives
 [rew]: #rewards
 [sla]: #slashing
 
 <!-- Basics -->
+[vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
@@ -101,8 +153,11 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
-<!-- TODO: link to Stake Contract -->
+<!-- Tokenomics -->
+[ep]:      https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
+[tok]:     https://docs.dusk.network/learn/economy/tokenomics/#token-emission-schedule
+
+<!-- TODO: these links point to missing pages -->
+[vm]:      https://github.com/dusk-network/dusk-protocol/tree/main/vm
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
 
-[ep]: https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
-[tok]: https://docs.dusk.network/learn/economy/tokenomics/#token-emission-schedule

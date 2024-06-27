@@ -23,6 +23,7 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [*SubCommittee*](#subcommittee)
       - [*CountCredits*](#countcredits)
   - [Attestations](#attestations)
+      - [Block Certificate](#block-certificate)
     - [Structures](#structures)
       - [`Attestation`](#attestation-1)
       - [`StepVotes`](#stepvotes)
@@ -30,8 +31,7 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
     - [Procedures](#procedures-2)
       - [*AggregateVote*](#aggregatevote)
 
-
-
+<p><br></p>
 
 ## Voting Committees
 A *Voting Committee* is an array of provisioners entitled to cast votes in the Validation and Ratification steps. Provisioners in a committee are called *members* of that committee. Each member in a given committee is assigned (by the sortition process) a number of *credits* (i.e., castable vote), referred to as its *power* in the committee.
@@ -235,8 +235,14 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 
 
 ## Attestations
-An *Attestation* is an aggregate collection of votes from a specific iteration. It includes the votes of the [Validation][val] and [Ratification][rat] steps and is used as proof of a reached agreement in an iteration: if the iteration was successful, it proves a supermajority quorum of $Valid$ votes was cast in both steps, while if the iteration failed, it proves there was a majority quorum of $Invalid$, $NoCandidate$ or $NoQuorum$ votes. 
-We use the terms *Valid Attestation* and *Failed Attestation* to refer to the two types of quorum being proved.
+An *attestation* is an aggregate collection of votes from a specific iteration. It includes the votes of the [Validation][val] and [Ratification][rat] steps and is used as proof of a reached agreement in an iteration: if the iteration was successful, it proves a supermajority quorum of $Valid$ votes was cast in both steps, while if the iteration failed, it proves there was a majority quorum of $Invalid$, $NoCandidate$ or $NoQuorum$ votes. 
+We use the terms *valid attestation* and *failed attestation* to refer to the two types of quorum being proved.
+
+#### Block Certificate
+Note that, for each [candidate block][cb], there might be multiple valid attestations, one for each possible subset of quorum voters. This might generate ambiguity in the handling of quorum-specific mechanisms, such as the assignment of [rewards][rew].
+
+To make such mechanisms deterministic, the official set of voters that brought to a valid attestation is decided by the generator of the following block.
+This is done by including in the candidate an attestation of the previous block. Such an attestation is referred to as the *certificate* of the previous block.
 
 ### Structures
 #### `Attestation`
@@ -311,11 +317,12 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 [bits]: #bitsets
 [bs]:   #bitset
 [sb]:   #setbit
-[cb]:   #countsetbits
+[csb]:  #countsetbits
 [sc]:   #subcommittee
 [cc]:   #countcredits
 
 [atts]: #attestations
+[cert]: #block-certificate
 [att]:  #attestation
 [sv]:   #stepvotes
 [sr]:   #stepresult
@@ -323,6 +330,9 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 <!-- Basics -->
 [pro]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
+[rew]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#rewards
+
+[cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment

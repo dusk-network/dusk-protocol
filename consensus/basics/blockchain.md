@@ -59,7 +59,7 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 | $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                |
 | $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                    |
 | $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                 |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | Certificate for the previous block                  |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | [Certificate][cert] for the previous block          |
 | $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
 | $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                             |
 | $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block      |
@@ -263,6 +263,7 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [mcf]: #makechainfinal
 
 <!-- Basics -->
+[cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
