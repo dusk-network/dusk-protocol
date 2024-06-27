@@ -7,7 +7,7 @@ This section describes staking in Dusk. In particular, it formally defines stake
     - [Epochs and Eligibility](#epochs-and-eligibility)
   - [Incentives](#incentives)
     - [Rewards](#rewards)
-    - [Slashing](#slashing)
+    - [Penalties](#penalties)
 
 <p><br></p>
 
@@ -113,7 +113,9 @@ Moreover, voters with more credits are also more likely to be generators in the 
 Note that, if the certificate contains less credits then the size of both committees, some quotas are not assigned. In particular, unassigned quotas get effectively burned. This strategy entails a fixed amount is given to each voter, regardless of how many voters are in the certificate. In tur, this prevents possible incentives for provisioners to misbehave in order to accrue their share of the reward. The conditional part of the generator reward, which is tied to the inclusion of as many votes as possible, is also closely related to this point.
 
 
-### Slashing
+### Penalties
+There are two forms of penalties
+
 The following behaviors are subject to slashing:
 - Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the slash takes effect when accepting a block with a [Failed Attestation][atts] of $NoCandidate$ quorum;
 - Invalid block: if a candidate block is deemed invalid by the [Validation][val] step; the slash takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
@@ -138,7 +140,7 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 [epo]: #epochs-and-eligibility
 [inc]: #incentives
 [rew]: #rewards
-[sla]: #slashing
+[pen]: #penalties
 
 <!-- Basics -->
 [vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
