@@ -73,14 +73,39 @@ The *generator reward* constitutes the 80% of the block reward. This amount is f
 
 In particular, we give a quota of the variable part for each extra credit beyond the quorum threshold. In other words, considering two committees (Validation and Ratification) of 64 credits and quorum of 43 credits, we split the variable part of the generator reward into 42 quotas. The block generator will receive as many quotas as the number of credits beyond 86 (43 for each committee).
 
+Formally:
+
+ $$ GeneratorReward = (BlockReward{\times}0.7) + [Quota_{GR} \times (CertificateCredits-QuorumCredits)],$$
+
+ where: $BlockReward$ is the sum of the block emission and transaction fees, $CertificateCredits$ is the total number of credits in the block certificate, and:
+ 
+ $$ QuorumCredits = Supermajority \times 2 ,$$
+ 
+ $$ ExtraCredits = (CommitteeCredits - Supermajority) \times 2 ,$$
+
+ $$ Quota_{GR} = \frac{BlockReward{\times}0.1}{ExtraCredits} ,$$
+
+where $CommitteeCredits$ and $Supermajority$ are defined as [global parameters][cenv].
+
+
 For instance, if the votes in the certificate sum up to 100 credits, the generator will get 70% of the block reward plus 14/42 of the variable part (i.e. 3.33%), for a total reward of 73.33% of the block reward. Including all votes earns the generator the full generator reward (80% of the block reward).
 
-<!-- TODO: Include formula from Pol Audit -->
+
 
 #### Voters Reward
 The *voters reward* assign the 10% of the block reward to the provisioners whose vote is included in the certificate. Note that this means this reward is earned by voters of the previous block, instead of the current one. This delay is necessary because the certificate of a block, which establish a definitive set of votes, is only included in the next block.
 
 The reward is distributed in the following way: the amount is split into as many quotas as the number of credits (64 per committee, hence 128 quotas in total); each voter in the certificate gets as many quotas as the credits it has in the committee. 
+
+Formally:
+
+ $$ VoterReward = Quota_{VR} \times VoterPower ,$$
+
+ where: $VoterPower$ is the [*power*][vc] (i.e. the number of credits) of the voter in the committee, and $Quota_{VR}$ is defined as follows:
+
+ $$ Quota_{VR} = \frac{BlockReward{\times}0.1}{CommitteeCredits},$$
+ 
+ where: $BlockReward$ is the sum of the block emission and transaction fees, and $CommitteeCredits$ is defined as [global parameter][cenv].
 
 By giving rewards proportionally to the voters' credits we acknowledge the fact that votes from more powerful members (i.e. with more credits in the committee) are indeed more relevant to reach the quorum, so it makes sense to give them a bigger incentive.
 Moreover, voters with more credits are also more likely to be generators in the following iterations; by giving them a bigger incentive, we disincentivize their temptation to skip voting.
@@ -116,6 +141,7 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 [sla]: #slashing
 
 <!-- Basics -->
+[vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 
