@@ -78,6 +78,14 @@ For instance, if the votes in the certificate sum up to 100 credits, the generat
 <!-- TODO: Include formula from Pol Audit -->
 
 #### Voters Reward
+The *voters reward* assign the 10% of the block reward to the provisioners whose vote is included in the certificate. Note that this means this reward is earned by voters of the previous block, instead of the current one. This delay is necessary because the certificate of a block, which establish a definitive set of votes, is only included in the next block.
+
+The reward is distributed in the following way: the amount is split into as many quotas as the number of credits (64 per committee, hence 128 quotas in total); each voter in the certificate gets as many quotas as the credits it has in the committee. 
+
+By giving rewards proportionally to the voters' credits we acknowledge the fact that votes from more powerful members (i.e. with more credits in the committee) are indeed more relevant to reach the quorum, so it makes sense to give them a bigger incentive.
+Moreover, voters with more credits are also more likely to be generators in the following iterations; by giving them a bigger incentive, we disincentivize their temptation to skip voting.
+
+Note that, if the certificate contains less credits then the size of both committees, some quotas are not assigned. In particular, unassigned quotas get effectively burned. This strategy entails a fixed amount is given to each voter, regardless of how many voters are in the certificate. In tur, this prevents possible incentives for provisioners to misbehave in order to accrue their share of the reward. The conditional part of the generator reward, which is tied to the inclusion of as many votes as possible, is also closely related to this point.
 
 
 ### Slashing
