@@ -137,12 +137,12 @@ Suspension works as follows:
  - when punished, the provisioner is excluded for 1 epoch
  - when becoming eligible again:
    - if the provisioner produces a block or a vote, $Warnings_\mathcal{P}$ is reset to its initial value,
-   - if the provisioner commits a new fault, it gets suspended for as many epochs as the consecutive number of faults it committed; in other words, if the provisioner is suspended of the $n$th consecutive time, its suspension is of $n$ epochs.
+   - if the provisioner commits a new fault, it gets suspended for as many epochs as the consecutive number of faults it committed; in other words, if the provisioner is suspended of the $n\text{th}$ consecutive time, its suspension is of $n$ epochs.
 
 #### Soft Slashing
 When a provisioner gets suspended, a part of its stake is moved to its $Rewards$ amount. By doing so, the provisioner does not lose money but it weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
 
-The slashed amount follows this rule: if this is the $n$th consecutive suspension, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again.
+The slashed amount follows this rule: if this is the $n\text{th}$ consecutive suspension, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again.
 
 Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 would get frozen after a single suspension.
 Instead, a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, 10 is the upper bound of possible faults before getting frozen (since after 10 suspensions, the stake is reduced by 100%).
