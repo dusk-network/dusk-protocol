@@ -615,12 +615,6 @@ $\textit{AcceptPoolBlocks}():$
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
 
-[fin]: #finality
-[cs]:  #consensus-state
-[lfb]: #last-final-block
-[rf]:  #rolling-finality
-[crf]: #checkrollingfinality
-
 [fal]: #fallback
 [hst]: #handlesynctimeout
 [hb]:  #HandleBlock
@@ -640,6 +634,7 @@ $\textit{AcceptPoolBlocks}():$
 <!-- Basics -->
 [blk]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blocks
 [lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chain
+[crf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#checkrollingfinality
 
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 [ec]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractCommittee

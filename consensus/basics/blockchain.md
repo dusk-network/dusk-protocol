@@ -129,50 +129,65 @@ This structure contains the information of the system state at a certain height 
 
 Note that this is an incomplete description of the system state, with several parts omitted, as they are irrelevant to the consensus protocol description.
 
-## Finality
+<p><br></p>
+
+-----
+
+## Rolling Finality
 Due to the asynchronous nature of the network, more than one block can reach consensus in the same round (but in different iterations), creating a chain *fork* (i.e., two parallel branches stemming from a common ancestor). This is typically due to consensus messages being delayed or lost due to network congestion.
 
 When a fork occurs, network nodes can initially accept either of the two blocks at the same height, depending on which one they see first. 
 However, when multiple same-height blocks are received, nodes always choose the lowest-iteration one. This mechanism allows to automatically resolve forks as soon as all conflicting blocks are received by all nodes.
 
-As a consequence of the above, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus (see [*Fallback*][fal]). Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
+Therefore, blocks from iterations greater than 0 could potentially be replaced if a lower-iteration block also reached consensus (see [*Fallback*][fal]). Instead, blocks reaching consensus at iteration 0 can't be replaced by lower-iteration ones with the same parent. However, they can be replaced if an ancestor block is reverted.
+
+To help nodes (and users) determine when blocks are considered as definitively part of the blockchain, we employ the concept of block *finality*: a final block is a block that cannot be replaced in the local chain. In particular, we use the concept of *Rolling Finality*, where finality is determined by the conditions of the block itself (i.e. what Attestations it has) and the blocks before and after it. In other words, *Rolling Finality* is the mechanism through which blocks in the [local chain][lc] are marked as *final*.
+
+Note that when a block is marked as final by the Rolling Finality, the probability of a higher priority block having reached a $Valid$ quorum is assumed to be negligible[^2].
+
+
+### Rationale
+The mechanism is based on the following observations:
+ - The only blocks that can be replaced by "higher-priority" sibling (a block with the same parent) are those with $Iteration \gt 0$ for which not all previous iterations have a [Failed Attestation][atts]. In particular, the number of such competing siblings corresponds to the number of previous iterations with no Attestation (that is, whose result is unknown).
+ - Considering a replaceable block $B$, a successor of $B$ reaching a $Valid$ quorum implicitly proves that a set of the provisioners, namely those involved in its creation and voting, have accepted $B$ into their local chain. More specifically, any Attestation for a successor of $B$ implicitly confirms $B$ is in the local chain of a subset of the provisioner set. 
+ - Since generators and committees are selected at random (see [Deterministic Sortition][ds]), they can be considered as a random sample of the provisioner set. Hence, an Attestation of a successor of $B$ implies that a large enough number of provisioners have $B$ in their chain.
+ - Each new successor of $B$ (with an Attestation) increases the size of the random sample of provisioners that accepted $B$, reducing the probability that other provisioners are working on a competing fork.
+ - Each round/iteration executed after $B$ decreases the probability of a competing sibling being received. In fact, each iteration implies a certain time elapsed during which the competing block, if it existed, should have been received.
+ - While all attested successors of $B$ confirm $B$, only those at Iteration $0$, or having all previous iterations attested as Failed, can be safely accounted for its finality. In fact, other blocks can also be replaced, which make them unreliable to determine the finality status of $B$.
+
 
 ### Consensus State
-To handle forks, we use the concept of Consensus State, which defines whether a block can or cannot be replaced by another one from the network.
-In particular, Blocks in the [local chain][lc] can be in three states:
+To implement Rolling Finality, blocks in the [local chain][lc] are marked with a *Consensus State* label, which determines their current level of "replaceability".
 
-  - *Accepted*: the block has a $Valid$ quorum but there might be a lower-iteration block with the same parent that also reached a $Valid$ quorum; an Accepted block can then be replaced by a lower-iteration one; *Accepted* blocks are blocks that reached consensus at Iteration higher than 0 and for which not all previous iterations have a [Failed Attestation][atts]. 
+In particular, blocks in the local chain can be in four states:
 
-  - *Attested*: the block has a Valid Quorum and all previous iterations have a Failed Attestation; this block cannot be replaced by a lower-iteration block with the same parent but one of its predecessors is Accepted and could be replaced; blocks reaching quorum at iteration 0 are Attested by definition (because no previous iteration exists).
+  - $Accepted$: the block has a Valid Attestation but there might be a lower-iteration block that also reached a $Valid$ quorum; an $Accepted$ block can then be replaced if such a higher-priority block is received. Formally, a block is marked as $Accepted$ if it has  $Iteration \gt 0$ and not all previous iterations have a [Failed Attestation][atts]. 
+
+  - $Attested$: the block has a Valid Attestation and all previous iterations have a Failed Attestation; an $Attested$ block cannot be replaced by a lower-iteration block of the same round. Formally, a block is marked as $Attested$ if it has $Iteration = 0$ or all previous iterations have Failed Attestation.
   
-  - *Final*: the block is Attested and all its predecessors are Final; this block is definitive and cannot be replaced in any case.
+  - $Confirmed$: the block is either $Accepted$ or $Attested$ and is confirmed by the [Rolling Finality][rf] rules; a $Confirmed$ block is unlikely to be replaced due to a number of block built on top of it; however, it might still be replaced if an ancestor is replaced.  
+
+  - $Final$: the block is $Confirmed$ and its parent is $Final$; this block is definitive and cannot be replaced in any case. Note that a block can only be $Final$ if all ancestors are also $Final$.
+
+### Finality Rules
+The Consensus State of each block in the local chain is determined by the following rules:
+
+> - A new block is marked as $Attested$ if $PNI=0$, where $PNI$ is the number of previous non-attested iterations, and $Accepted$ if $PNI>0$;
+> - If a block is $Attested$, it is marked as $Confirmed$ if its successor is $Attested$ or $Confirmed$;
+> - If a block is $Accepted$, it is marked as $Confirmed$ after $2 \times PNI$ consecutive $Attested$ or $Confirmed$ blocks;
+> - If a block is $Confirmed$ and its parent is $Final$, it is marked as $Final$.
+
+For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Failed Attestation, it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 2 = 4$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
+
+Note that the value of $PNI$ can be directly derived from the Attestations in the $FailedIterations$ field of a block.
+
 
 ### Last Final Block
-At any given moment, the local chain can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to Final (see [Rolling Finality][rf]. In contrast, the final part cannot be reverted in any way and is the definitive. When the chain tip is final, then the whole chain is final.
+At any given moment, the [local chain][lc] can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to $Final$. In contrast, the final part cannot be reverted in any way and is then definitive.
 
-Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as final, and denote it with $\mathsf{B}^f$.
+Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as $Final$, and denote it with $\mathsf{B}^f$.
 
-
-### Rolling Finality
-*Rolling Finality* is the mechanism by which non-final blocks become final.
-
-The mechanism is based on the following observations:
- - Accepted blocks are the only potential "post-fork" blocks (i.e., the successor of a forking point), which can be replaced by a sibling (a block with the same parent). 
- - Considering an Accepted block $B^A$, a successor of $B^A$ being voted implicitly proves that a subset of the provisioner set, namely the ones that voted for it, have accepted $B^A$ into their chain. In other words, any attestation for a successor of $B^A$ implicitly confirms $B^A$ is in the local chain of a subset of provisioners.
- - Since each committee is randomly extracted with [Deterministic Sortition][ds], it can be considered as a random sampling of the provisioner set.
- - Each block added on top of the Accepted block $B^A$ increases the size of the random sampling of provisioners that accepted $B^A$, reducing the probability that other provisioners are working on a competing fork.
- - Each round/iteration executed after $B^A$ decreases the probability of a competing sibling being received. In other words, each iteration implies a certain time elapsed during which the competing block should have been received if it existed.
- - While all blocks succeeding $B^A$ include Attestations confirming $B^A$, only Attested blocks can be safely accounted for. In fact, Accepted blocks could also be replaced, making it hard to decide which number of Attestations are enough to consider $B^A$ as Final.
-
-Considering only Attested blocks allow minimizing the risk of accounting for "confirmations" that are then replaced by a fork.
-
-Based on the above, nodes follow the following rule: 
-> Any accepted block $B^A$ in the local chain is marked as Final if 5 consecutive Attested blocks are accepted afterwards.
-
-In other words, 5 consecutive Attested blocks finalize all previous Accepted blocks. In turn, the 5 Attested blocks also become Final (because the previous Accepted block is now Final), thus making the whole chain Final.
-
-Note that this mechanism assumes that a block being finalized by the Rolling Finality has minimal probability of such a block being replaced.
-<!-- TODO: Proper calculations are required to decide on the number of consecutive blocks and the actual probability -->
+Note that, in the best case scenario, the *final* part of the chain includes all blocks except the tip. In fact, the tip can never be $Final$ as it has not been confirmed yet.
 
 ### Environment
 <!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
@@ -237,6 +252,7 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 [^1]: In principle, a malicious block generator could create two valid candidate blocks. However, this case is automatically handled in the Validation step, since provisioners will reach agreement on a specific block hash.
 
+[^2]: While this assumption is secure enough, and confirmed empirically, proper calculations are due in the future to confirm the non-negligibility of such probability. A possible consequence of such assumption being non-true would be an increase in the number of blocks being required to be marked as *final*.
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md -->
@@ -253,7 +269,6 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [sys]: #system-state
 [vms]: #vmstate-structure
 
-[fin]: #finality
 [cs]:  #consensus-state
 [lfb]: #last-final-block
 [rf]:  #rolling-finality

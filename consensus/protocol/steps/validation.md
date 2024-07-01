@@ -14,7 +14,7 @@ The main purpose of the Validation step is to agree on whether a candidate block
 In the Validation step, each node first executes the [*Deterministic Sortition*][ds] algorithm to extract the [Voting Committee][vc] for the step.
 
 If the node is part of the committee, it validates the output from the [Proposal][prop] step. If the output was $NIL$, it votes $NoCandidate$. Otherwise, it verifies the candidate block's validity against its previous block (i.e., the node's local $Tip$). If the candidate is valid, the node votes $Valid$, otherwise, it votes $Invalid$.
-$\text{Non-}Valid$ outputs are used to prove an iteration failed (i.e., it can't reach a quorum of $Valid$ votes), which is functional to block [*Attestation*][fin]; additionally, these votes are used to trigger [penalties][pen].
+$\text{Non-}Valid$ outputs are used to prove an iteration failed (i.e., it can't reach a quorum of $Valid$ votes), which is functional to block [*finalization*][rf]; additionally, these votes are used to trigger [penalties][pen].
 The vote is broadcast using a [`Validation`][vmsg] message.
 
 Then, all nodes, including the committee members, collect votes from the network until a *supermajority* ($\frac{2}{3}$ of the committee credits[^1]) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of $\text{non-}Valid$ votes is reached, or the step timeout expires.
@@ -165,7 +165,6 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 <!-- Basics -->
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
-[fin]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#finality
 
 [p]:     https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
 [pen]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#penalties
