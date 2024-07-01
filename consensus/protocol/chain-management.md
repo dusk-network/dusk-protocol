@@ -219,7 +219,7 @@ The procedure acts depending on the block's height: if the block has the same he
       2. Check $\mathsf{B}$ is not blacklisted
       3. If $\mathsf{B}$ is higher than $Tip$:
          1. Start *synchronization* ([*SyncBlock*][sb])
-      4. Otherwise, if $\mathsf{B}$ is higher than the last final block $\mathsf{B}^f$:
+      4. Otherwise, if $\mathsf{B}$ is higher than the last final block $\mathsf{B}^F$:
          1. Check if $\mathsf{B}$ is not already in our chain
          2. If $\mathsf{B}$'s parent is in our chain
          3. And its local sibling has a higher iteration number
@@ -244,7 +244,7 @@ $\textit{HandleBlock}():$
        3. $\texttt{if } (\mathsf{B}.Height > Tip.Height) :$
           1. [*SyncBlock*][sb]$(\mathsf{M^B})$
           <!-- B.Height <= Tip.Height -->
-       4. $\texttt{else if } (\mathsf{B}.Height > \mathsf{B}^f.Height) :$
+       4. $\texttt{else if } (\mathsf{B}.Height > \mathsf{B}^F.Height) :$
           1. $\texttt{if } (\mathsf{B} \in \textbf{Chain}):  \texttt{break}$
           2. $\texttt{if } (\eta^p \in \textbf{Chain})$
           3. $\texttt{and } (\mathsf{B}.Iteration \lt \textbf{Chain}[\mathsf{B}.Height].Iteration):$
@@ -341,9 +341,7 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 2. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
 3. Update the $Provisioners$ set
 4. Set $Tip$ to block $\mathsf{B}$
-5. Compute the consensus state $s$ of $\mathsf{B}$
-6. Add $(Tip, s)$ to the local chain
-7. Check Rolling Finality
+5. Add $\mathsf{B}$ to the [local chain][lc] and update [finality][rf] labels
 
 **Procedure**
 
@@ -356,10 +354,7 @@ $\textit{AcceptBlock}(\mathsf{B}):$
 2. $SystemState =$ [*ExecuteTransactions*][xt]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
 3. $Provisioners = SystemState.Provisioners$
 4. $Tip = \mathsf{B}$
-5. $s =$ *GetBlockState*$(\mathsf{B})$
-6. $\textbf{Chain}[h]=(\mathsf{B}, s)$
-7. [*CheckRollingFinality*][crf]$()$
-
+5. [*AddToLocalChain*][alc]$(\mathsf{B})$
 
 
 #### *Fallback*
@@ -615,12 +610,6 @@ $\textit{AcceptPoolBlocks}():$
 [ab]:  #acceptblock
 [apb]: #acceptpoolblocks
 
-[fin]: #finality
-[cs]:  #consensus-state
-[lfb]: #last-final-block
-[rf]:  #rolling-finality
-[crf]: #checkrollingfinality
-
 [fal]: #fallback
 [hst]: #handlesynctimeout
 [hb]:  #HandleBlock
@@ -639,7 +628,10 @@ $\textit{AcceptPoolBlocks}():$
 
 <!-- Basics -->
 [blk]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blocks
-[lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chain
+[lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
+[alc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#AddToLocalChain
+[gcs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#GetConsensusState
+[rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
 [sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 [ec]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractCommittee
