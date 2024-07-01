@@ -12,16 +12,20 @@ This section formally describes the the Dusk blockchain and block finality.
       - [Main Chain](#main-chain)
       - [Local Chain](#local-chain)
         - [`ChainBlock` Structure](#chainblock-structure)
-  - [Finality](#finality)
+        - [*AddToLocalChain*](#addtolocalchain)
+    - [System State](#system-state)
+      - [`VMState` Structure](#vmstate-structure)
+  - [Rolling Finality](#rolling-finality)
+    - [Rationale](#rationale)
     - [Consensus State](#consensus-state)
+    - [Finality Rules](#finality-rules)
     - [Last Final Block](#last-final-block)
-    - [Rolling Finality](#rolling-finality)
-    - [Environment](#environment)
     - [Procedures](#procedures)
-      - [*GetBlockState*](#getblockstate)
-      - [*CheckRollingFinality*](#checkrollingfinality)
-      - [*HasRollingFinality*](#hasrollingfinality)
-      - [*MakeChainFinal*](#makechainfinal)
+      - [*GetPNI*](#getpni)
+      - [*GetConsensusState*](#getconsensusstate)
+      - [*ApplyRollingFinality*](#applyrollingfinality)
+      - [*UpdateConfirmedBlocks*](#updateconfirmedblocks)
+      - [*UpdateFinalBlocks*](#updatefinalblocks)
 
 
 
@@ -89,12 +93,12 @@ The *main chain* is the most accepted sequence of blocks in the network. In part
 
 The concept if main chain is typically used when assessing the validity of the chain known by a network node. Specifically, it is used to determine whether a node's chain has fallen behind the rest of the network or if it is on a separate branch (a chain fork). However, it is important to note that no single source of truth for the main chain can exist, and nodes can only compare their chain to those of other nodes. Based on this comparison, nodes choose what "seems" to be the main chain (see [Chain Management][cm]).
 
-To help eliminate ambiguities and make node identify blocks that reached a definitive state, the concept of [*finality*][fin] is used. A block marked as *final* cannot be replaced and it is then permanently part of the main chain.
+To help eliminate ambiguities and make node identify blocks that reached a definitive state, the concept of [*finality*][rf] is used. A block marked as *final* cannot be replaced and it is then permanently part of the main chain.
 
 <!-- TODO: Describe the Genesis Block and its contents -->
 
 #### Local Chain
-The *local chain* is the copy of the blockchain stored by a node, and is defined as a vector of [blocks](#block) along with their *consensus state* label indicating their state with respect to [finality][fin] rules:
+The *local chain* is the copy of the blockchain stored by a node, and is defined as a vector of [blocks](#block) along with their *consensus state* label indicating their state with respect to [Rolling Finality][rf] rules:
 
 $$\textbf{Chain}: [(\mathsf{B}_{Genesis}, "Final"), \text{ }\dots, (\mathsf{B}_i, State_i)], \dots ,$$
 
@@ -113,6 +117,20 @@ For convenience, we define the `ChainBlock` structure as:
 |------------------|--------------|------------------------------------|
 | $Block$          | [`Block`][b] | A full block accepted in the chain |
 | $ConsensusState$ | String       | The block [consensus state][cs]    |
+
+
+##### *AddToLocalChain*
+This procedure takes a block $\mathsf{B}$, sets its $ConsensusState$ label, and adds it as the new tip of the local chain. Then it updates block states according to Rolling Finality.
+
+**Parameters**
+- $\mathsf{B}$: the block to add
+
+**Procedure**
+1. $ConsensusState =$ [*GetConsensusState*][gcs]$(\mathsf{B})$
+2. $\textbf{Chain}[\mathsf{B}.Height]=(\mathsf{B}, ConsensusState)$
+3. [*ApplyRollingFinality*][arf]$()$
+
+
 
 ### System State
 With the term *system state* we indicate the state of the underlying Virtual Machine (VM) resulting from the execution of all transactions included in the block of the local chain. In particular, we define a variable $VMState$ for each heigh $H$ (indicated as $VMState_H$).
@@ -165,17 +183,17 @@ In particular, blocks in the local chain can be in four states:
 
   - $Attested$: the block has a Valid Attestation and all previous iterations have a Failed Attestation; an $Attested$ block cannot be replaced by a lower-iteration block of the same round. Formally, a block is marked as $Attested$ if it has $Iteration = 0$ or all previous iterations have Failed Attestation.
   
-  - $Confirmed$: the block is either $Accepted$ or $Attested$ and is confirmed by the [Rolling Finality][rf] rules; a $Confirmed$ block is unlikely to be replaced due to a number of block built on top of it; however, it might still be replaced if an ancestor is replaced.  
+  - $Confirmed$: the block is either $Accepted$ or $Attested$ and is confirmed by the [Finality rules][fr]; a $Confirmed$ block is unlikely to be replaced due to a number of block built on top of it; however, it might still be replaced if an ancestor is replaced.  
 
   - $Final$: the block is $Confirmed$ and its parent is $Final$; this block is definitive and cannot be replaced in any case. Note that a block can only be $Final$ if all ancestors are also $Final$.
 
 ### Finality Rules
 The Consensus State of each block in the local chain is determined by the following rules:
 
-> - A new block is marked as $Attested$ if $PNI=0$, where $PNI$ is the number of previous non-attested iterations, and $Accepted$ if $PNI>0$;
-> - If a block is $Attested$, it is marked as $Confirmed$ if its successor is $Attested$ or $Confirmed$;
-> - If a block is $Accepted$, it is marked as $Confirmed$ after $2 \times PNI$ consecutive $Attested$ or $Confirmed$ blocks;
-> - If a block is $Confirmed$ and its parent is $Final$, it is marked as $Final$.
+ - A new block is marked as $Attested$ if $PNI=0$, where $PNI$ is the number of previous non-attested iterations, and $Accepted$ if $PNI>0$;
+ - If a block is $Attested$, it is marked as $Confirmed$ if its successor is $Attested$ or $Confirmed$;
+ - If a block is $Accepted$, it is marked as $Confirmed$ after $2 \times PNI$ consecutive $Attested$ or $Confirmed$ blocks;
+ - If a block is $Confirmed$ and its parent is $Final$, it is marked as $Final$.
 
 For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Failed Attestation, it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 2 = 4$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
 
@@ -185,68 +203,102 @@ Note that the value of $PNI$ can be directly derived from the Attestations in th
 ### Last Final Block
 At any given moment, the [local chain][lc] can be considered as made of two parts: a *final* one, from the genesis block to the last final block, and a *non-final* one, including all blocks after the last final block. Blocks in the non-final part can potentially be reverted until their state changes to $Final$. In contrast, the final part cannot be reverted in any way and is then definitive.
 
-Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as $Final$, and denote it with $\mathsf{B}^f$.
+Due to its relevance, we formally define the ***last final block*** as the highest block in the local chain that has been marked as $Final$, and denote it with $\mathsf{B}^F$.
 
 Note that, in the best case scenario, the *final* part of the chain includes all blocks except the tip. In fact, the tip can never be $Final$ as it has not been confirmed yet.
 
-### Environment
-<!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
-
-| Name               | Value          | Description                                          |
-|--------------------|----------------|------------------------------------------------------|
-| $RollingFinality$  | 5              | Number of Attested blocks for [Rolling Finality][rf] |
 
 ### Procedures
 
-#### *GetBlockState*
-The block state is computed according to the [Finality][fin] rules.
+#### *GetPNI*
+This procedure gets a block $\mathsf{B}$ and returns the number of previous non-attested iterations (PNI).
 
 **Parameters**
-- $\mathsf{B}$: the block being accepted to the chain
+- $\mathsf{B}$: the block being added to the chain
+
+**Procedure**
+
+$\textit{GetPNI}( \mathsf{B} ):$
+- $\texttt{set } pni = 0$
+1. $\texttt{for } i = 0 \dots \mathsf{B}.Iteration-1: $
+   1. $\texttt{if } (\mathsf{H_B}.FailedIterations[i] = NIL):$
+      1. $pni = pni + 1$
+2. $\texttt{output } pni$
+
+#### *GetConsensusState*
+This procedure gets a block $\mathsf{B}$, checks previous non-attested iterations (PNI), and returns the label $Accepted$ or $Attested$ accordingly.
+
+**Parameters**
+- $\mathsf{B}$: the block being added to the chain
+
+**Procedure**
+
+$\textit{GetConsensusState}( \mathsf{B} ):$
+1. $\texttt{set } pni =$ [*GetPNI*][pni]$(\mathsf{B})$
+2. $\texttt{if } (pni > 0):$
+   1. $\texttt{output } Accepted$
+3. $\texttt{else } :$
+   1. $\texttt{output } Attested$
+
+#### *ApplyRollingFinality*
+This procedure updates the labels of the non-final portion of the local chain, from the [Last Final Block][lfb] to the Tip, according to the [Finality rules][fr].
+
+The update takes place only if the new Tip is labeled as $Attested$, since $Accepted$ blocks do not count for Rolling Finality.
+
+**Procedure**
+
+$\textit{ApplyRollingFinality}():$
+1. $\texttt{if } ( \textbf{Chain}[tiph].ConsensusState = Attested ):$
+   1. [*UpdateConfirmedBlocks*][ucb]$()$
+   2. [*UpdateFinalBlocks*][ufb]$()$
+
+
+#### *UpdateConfirmedBlocks*
+This procedure iterates from the $Tip$ to the [Last Final Block][lfb] ($\mathsf{B}^F$) updates $Confirmed$ blocks.
+
+The procedure uses a *Rolling Finality* ($rf$) counter to count the number of consecutive $Confirmed$ or $Attested$ blocks. This counter is initialized to 1 as it assumes the $Tip$ has been labeled as $Attested$. 
+Note that $Attested$ blocks have $PNI=0$, so the check against the $rf$ counter always succeeds. In other words, if the loop reached an $Attested$ block, this is marked as $Confirmed$.
 
 **Algorithm**
-1. If all failed iterations have a [Failed Attestation][atts]:
-   1. Set $cstate$ to "Attested"
-   2. If $\mathsf{B}$'s parent is Final
-      1. Set $cstate$ to "Final"
-2. Otherwise, set $cstate$ to "Accepted"
-3. Output $cstate$
+   1. Initialize $rf$ to 1
+   2. For each block $\mathsf{B}$ between $Tip-1$ and $\mathsf{B}^F$:
+      1. If $\mathsf{B}$ is $Confirmed$:
+         1. Increase $rf$
+      2. Otherwise:
+         1. Get $\mathsf{B}$'s $PNI$ value
+         2. If $rf$ is more than $PNI \times 2$:
+            1. Mark $\mathsf{B}$ as $Confirmed$
+         3. Otherwise, stop
 
 **Procedure**
 
-$\textit{GetBlockState}(\mathsf{B}):$
-- $\texttt{set } h = \mathsf{H_B}.Height$
-1. $\texttt{if } (|\mathsf{H_B}.FailedIterations| = \mathsf{H_B}.Iteration-1):$
-   1. $\texttt{set } cstate = \text{"Attested"}$
-   2. $\texttt{if } (\textbf{Chain}[h{-}1].ConsensusState = \text{"Final"}) :$
-      1. $\texttt{set } cstate = \text{"Final"}$
-2. $\texttt{else } :$
-   1. $\texttt{set } cstate = \text{"Accepted"}$
-3. $\texttt{output } cstate$
+$\textit{UpdateConfirmedBlocks}():$
+- $\texttt{set}:$
+  - $tiph = Tip.Height$
+  - $lfbh = \mathsf{B}^F.Height$
+ 1. $rf = 1$ 
+ 2. $\texttt{for } h = tiph-1 \text{ }\dots\text{ } lfbh+1 :$
+    1. $\texttt{if } ( \textbf{Chain}[h].ConsensusState = Confirmed ):$
+       1. $rf = rf + 1$
+    2. $\texttt{else }:$
+       1. $PNI =$ [*GetPNI*][pni]$(\textbf{Chain}[h].Block)$
+       2. $\texttt{if } (rf \ge PNI \times 2):$
+          1. $\textbf{Chain}[h].ConsensusState = Confirmed$
+       3. $\texttt{else}: \texttt{break}$
 
-
-#### *CheckRollingFinality*
-This procedure checks if the last $RollingFinality$ blocks are all "Attested" and, if so, finalizes all non-final blocks.
-
-**Procedure**
-$\textit{CheckRollingFinality}():$
-1. $rf =$ *HasRollingFinality*$()$
-2. $\texttt{if } (rf = true) :$
-   1. *MakeChainFinal*$()$
-
-#### *HasRollingFinality*
-This procedure outputs true if the last $RollingFinality$ are all Attested and false otherwise.
+#### *UpdateFinalBlocks*
+This procedure iterates from the first non-final block to the Tip and marks as $Final$ all $Confirmed$ blocks following a $Final$ block.
 
 **Procedure**
-$\textit{HasRollingFinality}():$
-- $\texttt{set } tip = \mathsf{H}_{Tip}.Height$
-1. $\texttt{for } i = tip \dots tip{-}RollingFinality :$
-   1. $\texttt{if } \textbf{Chain}[i].ConsensusState \ne \text{"Attested"}$
-      1. $\texttt{output } false$
-2. $\texttt{output } true$ 
 
-#### *MakeChainFinal*
-This procedure set to "Final" the state of all non-final blocks in $\textbf{Chain}$
+$\textit{UpdateFinalBlocks}():$
+- $\texttt{set}:$
+  - $tiph = Tip.Height$
+  - $lfbh = \mathsf{B}^F.Height$
+1. $\texttt{for } h = lfbh+1 \dots tiph :$
+   1. $\texttt{if } ( \textbf{Chain}[h].ConsensusState = Confirmed ):$
+      1. $\textbf{Chain}[h].ConsensusState = Final$
+   2. $\texttt{else}: \texttt{break}$
 
 <!----------------------- FOOTNOTES ----------------------->
 
@@ -265,17 +317,21 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 [chn]: #chain
 [mc]:  #main-chain
 [lc]:  #local-chain
+[alc]: #AddToLocalChain
 [chb]: #chainblock-structure
 [sys]: #system-state
 [vms]: #vmstate-structure
 
-[cs]:  #consensus-state
-[lfb]: #last-final-block
 [rf]:  #rolling-finality
-[gbs]: #getblockstate
-[crf]: #checkrollingfinality
-[hrf]: #hasrollingfinality
-[mcf]: #makechainfinal
+[cs]:  #consensus-state
+[fr]:  #finality-rules
+[lfb]: #last-final-block
+[pni]: #GetPNI
+[gcs]: #GetConsensusState
+[arf]: #ApplyRollingFinality
+[ucb]: #UpdateConfirmedBlocks
+[ufb]: #UpdateFinalBlocks
+
 
 <!-- Basics -->
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
@@ -298,3 +354,4 @@ This procedure set to "Final" the state of all non-final blocks in $\textbf{Chai
 
 
 
+<!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->
