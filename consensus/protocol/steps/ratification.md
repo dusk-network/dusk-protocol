@@ -153,7 +153,9 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [sr]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepresult
 [sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
 [av]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#aggregatevote
+[vv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#verifyvotes
 
+[vbh]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblockheader
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
 <!-- Protocol -->
@@ -170,9 +172,6 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 
 [ds]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
-
-[vbh]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#verifyblockheader
-[vv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#verifyvotes
 
 <!-- Messages -->
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures

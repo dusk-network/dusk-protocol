@@ -2,15 +2,9 @@
 This section describes how new blocks are accepted into the local blockchain and how this chain can be updated when receiving valid blocks from the network.
 
 **ToC**
-  - [Block Verification](#block-verification)
-    - [Procedures](#procedures)
-      - [*VerifyBlock*](#verifyblock)
-      - [*VerifyBlockHeader*](#verifyblockheader)
-      - [*VerifyAttestation*](#verifyattestation)
-      - [*VerifyVotes*](#verifyvotes)
   - [Block Handling](#block-handling)
     - [Environment](#environment)
-    - [Procedures](#procedures-1)
+    - [Procedures](#procedures)
       - [*HandleBlock*](#handleblock)
       - [*HandleQuorum*](#handlequorum)
       - [*MakeWinning*](#makewinning)
@@ -18,166 +12,12 @@ This section describes how new blocks are accepted into the local blockchain and
       - [*Fallback*](#fallback)
   - [Synchronization](#synchronization)
     - [Environment](#environment-1)
-    - [Procedures](#procedures-2)
+    - [Procedures](#procedures-1)
       - [*SyncBlock*](#syncblock)
       - [*PreSync*](#presync)
       - [*StartSync*](#startsync)
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
-
-
-## Block Verification
-We here define the procedures to verify the validity of a block: [*VerifyBlock*][vb], [*VerifyBlockHeader*][vbh], [*VerifyAttestation*][va], and [*VerifyVotes*][vv].
-
-### Procedures
-#### *VerifyBlock*
-This procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
-
-If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
-
-**Parameters**
-- $\mathsf{B}$: the block to verify
-- $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
-
-**Algorithm**
-1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
-2. If header's not valid, output $false$
-3. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
-4. If $\mathsf{A}^p$ is not valid, output $false$
-5. If $\mathsf{B}$ is an Emergency Block
-   1. Output $true$
-6. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
-7. If attestation is not valid, output $false$
-8. For each attestation $\mathsf{A}_i$ in $FailedIterations$
-   1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
-   2. If $\mathsf{A}_i$ is not valid, output $false$
-9.  If all verifications succeeded, output $true$
-
-**Procedure**
-$\textit{VerifyBlock}(\mathsf{B}):$
-- $\textit{set }:$
-  - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
-  - $\mathsf{A_B} = \mathsf{B}.Attestation$
-  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
-  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
-1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
-2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
-4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
-   1. $\texttt{output } true$
-6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
-7. $\texttt{if } (isValid = false): \texttt{output } false$
-8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
-   - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
-   1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
-      <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$[^1]
-      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
-      2. $\texttt{if } (isValid = false): \texttt{output } false$
-9.  $\texttt{output } true$
-
-#### *VerifyBlockHeader*
-This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
-
-Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between blocks. The candidate's timestamp is checked accordingly. Moreover, we reject blocks with correct timestamp that are published in advance. This implicitly assume nodes have a correct local time (ideally, synced through NTP).
-
-**Parameters**
-- $\mathsf{B}$: block to verify
-- $\mathsf{B}^p$: previous block
-
-**Algorithm**
-1. If $\mathsf{B}$'s $Version$ is $Version$
-2. And $\mathsf{B}$'s $Hash$ is the header's hash
-3. And $\mathsf{B}$'s $Height$ is $\mathsf{B}^p$'s height plus 1
-4. And $\mathsf{B}$'s $PrevBlock$ is $\mathsf{B}^p$'s hash
-5. And $\mathsf{B}$'s $Seed$ is the generator's signature of $\mathsf{B}^p$'s $Seed$
-6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
-7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
-8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
-9. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
-   1. Output $true$
-10. Otherwise, output $false$
-
-**Procedure**
-
-$\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $SystemState_{\mathsf{B}^p} =$ [*ExecuteTransactions*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
-- $\texttt{if }$
-  1. $(\mathsf{B}.Version = Version)$ 
-  2. $\texttt{and } (\mathsf{B}.Hash = \eta(\mathsf{B}))$
-  3. $\texttt{and } (\mathsf{B}.Height = \mathsf{B}^p.Height)+1$
-  4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
-  5. $\texttt{and } (\mathsf{B}.Seed = $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
-  6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
-  7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
-  8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
-  9. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
-     1. $\texttt{output } true$
-
-  10. $\texttt{else: output } false$
-
-
-#### *VerifyAttestation*
-This procedure checks a block's Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures against the respective committees.
-
-**Parameters**
-- $\mathsf{A}$: the attestation to verify
-- $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
-
-**Algorithm**
-1. Check both Validation and Ratification votes are present
-2. Verify Validation votes
-3. If votes are not valid, output $false$
-4. Verify Ratification votes
-5. If votes are not valid, output $false$
-6. Output $true$
-
-**Procedure**
-
-$\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
-- $\texttt{set}:$
-   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
-   - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
-   - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
-   - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
-   - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
-   - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
-   - $Q =$ [*GetQuorum*][gq]$(v)$
-1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
-   1. $\texttt{output } false$
-2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
-3. $\texttt{if } (isValid{=}false): \texttt{output } false$
-4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
-5. $\texttt{if } (isValid{=}false): \texttt{output } false$
-6. $\texttt{output } true$
-
-#### *VerifyVotes*
-This procedure checks the aggregated votes are valid and reach the target quorum.
-
-**Parameters**
-- $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
-- $\upsilon$: the [signature value][ms]
-- $Q$: the target quorum
-- $\mathcal{C}$: the step committee
-
-**Algorithm**
-1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{SV}.BitSet$
-2. If credits in $C^{\boldsymbol{bs}}$ are less than the target quorum $Q$
-   1. Output $false$
-3. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
-4. Verify aggregated signature over $\upsilon$
-
-**Procedure**
-
-$\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
-- $\texttt{set}:$
-  - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
-1. $\mathcal{C}^{\boldsymbol{bs}}=$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
-2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
-   1. $\texttt{output } false$
-3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
-4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 <p><br></p>
 
@@ -622,36 +462,25 @@ $\textit{AcceptPoolBlocks}():$
 [sb]:  #syncblock
 [ps]:  #presync
 [ss]:  #startsync
-[vb]:  #verifyblock
-[vbh]: #verifyblockheader
-[va]:  #verifyattestation
-[vv]:  #verifyvotes
+
 [hq]:  #HandleQuorum
 [mw]:  #makewinning
 [vq]:  #VerifyQuorum
 
 
 <!-- Basics -->
-[blk]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blocks
+[vb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblock
 [lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 [alc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#AddToLocalChain
-[gcs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#GetConsensusState
 [rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
-[ec]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractCommittee
-[gq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetQuorum
-[gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
-[sc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
-[cc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#countcredits
+[va]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#verifyattestation
 
 [inc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#incentives
 
 <!-- Protocol -->
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
-[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
-[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#isemergencyblock
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saloop
 [sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
@@ -659,15 +488,11 @@ $\textit{AcceptPoolBlocks}():$
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
-[ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
-[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds 
-
 <!-- Messages -->
 [mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
 
 <!-- TODO -->
