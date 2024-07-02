@@ -80,37 +80,42 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 #### *VerifyBlockHeader*
 This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
 
+Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between blocks. The candidate's timestamp is checked accordingly. Moreover, we reject blocks with correct timestamp that are published in advance. This implicitly assume nodes have a correct local time (ideally, synced through NTP).
+
 **Parameters**
 - $\mathsf{B}$: block to verify
 - $\mathsf{B}^p$: previous block
 
 **Algorithm**
-1. Check $Version$ is $0$
-2. Check $Hash$ is the header's hash
-3. Check $Height$ is $\mathsf{B}^p$'s height plus 1
-4. Check $PrevBlock$ is $\mathsf{B}^p$'s hash
-5. Check $Seed$ is the generator's signature of the previous seed
-6. Check transaction root is correct with respect to the transaction set
-7. Check state hash corresponds to the result of the state transition over $\mathsf{B}^p$
-- If any check failed
-  1. Output $false$
-- Otherwise, output $true$
+1. If $\mathsf{B}$'s $Version$ is $Version$
+2. And $\mathsf{B}$'s $Hash$ is the header's hash
+3. And $\mathsf{B}$'s $Height$ is $\mathsf{B}^p$'s height plus 1
+4. And $\mathsf{B}$'s $PrevBlock$ is $\mathsf{B}^p$'s hash
+5. And $\mathsf{B}$'s $Seed$ is the generator's signature of $\mathsf{B}^p$'s $Seed$
+6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
+7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
+8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
+9. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+   1. Output $true$
+10. Otherwise, output $false$
 
 **Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $newState =$ *ExecuteTransactions*$(State_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
+- $SystemState_{\mathsf{B}^p} =$ [*ExecuteTransactions*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
 - $\texttt{if }$
-  1. $(\mathsf{B}.Version > 0)$ 
-  2. $\texttt{or } (\mathsf{B}.Hash \ne \eta(\mathsf{B}))$
-  3. $\texttt{or } (\mathsf{B}.Height \ne \mathsf{B}^p.Height)$
-  4. $\texttt{or } (\mathsf{B}.PreviousBlock \ne \mathsf{B}^p.Hash)$
-  5. $\texttt{or } (\mathsf{B}.Seed \ne $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
-  6. $\texttt{or } (\mathsf{B}.TransactionRoot \ne MerkleTree(\mathsf{B}.Transactions).Root)$
-  7. $\texttt{or } (\mathsf{B}.StateRoot \ne MerkleTree(newState).Root):$
-     1. $\texttt{output } false$
+  1. $(\mathsf{B}.Version = Version)$ 
+  2. $\texttt{and } (\mathsf{B}.Hash = \eta(\mathsf{B}))$
+  3. $\texttt{and } (\mathsf{B}.Height = \mathsf{B}^p.Height)+1$
+  4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
+  5. $\texttt{and } (\mathsf{B}.Seed = $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
+  6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
+  7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
+  8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
+  9. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+     1. $\texttt{output } true$
 
-  8. $\texttt{output } true$
+  10. $\texttt{else: output } false$
 
 
 #### *VerifyAttestation*
@@ -351,7 +356,7 @@ $\textit{AcceptBlock}(\mathsf{B}):$
    - $gas = \mathsf{B}.GasLimit$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $SystemState =$ [*ExecuteTransactions*][xt]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
+2. $SystemState =$ [*ExecuteTransactions*][est]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
 3. $Provisioners = SystemState.Provisioners$
 4. $Tip = \mathsf{B}$
 5. [*AddToLocalChain*][alc]$(\mathsf{B})$
@@ -666,4 +671,4 @@ $\textit{AcceptPoolBlocks}():$
 [sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
 
 <!-- TODO -->
-[xt]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine
+[est]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

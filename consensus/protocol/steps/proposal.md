@@ -23,6 +23,8 @@ It is called by [*SAIteration*][sai], which will pass the result to [*Validation
 
 In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*ExtractGenerator*][eg]. If the node is extracted as $\mathcal{G}$, it generates the candidate block $\mathsf{B}^c$ and broadcasts it. Otherwise, it waits the Proposal timeout $\tau_{Prop}$ to receive the candidate block from the network. If $\mathsf{B}^c$ is received, it outputs it, otherwise, it outputs $NIL$.
 
+We impose a minimum block time of 10 seconds. This is enforced by having nodes wait until at least 10 seconds have passed since the previous block. This is further verified in the Candidate header verification.
+
 **Parameters** 
 - [SA Environment][env]
 - $R$: round number
@@ -36,8 +38,10 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
    3. Broadcast $\mathsf{M}$
    4. Output $\mathsf{B}^c$
 3. Otherwise:
-   1. Start Proposal timeout $\tau_{Prop}$
-   2. While timeout has not expired:
+   1. If current time is lower than $Tip$'s timestamp + 10 seconds
+      1. Wait until $Tip$'s timestamp + 10 seconds
+   2. Start Proposal timeout $\tau_{Prop}$
+   3. While timeout has not expired:
       1. If a $\mathsf{Candidate}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
          1. If $\mathsf{M}$'s signature is valid
          2. and $\mathsf{M}.PrevHash$ is $Tip$
@@ -45,7 +49,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
             1. Propagate $\mathsf{M}$
             2. Store elapsed time
             3. Output $\mathsf{M}$'s block ($\mathsf{B}^c_\mathsf{M}$)
-   3. If timeout expired
+   4. If timeout expired
       1. Increase Proposal timeout
       2. Output $NIL$
 
@@ -54,7 +58,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
 $\textit{ProposalStep}(R, I)$:
 1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
 2. $\texttt{if } (pk_\mathcal{N} = \mathcal{G}):$
-   1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I)$
+   1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I, Tip)$
    2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
       | Field       | Value               | 
       |-------------|---------------------|
@@ -67,9 +71,12 @@ $\textit{ProposalStep}(R, I)$:
 
    3. [*Broadcast*][mx]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
+
 3. $\texttt{else}:$
-   1. $\tau_{Start} = \tau_{Now}$
-   2. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Prop}) \texttt{ and } (I \lt EmergencyMode):$
+   1. $\texttt{if }(\tau_{Now} < Tip.Timestamp+MinBlockTime)$
+      1. $\texttt{sleep}(Tip.Timestamp+MinBlockTime - \tau_{Now})$
+   2. $\tau_{Start} = \tau_{Now}$
+   3. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Prop}) \texttt{ and } (I \lt EmergencyMode):$
       1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M^C} \ne NIL):$
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
@@ -81,7 +88,7 @@ $\textit{ProposalStep}(R, I)$:
             1. [*Propagate*][mx]$(\mathsf{M^C})$
             2. [*StoreElapsedTime*][set]$(Proposal, \tau_{Now}-\tau_{Start})$
             3. $\texttt{output } \mathsf{B}^c$
-   3. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Prop}):$
+   4. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Prop}):$
       1. [*IncreaseTimeout*][it]$(Proposal)$
       2. $\texttt{output } NIL$
 
@@ -92,49 +99,52 @@ This procedure creates a candidate block for round $R$ and iteration $I$ by sele
 It is called by [*ProposalStep*][props], which will broadcast the returned block in a `Candidate` message.
 
 **Parameters**
-- [SA Environment][env]
 - $R$: round number
 - $I$: iteration number
+- $\mathsf{B}^p$: previous block (the current $Tip$)
 
 **Algorithm**
 1. Fetch transactions $\boldsymbol{txs}$ from Mempool
-2. Execute $\boldsymbol{txs}$ and get new state $State_R$
+2. Execute $\boldsymbol{txs}$ and get new state $SystemState_R$
 3. Compute transaction Merkle tree root $TxRoot_R$
-4. Set new $Seed_R$ by signing the previous one $Seed_{R-1}$
-5. Create block header $`\mathsf{H}_{\mathsf{B}^c_{R,I}}`$
-6. Create candidate block $\mathsf{B}^c$
-7. Output $\mathsf{B}^c$
+4. Set new $Seed_R$ by signing the previous one $Seed_{\mathsf{B}^p}$
+5. Set block's timestamp
+6. Create block header $`\mathsf{H}_{\mathsf{B}^c}`$
+7. Create candidate block $\mathsf{B}^c$
+8. Output $\mathsf{B}^c$
 
 **Procedure**
 
-$\textit{GenerateBlock}(R,I)$
-1. $`\boldsymbol{txs} = [tx_1, \dots, tx_n] = `$ [*SelectTransactions*][st]$()$
-2. $SystemState_R =$ [*ExecuteStateTransition*][est]$`(State_{R-1}, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
-3. $`TxRoot_R = MerkleTree(\boldsymbol{txs}).Root`$
-4. $`Seed_R = Sign_{BLS}(sk_\mathcal{N}, Seed_{R-1})`$
-5. $`\mathsf{H}_{\mathsf{B}^c_{R,I}} = (V,R,\tau_{now},BlockGas,I,\eta_{\mathsf{B}_{R-1}},Seed_R,pk_\mathcal{N},$
+$\textit{GenerateBlock}(R,I, \mathsf{B}^p)$
+1. $\boldsymbol{txs} =$ [*SelectTransactions*][st]$()$
+2. $SystemState_{\mathsf{B}^c} =$ [*ExecuteStateTransition*][est]$`(\mathsf{B}^p.State, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
+3. $`TxRoot_{\mathsf{B}^c} = MerkleTree(\boldsymbol{txs}).Root`$
+4. $`Seed_{\mathsf{B}^c} = Sign_{BLS}(sk_\mathcal{N}, Seed_{\mathsf{B}^p})`$
+5. $\tau_{\mathsf{B}^c} = Max(\tau_{now}, \mathsf{B}^p.Timestamp+10)$
+6. $`\mathsf{H}_{\mathsf{B}^c} = (Version,R,\tau_{\mathsf{B}^c},BlockGas,I,\eta_{\mathsf{B}_{\mathsf{B}^p}},Seed_{\mathsf{B}^c},pk_\mathcal{N},$
    $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedAttestations})`$
     | Field                  | Value                              | 
     |------------------------|------------------------------------|
     | $Version$              | $V$                                |
     | $Height$               | $R$                                |
-    | $Timestamp$            | $\tau_{now}$                       |
+    | $Timestamp$            | $\tau_{\mathsf{B}^c}$              |
     | $GasLimit$             | $BlockGas$                         |
     | $Iteration$            | $I$                                |
-    | $PreviousBlock$        | $\eta_{\mathsf{B}_{R-1}}$          |
-    | $Seed$                 | $Seed_R$                           |
+    | $PreviousBlock$        | $\eta_{\mathsf{B}_{\mathsf{B}^p}}$ |
+    | $Seed$                 | $Seed_{\mathsf{B}^c}$              |
     | $Generator$            | $pk_\mathcal{N}$                   |
-    | $TxRoot$               | $TxRoot_R$                         |
-    | $State$                | $SystemState_R$                    |
-    | $PrevBlockCertificate$ | $\mathsf{B}_{R-1}.Attestation$     | 
+    | $TxRoot$               | $TxRoot_{\mathsf{B}^c}$            |
+    | $State$                | $SystemState_{\mathsf{B}^c}$       |
+    | $PrevBlockCertificate$ | $\mathsf{B}^p.Attestation$         | 
     | $FailedIterations$     | $\boldsymbol{FailedAttestations}$  |
     
-6. $`\mathsf{B}^c_{R,I} = (\mathsf{H}, \boldsymbol{tx})`$
+7. $`\mathsf{B}^c = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 
     |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
     | $Transactions$ | $\boldsymbol{txs}$          |
-7. $\texttt{output } \mathsf{B}^c_{R,I}$
+
+8. $\texttt{output } \mathsf{B}^c$
 
 <p><br></p>
 
