@@ -1,5 +1,5 @@
 # Blockchain
-This section formally describes the the Dusk blockchain and block finality.
+This section formally describes the Dusk block, blockchain, and Rolling Finality.
 
 **ToC**
   - [Blocks](#blocks)
@@ -8,6 +8,9 @@ This section formally describes the the Dusk blockchain and block finality.
     - [Structures](#structures)
       - [`Block` Structure](#block-structure)
       - [`BlockHeader` Structure](#blockheader-structure)
+    - [Procedures](#procedures)
+      - [*VerifyBlock*](#verifyblock)
+      - [*VerifyBlockHeader*](#verifyblockheader)
   - [**Chain**](#chain)
       - [Main Chain](#main-chain)
       - [Local Chain](#local-chain)
@@ -16,11 +19,10 @@ This section formally describes the the Dusk blockchain and block finality.
     - [System State](#system-state)
       - [`VMState` Structure](#vmstate-structure)
   - [Rolling Finality](#rolling-finality)
-    - [Rationale](#rationale)
     - [Consensus State](#consensus-state)
     - [Finality Rules](#finality-rules)
     - [Last Final Block](#last-final-block)
-    - [Procedures](#procedures)
+    - [Procedures](#procedures-1)
       - [*GetPNI*](#getpni)
       - [*GetConsensusState*](#getconsensusstate)
       - [*ApplyRollingFinality*](#applyrollingfinality)
@@ -84,6 +86,101 @@ We also define the function $\eta(\mathsf{B})$ that given a block $\mathsf{B}$ o
 
 Finally, we use $\mathsf{B}_\eta$ to indicate the block with hash $\eta$.
 
+
+### Procedures
+We define the following Block-related procedures: 
+  - [*VerifyBlock*][vb]: verifies the validity of a [`Block`][b] with respect to its parent block
+  - [*VerifyBlockHeader*][vbh]: verifies the validity of a [`BlockHeader`][bh]
+
+#### *VerifyBlock*
+This procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
+
+If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
+
+**Parameters**
+- $\mathsf{B}$: the block to verify
+- $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
+
+**Algorithm**
+1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
+2. If header's not valid, output $false$
+3. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
+4. If $\mathsf{A}^p$ is not valid, output $false$
+5. If $\mathsf{B}$ is an Emergency Block
+   1. Output $true$
+6. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
+7. If attestation is not valid, output $false$
+8. For each attestation $\mathsf{A}_i$ in $FailedIterations$
+   1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
+   2. If $\mathsf{A}_i$ is not valid, output $false$
+9.  If all verifications succeeded, output $true$
+
+**Procedure**
+$\textit{VerifyBlock}(\mathsf{B}):$
+- $\textit{set }:$
+  - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
+  - $\mathsf{A_B} = \mathsf{B}.Attestation$
+  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
+  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
+1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
+2. $\texttt{if } (isValid = false): \texttt{output } false$
+3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
+4. $\texttt{if } (isValid = false): \texttt{output } false$
+5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
+   1. $\texttt{output } true$
+6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
+7. $\texttt{if } (isValid = false): \texttt{output } false$
+8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
+   - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
+   1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
+      <!-- TODO: support Invalid/NoQuorum votes -->
+      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
+      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
+      2. $\texttt{if } (isValid = false): \texttt{output } false$
+9.  $\texttt{output } true$
+
+#### *VerifyBlockHeader*
+This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
+
+Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between blocks. The candidate's timestamp is checked accordingly. Moreover, we reject blocks with correct timestamp that are published in advance. This implicitly assume nodes have a correct local time (ideally, synced through NTP).
+
+**Parameters**
+- $\mathsf{B}$: block to verify
+- $\mathsf{B}^p$: previous block
+
+**Algorithm**
+1. If $\mathsf{B}$'s $Version$ is $Version$
+2. And $\mathsf{B}$'s $Hash$ is the header's hash
+3. And $\mathsf{B}$'s $Height$ is $\mathsf{B}^p$'s height plus 1
+4. And $\mathsf{B}$'s $PrevBlock$ is $\mathsf{B}^p$'s hash
+5. And $\mathsf{B}$'s $Seed$ is the generator's signature of $\mathsf{B}^p$'s $Seed$
+6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
+7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
+8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
+9. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+   1. Output $true$
+10. Otherwise, output $false$
+
+**Procedure**
+
+$\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
+- $SystemState_{\mathsf{B}^p} =$ [*ExecuteTransactions*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
+- $\texttt{if }$
+  1. $(\mathsf{B}.Version = Version)$ 
+  2. $\texttt{and } (\mathsf{B}.Hash = \eta(\mathsf{B}))$
+  3. $\texttt{and } (\mathsf{B}.Height = \mathsf{B}^p.Height)+1$
+  4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
+  5. $\texttt{and } (\mathsf{B}.Seed = $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
+  6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
+  7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
+  8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
+  9. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+     1. $\texttt{output } true$
+
+  10. $\texttt{else: output } false$
+
+
+<p><br></p>
 
 ## **Chain**
 In each moment, it is possible that different nodes store a different version of the Dusk blockchain, which may vary in the extent of the chain (i.e., a difference in the height of last known block) or even composition (i.e., the last blocks are different, a case known as chain fork). For this reason, we distinguish between the chain on which the majority of the network agreed, referred to as the *main chain*, from the local version stored by a single node, referred to as the *local chain*.
@@ -164,7 +261,8 @@ To help nodes (and users) determine when blocks are considered as definitively p
 Note that when a block is marked as final by the Rolling Finality, the probability of a higher priority block having reached a $Valid$ quorum is assumed to be negligible[^2].
 
 
-### Rationale
+**Rationale**
+
 The mechanism is based on the following observations:
  - The only blocks that can be replaced by "higher-priority" sibling (a block with the same parent) are those with $Iteration \gt 0$ for which not all previous iterations have a [Failed Attestation][atts]. In particular, the number of such competing siblings corresponds to the number of previous iterations with no Attestation (that is, whose result is unknown).
  - Considering a replaceable block $B$, a successor of $B$ reaching a $Valid$ quorum implicitly proves that a set of the provisioners, namely those involved in its creation and voting, have accepted $B$ into their local chain. More specifically, any Attestation for a successor of $B$ implicitly confirms $B$ is in the local chain of a subset of the provisioner set. 
@@ -313,6 +411,9 @@ $\textit{UpdateFinalBlocks}():$
 [fb]:  #full-block
 [b]:   #block-structure
 [bh]:  #blockheader-structure
+[vb]:  #verifyblock
+[vbh]: #verifyblockheader
+
 
 [chn]: #chain
 [mc]:  #main-chain
@@ -337,21 +438,23 @@ $\textit{UpdateFinalBlocks}():$
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
-[sv]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
+[va]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#verifyattestation
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
+[ieb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#isemergencyblock
 
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
-[dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 [cm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md
 [fal]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#fallback
 
-
+<!-- TODO -->
+[est]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine
 
 <!-- TODO: RELAX_ITERATION_THRESHOLD = 10 -->

@@ -30,6 +30,8 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [`StepResult`](#stepresult)
     - [Procedures](#procedures-2)
       - [*AggregateVote*](#aggregatevote)
+      - [*VerifyAttestation*](#verifyattestation)
+      - [*VerifyVotes*](#verifyvotes)
 
 <p><br></p>
 
@@ -284,6 +286,11 @@ The structure is defined as follows:
 $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
 ### Procedures
+We define the following Attestation-related procedures: 
+  - [*AggregateVote*][av]: adds a vote to a [`StepVotes`][sv]
+  - [*VerifyAttestation*][va]: verifies an [`Attestation`][att]
+  - [*VerifyVotes*][vv]: verifies aggregated votes in a [`StepVotes`][sv] and checks the quorum
+
 #### *AggregateVote*
 This procedure adds a vote to a [`StepVotes`][sv] by aggregating the BLS signature and setting the signer bit in the committee bitset.
 
@@ -300,6 +307,67 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 2. $\mathsf{SV}.Voters =$ [*SetBit*][sb]$(\mathsf{SV}.Voters, \mathcal{C}, pk)$
 3. $\texttt{output } \mathsf{SV}$
 
+
+#### *VerifyAttestation*
+This procedure checks a block's Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures against the respective committees.
+
+**Parameters**
+- $\mathsf{A}$: the [Attestation][att] to verify
+- $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
+
+**Algorithm**
+1. Check both Validation and Ratification votes are present
+2. Verify Validation votes
+3. If votes are not valid, output $false$
+4. Verify Ratification votes
+5. If votes are not valid, output $false$
+6. Output $true$
+
+**Procedure**
+
+$\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
+- $\texttt{set}:$
+   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
+   - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
+   - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
+   - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
+   - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
+   - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
+   - $Q =$ [*GetQuorum*][gq]$(v)$
+1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
+   1. $\texttt{output } false$
+2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
+3. $\texttt{if } (isValid{=}false): \texttt{output } false$
+4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
+5. $\texttt{if } (isValid{=}false): \texttt{output } false$
+6. $\texttt{output } true$
+
+#### *VerifyVotes*
+This procedure checks the aggregated votes are valid and reach the target quorum.
+
+**Parameters**
+- $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
+- $\upsilon$: the [signature value][ms]
+- $Q$: the target quorum
+- $\mathcal{C}$: the step committee
+
+**Algorithm**
+1. Compute subcommittee $C^{\boldsymbol{bs}}$ from $\mathsf{SV}.BitSet$
+2. If credits in $C^{\boldsymbol{bs}}$ are less than the target quorum $Q$
+   1. Output $false$
+3. Aggregate public keys of $C^{\boldsymbol{bs}}$ members
+4. Verify aggregated signature over $\upsilon$
+
+**Procedure**
+
+$\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
+- $\texttt{set}:$
+  - $\boldsymbol{bs}, \sigma_{\boldsymbol{bs}} \leftarrow \mathsf{SV}$
+1. $\mathcal{C}^{\boldsymbol{bs}}=$ [*SubCommittee*][sc]$(\mathcal{C}, \boldsymbol{bs})$
+2. $\texttt{if } ($[*CountCredits*][cc]$(\mathcal{C}, \boldsymbol{bs}) \lt Q):$
+   1. $\texttt{output } false$
+3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
+4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md -->
@@ -327,9 +395,10 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 [sv]:   #stepvotes
 [sr]:   #stepresult
 [av]:   #aggregatevote
+[va]:   #verifyattestation
+[vv]:   #verifyvotes
 
 <!-- Basics -->
-[pro]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
 [rew]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#rewards
 
 [cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block

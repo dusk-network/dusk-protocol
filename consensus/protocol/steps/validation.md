@@ -161,9 +161,9 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [ds]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
-[vbh]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#verifyblockheader
 
 <!-- Basics -->
+[vbh]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblockheader
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
 [p]:     https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
