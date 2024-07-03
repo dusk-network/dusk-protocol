@@ -291,8 +291,8 @@ At Iteration 0, each step timeout $\tau_{Step}$ is set to $BaseTimeout_{Step}$. 
 | Name              | Value | Description                                               |
 |-------------------|-------|-----------------------------------------------------------|
 | $TimeoutIncrease$ | 2     | Increase amount in case of timeout (in seconds)           |
-| $MinStepTimeout$  | 2     | Minimum timeout for a single step (in seconds)            |
-| $MaxStepTimeout$  | 30    | Maximum timeout for a single step (in seconds)            |
+| $MinStepTimeout$  | 7     | Minimum timeout for a single step (in seconds)            |
+| $MaxStepTimeout$  | 40    | Maximum timeout for a single step (in seconds)            |
 | $MaxElapsedTimes$ | 5     | Maximum number of elapsed time values stored (in seconds) |
 
 **State Variables**
