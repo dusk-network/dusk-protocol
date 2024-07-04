@@ -16,7 +16,7 @@ This section describes the network messages exchanged by nodes to participate in
       - [`Block`](#block)
       - [Sync messages](#sync-messages)
     - [Procedures](#procedures)
-      - [*Msg*](#msg)
+      - [*CMsg*](#cmsg)
       - [*Broadcast*](#broadcast)
       - [*Receive*](#receive)
       - [*Propagate*](#propagate)
@@ -192,8 +192,8 @@ The following messages are used to synchronize the node with other peers:
 ### Procedures
 While the underlying network protocol is described in the [Network][net] section, we here define some generic network procedures used in the SA protocol.
 
-#### *Msg*
-We define a common *Msg* procedure, which is used to create a consensus message:
+#### *CMsg*
+We define a common *CMsg* (Consensus Message) constructor procedure, which is used to create a consensus message:
 
 $Msg(\mathsf{T}, f_1,\dots,f_2):$
 1. $\mathsf{ConsensusInfo} = (\eta_{Tip}, R, I)$
@@ -243,7 +243,7 @@ This procedure represents a point-to-point message from the node to one of its p
 [sinf]: #signinfo
 [sigs]: #signatures
 [mx]:   #procedures
-[msg]:  #msg
+[cmsg]:  #cmsg
 [sm]:   #sync-messages
 
 <!-- Basics -->

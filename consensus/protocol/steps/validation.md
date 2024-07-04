@@ -98,7 +98,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       2. $\texttt{if } (isValid = true) : v = Valid$
       3. $\texttt{else}: v = Invalid$
    4. $\texttt{set}: \mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   5. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, \mathsf{VI})$
+   5. $`\mathsf{M} = `$ [*CMsg*][cmsg]$(\mathsf{Validation}, \mathsf{VI})$
       | Field           | Value                 | 
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -183,4 +183,4 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 [ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
 [vmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#validation
-[msg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#msg
+[cmsg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg

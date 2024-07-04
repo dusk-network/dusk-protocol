@@ -59,7 +59,7 @@ $\textit{ProposalStep}(R, I)$:
 1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
 2. $\texttt{if } (pk_\mathcal{N} = \mathcal{G}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I, Tip)$
-   2. $\mathsf{M} =$ [*Msg*][msg]$(\mathsf{Candidate}, \mathsf{B}^c)$
+   2. $\mathsf{M} =$ [*CMsg*][cmsg]$(\mathsf{Candidate}, \mathsf{B}^c)$
       | Field       | Value               | 
       |-------------|---------------------|
       | $PrevHash$  | $\eta_{Tip}$        |
@@ -179,7 +179,7 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 
 <!-- Messages -->
 [ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
-[msg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#msg
+[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
 [mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
 
