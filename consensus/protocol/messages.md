@@ -188,8 +188,22 @@ The following messages are used to synchronize the node with other peers:
 - $\mathsf{GetCandidate}$: requests a candidate block from its hash
 - $\mathsf{GetCandidateResp}$: transmits a candidate block in response to  $\mathsf{GetCandidate}$ message;
 
+<p><br></p>
 
-### Procedures
+## DataExchange Messages
+These messages are used by nodes to request missing data objects to their peers.
+
+We define the following messages:
+- `GetCandidate`: it requests a [Candidate][cb] block by its hash;
+- `GetCandidateResp`: it contains the [`Block`][b] requested by `GetCandidate`;
+- `GetMempool`: it requests all transactions in the node's *Mempool*;
+- `GetBlocks`: it requests all successors of a certain block; it is used to synchronize the chain with a peer;
+- `GetResource`: it requests a resource (transaction or block);
+- `Inv`: it contains a list of available resources (transactions and/or blocks);
+
+<p><br></p>
+
+## Procedures
 While the underlying network protocol is described in the [Network][net] section, we here define some generic network procedures used in the SA protocol.
 
 #### *CMsg*
@@ -248,6 +262,7 @@ This procedure represents a point-to-point message from the node to one of its p
 
 <!-- Basics -->
 [b]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure
+[cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
 
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
