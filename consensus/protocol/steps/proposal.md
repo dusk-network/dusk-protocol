@@ -59,7 +59,7 @@ $\textit{ProposalStep}(R, I)$:
 1. $\mathcal{G} =$ [*ExtractGenerator*][eg]$(R,I)$
 2. $\texttt{if } (pk_\mathcal{N} = \mathcal{G}):$
    1. $\mathsf{B}^c =$ [*GenerateBlock*][gb]$(R,I, Tip)$
-   2. $\mathsf{M} =$ [*CMsg*][cmsg]$(\mathsf{Candidate}, \mathsf{B}^c)$
+   2. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Candidate}, \mathsf{B}^c)$
       | Field       | Value               | 
       |-------------|---------------------|
       | $PrevHash$  | $\eta_{Tip}$        |
@@ -82,7 +82,7 @@ $\textit{ProposalStep}(R, I)$:
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
          - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
          - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}`$
-         1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][ms]$(\mathsf{M^C}) = true \text{ })`$
+         1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][sigs]$(\mathsf{M^C}) = true \text{ })`$
          2. $\texttt{and }(\eta_{\mathsf{B}^p} = \eta_{Tip})$
          3. $`\texttt{and }(\text{ } pk_\mathsf{M} = \mathcal{G} \text{ }):`$
             1. [*Propagate*][mx]$(\mathsf{M^C})$
@@ -178,10 +178,10 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 <!-- Messages -->
-[ms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
-[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
+[sigs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
+[nmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
 
 <!-- TODO: Add ExecuteTransactions -->
 [est]:  https://github.com/dusk-network/dusk-protocol/tree/main/

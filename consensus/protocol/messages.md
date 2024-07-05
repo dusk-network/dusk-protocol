@@ -1,71 +1,53 @@
 # Protocol Messages
-This section describes the network messages exchanged by nodes to participate in the SA consensus protocol.
+This section describes the network messages exchanged by nodes to participate in the SA consensus protocol and exchange blocks and transactions.
 
 **ToC**
-  - [Consensus Messages](#consensus-messages)
+  - [Consensus](#consensus)
       - [Sender](#sender)
+    - [Signatures](#signatures)
+      - [`SignInfo`](#signinfo)
+    - [Structures](#structures)
       - [`ConsensusInfo`](#consensusinfo)
       - [`VoteInfo`](#voteinfo)
-    - [Signatures](#signatures)
-      - [SignInfo](#signinfo)
     - [Messages](#messages)
       - [`Candidate`](#candidate)
       - [`Validation`](#validation)
       - [`Ratification`](#ratification)
       - [`Quorum`](#quorum)
-      - [`Block`](#block)
-      - [Sync messages](#sync-messages)
     - [Procedures](#procedures)
       - [*CMsg*](#cmsg)
+  - [Data Exchange](#data-exchange)
+    - [Structures](#structures-1)
+      - [`Inv`](#inv)
+      - [`InvItem`](#invitem)
+    - [Messages](#messages-1)
+      - [`Block`](#block)
+      - [`Transaction`](#transaction)
+      - [`GetMempool`](#getmempool)
+      - [`GetBlocks`](#getblocks)
+      - [`GetResource`](#getresource)
+        - [Resource Discovery](#resource-discovery)
+        - [Direct Request](#direct-request)
+      - [`Inv`](#inv-1)
+  - [Procedures](#procedures-1)
       - [*Broadcast*](#broadcast)
       - [*Receive*](#receive)
       - [*Propagate*](#propagate)
       - [*Send*](#send)
 
 
-## Consensus Messages
+## Consensus
 To run the SA protocol, nodes exchange four main types of messages:
-- `Candidate`: it stores a candidate block for a specific round and iteration; it is used during the [Proposal][prop] step;
-- `Validation`: it contains the vote of a member of the voting committee for a [Validation][val] step;
-- `Ratification`: it contains the vote of a member of the voting committee for a [Ratification][rat] step;
-- `Quorum`: it contains the aggregated votes of a specific iteration's Validation and Ratification steps; it is generated at the end of an SA iteration if a quorum was reached in the Ratification step;
+- $\mathsf{Candidate}$: it stores a candidate block for a specific round and iteration; it is used during the [Proposal][prop] step;
+- $\mathsf{Validation}$: it contains the vote of a member of the voting committee for a [Validation][val] step;
+- $\mathsf{Ratification}$: it contains the vote of a member of the voting committee for a [Ratification][rat] step;
+- $\mathsf{Quorum}$: it contains the aggregated votes of a specific iteration's Validation and Ratification steps; it is generated at the end of an SA iteration if a quorum was reached in the Ratification step;
 
 Consensus messages are composed of a [`ConsensusInfo`][cinf] structure, some fields specific to the message type, and, with the exception of the `Quorum` message, a [`SignInfo`][sinf] structure, containing the public key and signature of the provisioner that created the message. 
 
 #### Sender
 All messages include a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. 
 For the sake of readability, this field is omitted from the structure definition.
-
-
-#### `ConsensusInfo`
-All consensus messages share a common `ConsensusInfo` structure that allows identifying the candidate block they refer to. The information included is the previous block hash, and the round and iteration numbers.
-
-Recall that there's a different candidate block for each round and iteration. However, in the case of a fork, two candidates could exist for the same round and iteration. Including the previous block's hash allows distinguishing the two candidates.
-
-The `ConsensusInfo` structure is defined as follows:
-
-| Field       | Type    | Size     | Description         |
-|-------------|---------|----------|---------------------|
-| $PrevHash$  | SHA3    | 32 bytes | Previous block hash |
-| $Round$     | Integer | 64 bits  | Round number        |
-| $Iteration$ | Integer | 64 bits  | Iteration number    |
-
-The structure's total size is 48 bytes.
-
-#### `VoteInfo`
-This contains the information of a [Validation][val] or [Ratification][rat] vote.
-
-| Field           | Type    | Size     | Description            |
-|-----------------|---------|----------|------------------------|
-| $Vote$          | Integer | 1 byte   | Validation vote        |
-| $CandidateHash$ | SHA3    | 32 bytes | Candidate block's hash |
-
-The structure's total size is 33 bytes.
-
-$Vote$ can be $NoCandidate$ ($0$), $Valid$ ($1$), $Invalid$ ($2$), or $NoQuorum$ ($3$).
-When $Vote$ is $NoCandidate$ or $NoQuorum$, $CandidateHash$ is empty.
-Note that an empty $CandidateHash$ is not included in the [*signature value*][sigs].
-
 
 ### Signatures
 Each message contains a *message signature* (included in the $Signature$ field) which is used to verify the message authenticity but is also functional to prove the reached agreement over a candidate block (see [Attestations][atts])
@@ -97,6 +79,36 @@ The $Signer$ field identifies the provisioner sending the message. For instance,
 
 The $Signature$ field is not just the signature of the whole message but varies depending on the message type. This signature is used for the consensus protocol, especially for `Validation` and `Ratification` messages, whose signature is used to prove the vote and, if a quorum is reached, to certify the quorum in an iteration.
 
+### Structures
+
+#### `ConsensusInfo`
+All consensus messages share a common `ConsensusInfo` structure that allows identifying the candidate block they refer to. The information included is the previous block hash, and the round and iteration numbers.
+
+Recall that there's a different candidate block for each round and iteration. However, in the case of a fork, two candidates could exist for the same round and iteration. Including the previous block's hash allows distinguishing the two candidates.
+
+The `ConsensusInfo` structure is defined as follows:
+
+| Field       | Type    | Size     | Description         |
+|-------------|---------|----------|---------------------|
+| $PrevHash$  | SHA3    | 32 bytes | Previous block hash |
+| $Round$     | Integer | 64 bits  | Round number        |
+| $Iteration$ | Integer | 64 bits  | Iteration number    |
+
+The structure's total size is 48 bytes.
+
+#### `VoteInfo`
+This contains the information of a [Validation][val] or [Ratification][rat] vote.
+
+| Field           | Type    | Size     | Description            |
+|-----------------|---------|----------|------------------------|
+| $Vote$          | Integer | 1 byte   | Validation vote        |
+| $CandidateHash$ | SHA3    | 32 bytes | Candidate block's hash |
+
+The structure's total size is 33 bytes.
+
+$Vote$ can be $NoCandidate$ ($0$), $Valid$ ($1$), $Invalid$ ($2$), or $NoQuorum$ ($3$).
+When $Vote$ is $NoCandidate$ or $NoQuorum$, $CandidateHash$ is empty.
+Note that an empty $CandidateHash$ is not included in the [*signature value*][sigs].
 
 ### Messages
 
@@ -173,38 +185,7 @@ The message has a total size of 249 bytes.
 
 Note that this message is not signed, since the $Attestation$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $VoteInfo$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
 
-
-#### `Block`
-This message is used to propagate a winning block to other peers.
-It contains a full block structure ([`Block`][b]) including an Attestation.
-
-#### Sync messages
-The following messages are used to synchronize the node with other peers:
-
-- $\mathsf{GetBlocks}$: requests blocks from a peer;
-- $\mathsf{Inv}$: advertises blocks or transactions by their hash
-- $\mathsf{GetData}(T, data)$: requests blocks by their hash or height, or transactions by their hash
-  - The payload type $T$ can be: $BlockFromHeight$, $BlockFromHash$, or $MempoolTx$
-- $\mathsf{GetCandidate}$: requests a candidate block from its hash
-- $\mathsf{GetCandidateResp}$: transmits a candidate block in response to  $\mathsf{GetCandidate}$ message;
-
-<p><br></p>
-
-## DataExchange Messages
-These messages are used by nodes to request missing data objects to their peers.
-
-We define the following messages:
-- `GetCandidate`: it requests a [Candidate][cb] block by its hash;
-- `GetCandidateResp`: it contains the [`Block`][b] requested by `GetCandidate`;
-- `GetMempool`: it requests all transactions in the node's *Mempool*;
-- `GetBlocks`: it requests all successors of a certain block; it is used to synchronize the chain with a peer;
-- `GetResource`: it requests a resource (transaction or block);
-- `Inv`: it contains a list of available resources (transactions and/or blocks);
-
-<p><br></p>
-
-## Procedures
-While the underlying network protocol is described in the [Network][net] section, we here define some generic network procedures used in the SA protocol.
+### Procedures
 
 #### *CMsg*
 We define a common *CMsg* (Consensus Message) constructor procedure, which is used to create a consensus message:
@@ -222,7 +203,144 @@ We assume the procedure is able to automatically generate $\upsilon_\mathsf{M^T}
 
 $\mathsf{T}$ indicates the message type: $\mathsf{Candidate}$, $\mathsf{Validation}$, $\mathsf{Ratification}$, or $\mathsf{Quorum}$.
 
+<p><br></p>
+
+## Data Exchange
+These messages are used by nodes to request missing data objects to their peers.
+
+We define the following messages:
+- $\mathsf{Block}$: it contains a [`Block`][b];
+- $\mathsf{Transaction}$: it contains a [`Transaction`][tx]
+
+- $\mathsf{GetMempool}$: it requests all transactions in the node's *Mempool*; it has no payload;
+- $\mathsf{GetBlocks}$: it requests all successors of a certain block; it is used to synchronize the chain with a peer;
+- $\mathsf{GetResource}$: it requests a resource (transaction or block);
+- $\mathsf{Inv}$: it contains a list of available resources (transactions and/or blocks);
+
+### Structures
+
+#### `Inv`
+This structure contains a list of inventory items (transactions and blocks).
+It is used both to advertise known resources as well as to request them.
+
+| Field        | Type               | Size     | Description             |
+|--------------|--------------------|----------|-------------------------|
+| $InvList$    | [`InvItem`][ii][ ] | variable | List of inventory items |
+| $MaxEntries$ | Unsigned Int       | 2 bytes  | Maximum number of items to send (used for $\mathsf{GetResource}$ messages) |
+
+#### `InvItem`
+
+| Field      | Type         | Size          | Description                    |
+|------------|--------------|---------------|--------------------------------|
+| $InvType$  | Unsigned Int | 1 byte        | The type of the inventory item |
+| $InvParam$ | Unsigned Int | 40 bytes [^2] | The item ID                    |
+
+$InvType$ can have the following values:
+  - $0$: $MempoolTx$
+  - $1$: $BlockFromHash$
+  - $2$: $BlockFromHeight$
+  - $3$: $CandidateFromHash$
+
+$InvParam$ depends on $InvType$, and can be either of the following:
+- | Field  | Type         | Size     | Description       |
+  |--------|--------------|----------|-------------------|
+  | $Hash$ | Unsigned Int | 32 bytes | A hash value, used with $BlockFromHash$, $CandidateFromHash$, and $MempoolTx$ | 
+
+- | Field    | Type         | Size    | Description       |
+  |----------|--------------|---------|-------------------|
+  | $Height$ | Unsigned Int | 8 bytes | A block height, used with $BlockFromHeight$ |
+
+
+### Messages
+
+#### `Block`
+It contains a [`Block`][b] structure. It is sent in response to a [`GetBlocks`][gbmsg] message or to a [`GetResource`][grmsg] message requesting a block.
+
+
+#### `Transaction`
+It contains a [`Transaction`][tx] structure. It is sent in response to a [`GetResource`][grmsg] message requesting a transaction.
+
+
+#### `GetMempool`
+It requests the list of all transactions in a peer's Mempool. It has no payload.
+
+The response to this message is an $\mathsf{Inv}$ message containing a vector of type $MempoolTx$ containing the list of Transaction IDs ($Hash$).
+
+The expected message flow is the following: $\mathsf{GetMempool}$ -> $\mathsf{Inv}$ -> $\mathsf{GetResource}$ -> $\mathsf{Transaction}$.
+
+> NOTE: $\mathsf{GetMempool}$ is currently never used in the reference implementation.
+
+
+#### `GetBlocks`
+This messages is sent to synchronize the blockchain with a peer. Its payload includes a $Locator$ block hash indicating the highest block known to the sender. 
+
+This message is used in two situations:
+ - if the block acceptance timeout expires (i.e., no new block is accepted for 20 seconds) <!-- TODO: define BLOCK_ACCEPTANCE_TIMEOUT -->
+ - when the node starts a [synchronization procedure][syn] with a peer;
+
+The response to this message should be an $\mathsf{Inv}$ message containing a vector of type $BlockFromHash$ with the list of all blocks in the [local chain][lc] that are successors of $Locator$.
+
+
+| Field     | Type      | Size     | Description                         |
+|-----------|-----------|----------|-------------------------------------|
+| $Locator$ | SHA3 Hash | 32 bytes | The hash of the highest block known |
+
+The expected message flow is the following: $\mathsf{GetBlocks}$ -> $\mathsf{Inv}$ -> $\mathsf{GetResource}$ -> $\mathsf{Block}$.
+
+#### `GetResource`
+This message is sent by a node to request a transaction or block.
+The message can be used as a *direct request* to a peer, or to start a *resource discovery* process through the network.
+
+The message has the following payload:
+
+| Field       | Type          | Size            | Description                            |
+|-------------|---------------|-----------------|----------------------------------------|
+| $Inventory$ | [`Inv`][inv]  | 410-28448 bytes | List of resources being requested      |
+| $Requester$ | SocketAddress | 410-28448 bytes | The IP address of the requesting node  |
+| $TTL$       | Timestamp     | 8 bytes         | The expiration timeout                 |
+| $HopsLimit$ | Unsigned Int  | 2 bytes         | Maximum number of hops for the request |
+
+In response to this message, nodes send, in separate $\mathsf{Block}$ or $\mathsf{Transaction}$ messages, all available requested resources.
+
+##### Resource Discovery
+$\mathsf{GetResource}$ messages are propagated following a *Flood with Random Walk* algorithm. The algorithm works as follows:
+- The requesting node sends the message to $RedundancyPeerCount$ random peers;
+- When receiving a message, each node:
+  - Checks if the message is expired ($TTL \gt \tau_{Now}$)
+  - If not expired:
+    - if the resources is known, it sends it to $Requester$
+    - otherwise, it forwards the message, with $HopsLimit$ decreased by 1, to one random peer;
+
+> Note: $TTL$ is currently not used in the reference implementation. By default, it is then set to its maximum value.
+
+**Parameters**
+
+| Name                  | Value | Description                                 |
+|-----------------------|-------|---------------------------------------------|
+| $RedundancyPeerCount$ | $8$   | Initial number of peers to send the request |
+| $DefaultHopsLimit$    | $16$  | Default value for $HopsLimit$               |
+
+##### Direct Request
+When $\mathsf{GetResource}$ is sent in response to a $\mathsf{Inv}$ message, or to request the $Tip$'s successor as part of the [*PreSync*][ps] procedure, $HopsLimit$ is set to $1$.
+This effectively makes $\mathsf{GetResource}$ a direct request to a specific peer.
+
+
+#### `Inv`
+This message is sent to advertise a list of known resources, such as transactions and blocks.
+It is sent by a node in response to $\mathsf{GetMempool}$ and $\mathsf{GetBlocks}$ messages.
+
+It's payload is an `Inv` structure containing the list of resources.
+
+When receiving this message, nodes check if there are any unknown items and, if so, it requests them through a $\mathsf{GetResource}$ message with $HopsLimit = 1$.
+
+
+<p><br></p>
+
+## Procedures
+While the underlying network protocol is described in the [Network][net] section, we here define some generic network procedures used in the SA protocol.
+
 #### *Broadcast*
+<!-- TODO: to how many peers? -->
 This procedure is used by the creator of a new message to initiate the network propagation of the message. The function simply takes any consensus message in input and is assumed to not fail (only within the context of this description) so it does not return anything.
 
 Note that, for the sake of readability, broadcast messages are also received by the local node (as in a self-sending). <!-- TODO: check if this is still necessary -->
@@ -237,6 +355,7 @@ Messages received before calling the *Receive* function are stored in a queue an
 Note that also messages broadcasted by the node are received by this function. <!-- TODO: check if this is still necessary -->
 
 #### *Propagate*
+<!-- TODO: to how many peers? -->
 This procedure represents a re-broadcast operation. It is used by a node when receiving a message from the network and propagating to other nodes.
 
 We assume that if the message was originally broadcasted by the local node it is not re-propagated. <!-- TODO: check if this is still necessary -->
@@ -249,20 +368,53 @@ This procedure represents a point-to-point message from the node to one of its p
 
 [^1]: Note that the BLS signature definition already includes the hashing of the message being signed. However, we explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
 
+[^2]: This value derives from the Rust reference implementation, where this field is represented by an `enum`. In particular, the $InvParam$ field size is given by: 1 "discriminant" byte, 32 bytes for the biggest possible value($Hash$), plus 7 bytes to align the field to 8 bytes.
+
+
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md -->
-[cinf]: #consensusinfo
-[vinf]: #voteinfo
-[sinf]: #signinfo
-[sigs]: #signatures
-[mx]:   #procedures
-[cmsg]:  #cmsg
-[sm]:   #sync-messages
+
+[cmsgs]: #consensus
+[msen]:  #sender
+[sigs]:  #signatures
+[sinf]:  #signinfo
+
+[cinf]:  #consensusinfo
+[vinf]:  #voteinfo
+
+[cmsg]:  #candidate
+[vmsg]:  #validation
+[rmsg]:  #ratification
+[qmsg]:  #quorum
+[nmsg]:  #cmsg
+
+[dx]:    #data-exchange
+[inv]:   #inv
+[ii]:    #invitem
+[bmsg]:  #block
+[txmsg]: #transaction
+[gmmsg]: #getmempool
+[gbmsg]: #getblocks
+[grmsg]: #getresource
+[rd]:    #resource-discovery
+[dr]:    #direct-request
+[imsg]:  #inv-1
+
+[mx]:    #procedures-1
+[broad]: #broadcast
+[rec]:   #receive
+[pmsg]:  #propagate
+[send]:  #send
 
 <!-- Basics -->
 [b]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure
-[cb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
+[cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
+[fb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#full-block
+[lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
+<!-- TODO -->
+[tx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#transaction
+
 
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
@@ -272,6 +424,9 @@ This procedure represents a point-to-point message from the node to one of its p
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
+
+[syn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#synchronization
+[ps]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#presync
 
 <!-- Network -->
 [net]:  https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md

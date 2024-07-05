@@ -120,7 +120,7 @@ If the `Quorum` message is for the previous round (the $Tip$'s one), meaning tha
             1. Propagate $\mathsf{M}^Q$
             2. If the quorum vote is $Valid$
                1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
-               2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetCandidate*][gcmsg])
+               2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetResource*][grmsg])
                3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
                1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
@@ -150,7 +150,7 @@ $\textit{HandleQuorum}( R ):$
              2. $\texttt{if } (v = Valid) :$
                 1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
                 2. $\texttt{if } (\mathsf{B}^c = NIL) :$
-                  - $\mathsf{B}^c =$ [*GetCandidate*][gcmsg]$(\eta_{\mathsf{B}^c})$
+                  - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta_{\mathsf{B}^c})$
                 3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
              3. $\texttt{else } :$
                 1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
@@ -246,13 +246,13 @@ The process consists in requesting the missing blocks to the sync peer and waiti
 
 More specifically, the protocol works as follows:
 1. PreSync phase ([*PreSync*][ps]):
-   1. The node sends a $\mathsf{GetData}$ message (see [Sync Messages][sm]) of type $BlockFromHeight$ requesting the $Tip$'s successor
+   1. The node sends a $\mathsf{GetResource}$ message (see [Data Exchange messages][dx]) of type $BlockFromHeight$ requesting the $Tip$'s successor
 2. Sync phase ([*StartSync*][ss]):
    1. If the $Tip$'s successor is received:
       1. The node sends a $\mathsf{GetBlocks}$ message to $\mathcal{S}$ containing its local $Tip$;
       2. The sync peer $\mathcal{S}$ replies with an $\mathsf{Inv}$ message containing the hashes of the blocks from the received $Tip$ and its current tip;
-      3. When the $\mathsf{Inv}$ message is received, the node requests unknown blocks with a $\mathsf{GetData}$ message;
-      4. The peer responds to the $\mathsf{GetData}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
+      3. When the $\mathsf{Inv}$ message is received, the node requests unknown blocks with a $\mathsf{GetResource}$ message;
+      4. The peer responds to the $\mathsf{GetResource}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
 
 In the sync phase, the node stops the SA loop ([*SALoop*][sl]) for efficiency purposes. Note that this is done after receiving a valid $Tip+1$, which is a sign of trustworthiness from the $syncPeer$.
 Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the synchronization is stopped (see [*HandleSyncTimeout*][hst]) and [*SALoop*][sl] is restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided.
@@ -372,7 +372,7 @@ A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with s
 1. Set $syncFrom$ to $Tip$
 2. Set $syncTo$ to $\mathsf{B}$'s height or $Tip + MaxSyncBlocks$
 3. Set $syncPeer$ to $\mathcal{S}$
-4. Send $\mathsf{GetData}$ requesting $Tip$'s successor
+4. Send $\mathsf{GetResource}$ requesting $Tip$'s successor
 5. Start the sync timeout $\tau_{Sync}$
 6. Start the sync timeout handler ([*HandleSyncTimeout*][hst])
 
@@ -382,7 +382,7 @@ $\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
 1. $syncFrom = Tip.Height$
 2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
 3. $syncPeer = \mathcal{S}$
-4. [*Send*][mx]$(\mathcal{S}, \mathsf{GetData}(BlockFromHeight, Tip.Height+1))$
+4. [*Send*][mx]$(\mathcal{S}, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1))$
 5. $\tau_{Sync} = \tau_{Now}$
 6. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
 
@@ -489,11 +489,11 @@ $\textit{AcceptPoolBlocks}():$
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
 <!-- Messages -->
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
-[gcmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getcandidate
-[sm]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sync-messages
+[grmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getresource
+[dx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#data-exchange
 
 <!-- TODO -->
 [est]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

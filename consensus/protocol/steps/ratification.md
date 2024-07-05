@@ -118,7 +118,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
         - $Q^V =$ [*GetQuorum*][gq]$(v^\mathsf{R})$
 
       1. $\texttt{if } (pk_\mathsf{M^R} \in \mathcal{C})$
-      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^R}) = true)$
+      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M^R}) = true)$
       3. $\texttt{and }(v^\mathsf{R} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
       4. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
          1. [*Propagate*][mx]$(\mathsf{M^R})$
@@ -174,9 +174,8 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [dsp]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 <!-- Messages -->
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
-[vmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#validation
+[sigs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [rmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#ratification
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
-[cmsg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1

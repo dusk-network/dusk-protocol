@@ -239,7 +239,7 @@ $\textit{SAIteration}(R, I):$
 4. $\texttt{if } (v \ne NoQuorum):$
    1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
    2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M} =$ [*CMsg*][cmsg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
+   3. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
       | Field           | Value                 |
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -456,12 +456,10 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [syn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#synchronization
 
 <!-- Messages -->
-[cmsg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[nmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
-[rmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#ratification
-[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
 
 <!-- Network -->
 [net]:   https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md

@@ -347,7 +347,7 @@ This procedure checks the aggregated votes are valid and reach the target quorum
 
 **Parameters**
 - $\mathsf{SV}$: $\mathsf{StepVotes}$ with the aggregated votes
-- $\upsilon$: the [signature value][ms]
+- $\upsilon$: the [signature value][sigs]
 - $Q$: the target quorum
 - $\mathcal{C}$: the step committee
 
@@ -410,3 +410,6 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
+
+<!-- Messages -->
+[sigs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
