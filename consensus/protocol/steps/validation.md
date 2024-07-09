@@ -98,7 +98,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
       2. $\texttt{if } (isValid = true) : v = Valid$
       3. $\texttt{else}: v = Invalid$
    4. $\texttt{set}: \mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   5. $`\mathsf{M} = `$ [*Msg*][msg]$(\mathsf{Validation}, \mathsf{VI})$
+   5. $`\mathsf{M} = `$ [*CMsg*][cmsg]$(\mathsf{Validation}, \mathsf{VI})$
       | Field           | Value                 | 
       |-----------------|-----------------------|
       | $PrevHash$      | $\eta_{Tip}$          |
@@ -124,7 +124,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
         - $pk_\mathsf{M^V}, \sigma_\mathsf{M^V} \leftarrow \mathsf{SI}$
 
       1. $\texttt{if } (pk_{\mathsf{M^V}} \in \mathcal{C})$
-      2. $\texttt{and }($[*VerifyMessage*][ms]$(\mathsf{M^V}) = true)$
+      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M^V}) = true)$
       3. $\texttt{and }(v^\mathsf{V} \in \{NoCandidate,Valid,Invalid\}):$
          1. [*Propagate*][mx]$(\mathsf{M^V})$
          2. $`\mathsf{SV}_{v^\mathsf{V}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{V}}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
@@ -180,7 +180,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!-- Messages -->
-[ms]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
+[sigs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
 [vmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#validation
-[msg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#msg
+[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
