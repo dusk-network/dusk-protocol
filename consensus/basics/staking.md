@@ -7,46 +7,57 @@ This section describes staking in Dusk. In particular, it formally defines stake
     - [Epochs and Eligibility](#epochs-and-eligibility)
   - [Incentives](#incentives)
     - [Rewards](#rewards)
+      - [Generator Reward](#generator-reward)
+      - [Voters Reward](#voters-reward)
     - [Penalties](#penalties)
+      - [Faults](#faults)
+      - [Suspension](#suspension)
+      - [Soft Slashing](#soft-slashing)
+      - [Hard Slashing](#hard-slashing)
+
 
 <p><br></p>
 
 ## Provisioners and Stakes
-A provisioner is a user that locks a certain amount of their Dusk coins as *stake* (see [*Stake Contract*][c-stake]).
-Formally, we define a *Provisioner* $\mathcal{P}$ as:
+A Provisioner is a user that locks a certain amount of its own Dusks as *stake* (see [*Stake Contract*][c-stake]). Any user can do so by broadcasting a [`stake` transaction][stx].
+Formally, we define a ***Stake*** as
 
-$$\mathcal{P}=(pk_\mathcal{P}, S_\mathcal{P}),$$
+$$\mathsf{S} = (Amount, Height),$$
 
-where $pk_\mathcal{P}$ is the BLS public key of the provisioner and $S_\mathcal{P}$ is the stake belonging to $\mathcal{P}$.
+where $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the `stake` transaction was included. The minimum value for a stake is defined by the [global parameter][cenv] $MinStake$, and is currently equivalent to 1000 Dusk.
 
-In turn, a *Stake* is defined as:
-$$S_\mathcal{P}=(Amount, Height),$$
-where $\mathcal{P}$ is the provisioner that owns the stake, $Amount$ is the quantity of locked Dusks, and $Height$ is the height of the block where the lock action took place (i.e., when the *stake* transaction was included). The minimum value for a stake is defined by the [global parameter][cenv] $MinStake$, and is currently equivalent to 1000 Dusk.
 
-The stake amount of each provisioner directly influences the probability of being extracted by the [Deterministic Sortition][ds] algorithm: the higher the stake, the more the provisioner will be extracted on average.
+In turn, we define a ***Provisioner*** $\mathcal{P}$ as:
+
+$$\mathcal{P}=(pk_\mathcal{P}, \mathsf{S}_\mathcal{P}),$$
+
+where $pk_\mathcal{P}$ is the BLS public key of the provisioner and $\mathsf{S}_\mathcal{P}$ is the stake belonging to $\mathcal{P}$.
+
+The stake amount directly influences the probability of being extracted in the [Deterministic Sortition][ds] algorithm: the higher the stake, the more the provisioner will be selected, on average.
+
+Whenever a Provisioner wants to unlock its Stake, it can do so by broadcasting an `unstake` transaction.
+
+At any time, a unique set of provisioners can be derived from the set of previous `stake` and `unstake` operations. We refer to such set as the ***Provisioner Set***
 
 ### Epochs and Eligibility
-Participation in the consensus protocol is marked by *epochs*. Each epoch corresponds to a fixed number of blocks, defined by the [global parameter][cenv] $Epoch$ (currently equal to 2160).
-<!-- TODO: why 2160 ? -->
+Being in the Provisioner Set is a necessary condition for participating in the consensus protocol. However, it is not sufficient to be selected by the [Deterministic Sortition][ds] algorithm.
 
-The *Provisioners Set* during an epoch is fixed: all `stake` and `unstake` operations take effect at the beginning of an epoch. We refer to this property as *epoch stability*.
+In particular, only eligible stakes are able to participate. Formally, we say a Stake $\mathsf{S}$ is 
+***eligible*** in a [round][sa] $R$ if it satisfies the following conditions:
+  1. $Amount \ge MinStake$
+  2. $R \gt Height_\mathsf{S} + M$
 
-Additionally, for a Provisioner to be included in the Provisioners List, its stake is required to wait a certain number of blocks known as the *maturity* period. After this period, the stake and the Provisioner are said to be *eligible* for Sortition.
+where $M$ is the *maturity* period and is defined as:
 
-Formally, we say a Stake $S$ is *eligible* at round $R$, if $R$ is at least $Maturity$ blocks higher than the round in which $S$ was staked:
+$$M = 2{\times}Epoch - (Height_\mathsf{S} \mod Epoch),$$
 
-$$R \ge Round_S + M,$$
+where $Epoch$ corresponds to a fixed number of blocks defined as [global parameter][cenv] (currently set to $2160$).
 
-where $Round_S$ is the round at which $S$ was staked, and $M$ is the *maturity* period defined as:
+Note that we use the term ***Epoch*** to refer to a specific range of $Epoch$ blocks, starting from height $0$. For instance, the 1st Epoch corresponds to blocks $0$ to $Epoch-1$, the 2nd Epoch starts at block $Epoch{\times}2$, and so on. As such, "time" in the Dusk blockchain is effectively divided into Epochs, which mark participation in the consensus protocol. 
 
-$$M = 2{\times}Epoch - (Round_S \mod Epoch)),$$
+For instance, the Maturity period of a Stake, after which it becomes eligible, corresponds to the remainder of the Epoch in which the `stake` transaction was included, plus another full Epoch. As a consequence, all stakes become eligible at the beginning of a new Epoch.
 
-where $Epoch$ is a [global parameter][cenv]. Note that the value of $M$ is equal to a full epoch plus the blocks from $Round_S$ to the end of the corresponding epoch[^1]. Therefore the value of $M$ will vary depending on $Round_S$:
-
-$$Epoch \lt M \le 2{\times}Epoch.$$
-
-Having the Provisioner Set fixed during an epoch, along with the use of the maturity period, is mainly intended to allow the pre-verification of blocks from the future: if a node falls behind the main chain and receives a block at a higher height than its tip, it can pre-verify this block by ensuring that the block generator and the committee members are part of the expected Provisioner List.
-Specifically, while the stability of the Provisioner List during an epoch allows to pre-verify blocks from the same epoch, the Maturity period allows to also pre-verify blocks from the next epoch, since all changes (stake/unstake) occurred between the tip and the end of the epoch will not be effective until the end of the following epoch.
+The concept of epochs and eligibility is particularly useful for the *pre-verification* of blocks that are at a greater height than a node's [Tip][lc]. In fact, nodes can predict, to some extent, the Provisioner Set of the Tip's current epoch and that of the following one, thus being able to discard blocks and votes from Provisioners that are not in such sets.
 
 <p><br></p>
 
@@ -157,10 +168,6 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 In addition to hard slashing, major faults are also punished with suspension. Note however that no warnings are permitted in this case.
 
-<!----------------------- FOOTNOTES ----------------------->
-
-[^1]: Note that an epoch refers to a specific set of blocks and not just to a number of blocks; that is, an epoch starts and ends at specific block heights.
-
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md -->
@@ -172,11 +179,14 @@ In addition to hard slashing, major faults are also punished with suspension. No
 [pen]: #penalties
 
 <!-- Basics -->
+[lc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
+
 [vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 
 <!-- Protocol -->
+[sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
@@ -191,4 +201,4 @@ In addition to hard slashing, major faults are also punished with suspension. No
 <!-- TODO: these links point to missing pages -->
 [vm]:      https://github.com/dusk-network/dusk-protocol/tree/main/vm
 [c-stake]: https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
-
+[stx]:     https://github.com/dusk-network/dusk-protocol/tree/main/contracts/stake
