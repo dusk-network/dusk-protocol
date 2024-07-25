@@ -123,6 +123,8 @@ This procedure extracts the voting committee for the [Validation][val] or the [R
 
 The procedure excludes the block generator $\mathcal{G}$ of the same iteration to prevent it from being part of the committee. In other words, a candidate generator cannot vote over its own block.
 
+The next-iteration generator is also excluded to mitigate the [Future-Iteration Generator Problem][fgi].
+
 **Parameters**
 - $R$: round number
 - $I$: iteration number
@@ -131,18 +133,22 @@ The procedure excludes the block generator $\mathcal{G}$ of the same iteration t
 **Algorithm**
 
 1. Get absolute step number $S$ for $StepNum$ at iteration $I$
-2. Extract iteration generator $\mathcal{G}$ for iteration $I$
-3. Exclude the generator $\mathcal{G}$ from the provisioner list
-4. Execute Deterministic Sortition [*DS*][dsp] to extract the committee $\mathcal{C}$
-5. Output $\mathcal{C}$
+2. Extract iteration generator $\mathcal{G}_{R,I}$ for iteration $I$
+3. Exclude $\mathcal{G}_{R,I}$ from the provisioner list
+4. Extract iteration generator $\mathcal{G}_{R,I+1}$ for iteration $I+1$
+5. Exclude $\mathcal{G}_{R,I+1}$ from the provisioner list
+6. Execute Deterministic Sortition [*DS*][dsp] to extract the committee $\mathcal{C}$
+7. Output $\mathcal{C}$
 
 **Procedure**
 $\textit{ExtractCommittee}(R,I, StepNum)$
 1. $S =$ [*GetStepNum*][gsn]$(I, StepNum)$
 2. $\mathcal{G}_{R,I} =$ [*ExtractGenerator*][eg]$(R,I)$
 3. $\boldsymbol{P} = Provisioners - \mathcal{G}_{R,I}$
-4. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{P})$
-5. $\texttt{output } \mathcal{C}$
+4. $\mathcal{G}_{R,I+1} =$ [*ExtractGenerator*][eg]$(R,I+1)$
+5. $\boldsymbol{P} = Provisioners - \mathcal{G}_{R,I+1}$
+6. $\mathcal{C}=$ [*DS*][dsp]$(R, S, CommitteeCredits, \boldsymbol{P})$
+7. $\texttt{output } \mathcal{C}$
 
 
 ### *GetQuorum*
@@ -400,6 +406,7 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 
 <!-- Basics -->
 [rew]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#rewards
+[fgi]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#future-generator-incentive-problem
 
 [cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
 
