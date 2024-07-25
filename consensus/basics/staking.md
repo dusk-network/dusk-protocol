@@ -3,9 +3,11 @@ This section describes staking in Dusk. In particular, it formally defines stake
 
 **ToC**
 <!-- TODO: Add "Roles" section, describing Block Generator and Voters -->
+
   - [Provisioners and Stakes](#provisioners-and-stakes)
     - [Epochs and Eligibility](#epochs-and-eligibility)
   - [Incentives](#incentives)
+    - [Future-Generator Incentive Problem](#future-generator-incentive-problem)
     - [Rewards](#rewards)
       - [Generator Reward](#generator-reward)
       - [Voters Reward](#voters-reward)
@@ -14,7 +16,6 @@ This section describes staking in Dusk. In particular, it formally defines stake
       - [Suspension](#suspension)
       - [Soft Slashing](#soft-slashing)
       - [Hard Slashing](#hard-slashing)
-
 
 <p><br></p>
 
@@ -62,10 +63,20 @@ The concept of epochs and eligibility is particularly useful for the *pre-verifi
 <p><br></p>
 
 ## Incentives
-Given the nature of the SA consensus protocol, it is of paramount importance that provisioners participate when selected by the [Deterministic Sortition][ds] algorithm. In fact, offline provisioners can slow down the network, and, in extreme cases, even stop block production. Specifically, the provisioner selected for the [Proposal][prop] step must be online to produce the candidate block; similarly, a supermajority of voters is required to be online when the [Validation][val] or [Ratification][rat] steps occur, to reach a quorum on the candidate block. If any of the two conditions are not met, the iteration fails and a new one is needed to create a new block.
-To minimize the risk of failure, provisioners are incentivized (or, equally, disincentivized) by means of *rewards* and *penalties*.
+Given the nature of the SA consensus protocol, it is of paramount importance that provisioners participate when selected by the [Deterministic Sortition][ds] algorithm. In fact, offline provisioners can slow down the network, and, in extreme cases, even stop block production. Specifically, the provisioner selected for the [Proposal][prop] step must be online to produce the candidate block; similarly, a supermajority of voters is required to be online for the [Validation][val] or [Ratification][rat] steps to reach a quorum on the candidate block. If any of the two conditions are not met, the iteration fails and a new one is needed to create a new block.
+To minimize the risk of failure, provisioners are incentivized by means of *rewards* and disincentivized through *penalties*.
 
-The information required to apply rewards and penalties is always included in a block. In particular, we use [attestations][atts] as a single source of truth, with the addition of *proofs of faults* to demonstrate some misbehaviors. All incentives are handled by the [VM][vm] when performing the *state transition* of the accepted block.
+The information required to apply rewards and penalties is always included in a block. In particular, we use [attestations][atts] as a single source of truth, with the addition of [*proofs of faults*][fau] to demonstrate some misbehaviors. All incentives are handled by the [VM][vm] when performing the *state transition* of the accepted block.
+
+### Future-Generator Incentive Problem
+Due to the multiple-iteration design of the SA consensus protocol, there is an intrinsic incentive for generators of future iterations not to vote in previous iterations (if selected as voters).
+In other words, when a provisioner is selected both as voter in an iteration $I$ and as a generator in an iteration $J > I$[^1], it is more convenient for it to make iteration $I$ fail and reach iteration $J$ where it could potentially earn the block reward. We refer to this as the *Future-Generator Incentive Problem*.
+
+To mitigate this harmful incentive, we include several mechanisms: 
+- voter rewards: provisioners gain a small reward for voting for a candidate block; this implies the future-generator has something to lose by not voting when selected. The choice is between an (almost) certain reward now or a possible bigger reward later (conditional to all previous iterations to fail);
+- ExtraCredits reward to generators: to ensure all provisioners are equally incentivized we want as many of them as possible to be included the block certificate (which i used to assign reward), we make part of the generator reward conditional on the inclusion of all known votes;
+- exclude next-iteration generator from current-iteration voters: given that the probability for a future-iteration generator to gain a block reward is inversely proportional to the iteration number in which they are selected as a generator, the provisioner with the highest such probability at iteration $I$ is the generator of iteration $I+1$; to avoid "temptation" we then exclude such generator from the set of voters;
+- limit the number of iterations: as the number of future-iteration generators is directly proportional to the number of iterations, we keep the maximum number of iterations limited to the minimum needed to ensure security.
 
 ### Rewards
 Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among Dusk and the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees.
@@ -73,7 +84,7 @@ In particular, as Dusk is assigned 10% of the block reward, the remainder is div
 
 <!-- (for more details on fee distribution see the [Economic Protocol][ep]).  -->
 
-These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the incentive that future-iteration generators might ¡have to omit their vote on competing candidates (i.e., those from lower iterations). In fact, within a single round, all block generators (that is, for all iterations in the round) are known; hence, if a generator from a non-zero iteration is selected on a lower-iteration voting committee, it might skip voting in the hope of producing its block (and get the generator reward). Assigning rewards to voters is a way to reduce such an incentive.
+These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the [Future-Iteration Incentive][fgi] problem. 
 
 In addition, we also incentivize the block generator to include as many votes as possible in the [block certificate][cert] by making a portion of the block reward subject to the number of signatures included. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
 
@@ -168,6 +179,8 @@ Note that slashing has an immediate effect, in contrast with [staking][pro], whi
 
 In addition to hard slashing, major faults are also punished with suspension. Note however that no warnings are permitted in this case.
 
+<!----------------------- FOOTNOTES ----------------------->
+[^1]: Note that at the beginning of a new round is it possible to calculate all generators and voters for all iterations in the round. This is because the Deterministic Sortition only depends on previous-round data (plus the step for which the extraction is done).
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md -->
@@ -175,8 +188,10 @@ In addition to hard slashing, major faults are also punished with suspension. No
 [pro]: #provisioners-and-stakes
 [epo]: #epochs-and-eligibility
 [inc]: #incentives
+[fgi]: #future-generator-incentive-problem
 [rew]: #rewards
 [pen]: #penalties
+[fau]: #faults
 
 <!-- Basics -->
 [lc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
