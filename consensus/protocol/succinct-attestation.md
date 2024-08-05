@@ -49,7 +49,7 @@ Conversely, if the Ratification result is a failure or unknown, a new iteration 
 
 The round terminates when an iteration is successful.
 
-A maximum number of 255 iterations is executed within a single round.
+The maximum number of iterations executed within a single round is determined by the global parameter $MaxIterations$.
 
 ### Environment
 We here define global parameters and state variables of the SA protocol, used and shared by all consensus procedures.
@@ -77,8 +77,9 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $CommitteeCredits$ | 64                                       | Total credits in a voting committee                                      |
 | $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                                        |
 | $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                                             |
-| $MaxIterations$    | 255                                      | Maximum number of iterations in a single round                           |
-| $EmergencyMode$    | $MaxIterations - 10$                     | Iteration at which [Emergency Mode][em] starts                           |
+| $MaxIterations$    | 50                                       | Maximum number of iterations in a single round                           |
+| $RelaxedMode$      | 8                                        | Iteration after which the Relaxed mode is enabled                        |
+| $EmergencyMode$    | $16$                                     | Iteration at which [Emergency Mode][em] is enabled                       |
 | $DuskKey$          | $pk_\mathcal{Dusk}$                      | A Dusk-owned public key used to sign the [Emergency Block][eb]           |
 
 
