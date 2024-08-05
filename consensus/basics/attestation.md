@@ -244,12 +244,12 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 
 ## Attestations
 An *attestation* is an aggregate collection of votes from a specific iteration. It includes the votes of the [Validation][val] and [Ratification][rat] steps and is used as proof of a reached agreement in an iteration: if the iteration was successful, it proves a supermajority quorum of $Valid$ votes was cast in both steps, while if the iteration failed, it proves there was a majority quorum of $Invalid$, $NoCandidate$ or $NoQuorum$ votes. 
-We use the terms *Valid Attestation* and *Failed Attestation* to refer to the two types of quorum being proved.
+We use the terms *Success Attestation* and *Fail Attestation* to refer to the two types of quorum being proved.
 
 #### Block Certificate
-Note that, for each [candidate block][cb], there might be multiple Valid Attestations, one for each possible subset of quorum voters. This might generate ambiguity in the handling of quorum-specific mechanisms, such as the assignment of [rewards][rew].
+Note that, for each [candidate block][cb], there might be multiple Success Attestations, one for each possible subset of quorum voters. This might generate ambiguity in the handling of quorum-specific mechanisms, such as the assignment of [rewards][rew].
 
-To make such mechanisms deterministic, the official set of voters that brought to a Valid Attestation is decided by the generator of the following block.
+To make such mechanisms deterministic, the official set of voters that brought to a Success Attestation is decided by the generator of the following block.
 This is done by including in the candidate an attestation of the previous block. Such an attestation is referred to as the *certificate* of the previous block.
 
 ### Structures

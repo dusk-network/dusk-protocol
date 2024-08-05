@@ -53,22 +53,22 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 
 #### `BlockHeader` Structure
 
-| Field                  | Type                    | Size       | Description                                         |
-|------------------------|-------------------------|------------|-----------------------------------------------------|
-| $Version$              | Unsigned Integer        | 8 bits     | Block version                                       |
-| $Height$               | Unsigned Integer        | 64 bits    | Block height                                        |
-| $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                      |
-| $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                     |
-| $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced           |
-| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of the previous block                          |
-| $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed              |
-| $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                |
-| $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                    |
-| $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                 |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | [Certificate][cert] for the previous block          |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Aggregated votes of failed iterations |
-| $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                             |
-| $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block      |
+| Field                  | Type                    | Size       | Description                                            |
+|------------------------|-------------------------|------------|--------------------------------------------------------|
+| $Version$              | Unsigned Integer        | 8 bits     | Block version                                          |
+| $Height$               | Unsigned Integer        | 64 bits    | Block height                                           |
+| $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                         |
+| $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                        |
+| $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced              |
+| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of the previous block                             |
+| $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed                 |
+| $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                   |
+| $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                       |
+| $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                    |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | [Certificate][cert] for the previous block             |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Fail Attestations of previous iterations |
+| $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                                |
+| $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block         |
 
 The `BlockHeader` structure has a variable total size of 522 to 28970 bytes (28.8 KB).
 This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
@@ -93,7 +93,7 @@ We define the following Block-related procedures:
   - [*VerifyBlockHeader*][vbh]: verifies the validity of a [`BlockHeader`][bh]
 
 #### *VerifyBlock*
-This procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a valid Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
+This procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a Success Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
 
 If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
 
@@ -264,7 +264,7 @@ Note that when a block is marked as final by the Rolling Finality, the probabili
 **Rationale**
 
 The mechanism is based on the following observations:
- - The only blocks that can be replaced by "higher-priority" sibling (a block with the same parent) are those with $Iteration \gt 0$ for which not all previous iterations have a [Failed Attestation][atts]. In particular, the number of such competing siblings corresponds to the number of previous iterations with no Attestation (that is, whose result is unknown).
+ - The only blocks that can be replaced by "higher-priority" sibling (a block with the same parent) are those with $Iteration \gt 0$ for which not all previous iterations have a [Fail Attestation][atts]. In particular, the number of such competing siblings corresponds to the number of previous iterations with no Attestation (that is, whose result is unknown).
  - Considering a replaceable block $B$, a successor of $B$ reaching a $Valid$ quorum implicitly proves that a set of the provisioners, namely those involved in its creation and voting, have accepted $B$ into their local chain. More specifically, any Attestation for a successor of $B$ implicitly confirms $B$ is in the local chain of a subset of the provisioner set. 
  - Since generators and committees are selected at random (see [Deterministic Sortition][ds]), they can be considered as a random sample of the provisioner set. Hence, an Attestation of a successor of $B$ implies that a large enough number of provisioners have $B$ in their chain.
  - Each new successor of $B$ (with an Attestation) increases the size of the random sample of provisioners that accepted $B$, reducing the probability that other provisioners are working on a competing fork.
@@ -277,9 +277,9 @@ To implement Rolling Finality, blocks in the [local chain][lc] are marked with a
 
 In particular, blocks in the local chain can be in four states:
 
-  - $Accepted$: the block has a Valid Attestation but there might be a lower-iteration block that also reached a $Valid$ quorum; an $Accepted$ block can then be replaced if such a higher-priority block is received. Formally, a block is marked as $Accepted$ if it has  $Iteration \gt 0$ and not all previous iterations have a [Failed Attestation][atts]. 
+  - $Accepted$: the block has a Success Attestation but there might be a lower-iteration block that also reached a $Valid$ quorum; an $Accepted$ block can then be replaced if such a higher-priority block is received. Formally, a block is marked as $Accepted$ if it has  $Iteration \gt 0$ and not all previous iterations have a [Fail Attestation][atts]. 
 
-  - $Attested$: the block has a Valid Attestation and all previous iterations have a Failed Attestation; an $Attested$ block cannot be replaced by a lower-iteration block of the same round. Formally, a block is marked as $Attested$ if it has $Iteration = 0$ or all previous iterations have Failed Attestation.
+  - $Attested$: the block has a Success Attestation and all previous iterations have a Fail Attestation; an $Attested$ block cannot be replaced by a lower-iteration block of the same round. Formally, a block is marked as $Attested$ if it has $Iteration = 0$ or all previous iterations have Fail Attestation.
   
   - $Confirmed$: the block is either $Accepted$ or $Attested$ and is confirmed by the [Finality rules][fr]; a $Confirmed$ block is unlikely to be replaced due to a number of block built on top of it; however, it might still be replaced if an ancestor is replaced.  
 
@@ -293,7 +293,7 @@ The Consensus State of each block in the local chain is determined by the follow
  - If a block is $Accepted$, it is marked as $Confirmed$ after $2 \times PNI$ consecutive $Attested$ or $Confirmed$ blocks;
  - If a block is $Confirmed$ and its parent is $Final$, it is marked as $Final$.
 
-For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Failed Attestation, it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 2 = 4$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
+For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Fail Attestation, it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 2 = 4$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
 
 Note that the value of $PNI$ can be directly derived from the Attestations in the $FailedIterations$ field of a block.
 

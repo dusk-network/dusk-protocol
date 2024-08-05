@@ -74,7 +74,7 @@ In other words, when a provisioner is selected both as voter in an iteration $I$
 
 To mitigate this harmful incentive, we include several mechanisms: 
 - voter rewards: provisioners gain a small reward for voting for a candidate block; this implies the future-generator has something to lose by not voting when selected. The choice is between an (almost) certain reward now or a possible bigger reward later (conditional to all previous iterations to fail);
-- ExtraCredits reward to generators: to ensure all provisioners are equally incentivized we want as many of them as possible to be included the block certificate (which i used to assign reward), we make part of the generator reward conditional on the inclusion of all known votes;
+- ExtraCredits reward to generators: to ensure all provisioners are equally incentivized we want as many of them as possible to be included the block certificate (which is used to assign reward), we make part of the generator reward conditional on the inclusion of all known votes;
 - exclude next-iteration generator from current-iteration voters: given that the probability for a future-iteration generator to gain a block reward is inversely proportional to the iteration number in which they are selected as a generator, the provisioner with the highest such probability at iteration $I$ is the generator of iteration $I+1$; to avoid "temptation" we then exclude such generator from the set of voters;
 - limit the number of iterations: as the number of future-iteration generators is directly proportional to the number of iterations, we keep the maximum number of iterations limited to the minimum needed to ensure security.
 
@@ -146,10 +146,10 @@ Note that slashing takes effect immediately, altering the provisioner set in the
 The application of penalties is based on the type of misbheavior, or *fault*. We currently consider two degree of faults: *minor faults* and *major faults*. Minor faults are punished with suspension and soft slashing; in contrast major faults are punished with hard slashing.
 
 Minor faults are:
-- Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the punishment takes effect when accepting a block that includes a [Failed Attestation][atts] of $NoCandidate$ quorum;
+- Missed block: if, in the [Proposal][prop] step, the selected generator fails to broadcast the candidate block; the punishment takes effect when accepting a block that includes a [Fail Attestation][atts] of $NoCandidate$ quorum;
 
 Major faults are:
-- Invalid block: if a candidate block is deemed invalid by the [Validation][val] committee, and it's confirmed in the [Ratification][rat] step; the punishment takes effect when accepting a block with a Failed Attestation of $Invalid$ quorum;
+- Invalid block: if a candidate block is deemed invalid by the [Validation][val] committee, and it's confirmed in the [Ratification][rat] step; the punishment takes effect when accepting a block with a Fail Attestation of $Invalid$ quorum;
 - Double voting: if a provisioner publish two conflicting votes for the same candidate block; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block;
 - Double block: if a generator broadcasts two different candidates for the same iteration; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block.
 
