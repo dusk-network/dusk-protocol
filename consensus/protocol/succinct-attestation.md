@@ -23,6 +23,7 @@ Before reading, please make sure you are familiar with the system [basics][bas] 
       - [*StoreElapsedTime*](#storeelapsedtime)
       - [*AdjustBaseTimeout*](#adjustbasetimeout)
       - [*IncreaseTimeout*](#increasetimeout)
+  - [Relaxed Mode](#relaxed-mode)
   - [Emergency Mode](#emergency-mode)
     - [Emergency Block](#emergency-block)
     - [Procedures](#procedures-2)
@@ -354,6 +355,10 @@ $\textit{IncreaseTimeout}(Step):$
 
 <p><br></p>
 
+
+## Relaxed Mode
+To mitigate the increase of the block size when having many failed iterations in one round, we limit the number of iterations for which to include a [Fail Attestation][atts] in the candidate block (see the $FailedIterations$ field in the [BlockHeader][bh] structure). In particular, candidate blocks only include Fail Attestations for the first $RelaxedMode$ iterations (see [Global Parameters][cenv]).
+
 ## Emergency Mode
 In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
 
@@ -394,6 +399,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md -->
 [sa]:   #overview
 
+[rm]:   #relaxed-mode
 [em]:   #emergency-mode
 [eb]:   #emergency-block
 [beb]:  #broadcastemergencyblock
@@ -417,6 +423,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [bas]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/README.md
 
 [b]:     https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure
+[bh]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#blockheader-structure
 [lc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 [chb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chainblock-structure
 [sys]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#system-state

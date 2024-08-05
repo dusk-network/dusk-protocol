@@ -105,6 +105,8 @@ This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the
 
 If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
 
+If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedAttestations}$ array.
+
 **Parameters**
 - [SA Environment][cenv]
 - $R$: round number
@@ -123,7 +125,8 @@ If the `Quorum` message is for the previous round (the $Tip$'s one), meaning tha
                2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetResource*][grmsg])
                3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
-               1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+               1. If the iteration is not in [Relaxed Mode][rm]:
+                  1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
             4. Stop [*SAIteration*][sai]
 
 <!-- TODO: when receiving a Valid Quorum, we should stop SARound (all iterations)
@@ -153,7 +156,8 @@ $\textit{HandleQuorum}( R ):$
                   - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta_{\mathsf{B}^c})$
                 3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
              3. $\texttt{else } :$
-                1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
+                1. $\texttt{if } \mathsf{M}^Q.Iteration \le RelaxMode$
+                   1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
              4. $\texttt{stop}$([*SAIteration*][sai])
 
 
@@ -484,6 +488,7 @@ $\textit{AcceptPoolBlocks}():$
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [sl]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saloop
 [sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
+[rm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#relaxed-mode
 
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
