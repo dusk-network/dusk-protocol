@@ -93,7 +93,7 @@ Rewards are not added to the provisioner stake, but they are collected into a $R
 #### Generator Reward
 The *generator reward* constitutes the 80% of the block reward. This amount is further split into two: a fixed part (70% of the block reward) and variable part (10% of the block reward) subject to the inclusion of extra votes in the block certificate.
 
-In particular, we give a quota of the variable part for each extra credit beyond the quorum threshold. In other words, considering two committees (Validation and Ratification) of 64 credits and quorum of 43 credits, we split the variable part of the generator reward into 42 quotas. The block generator will receive as many quotas as the number of credits beyond 86 (43 for each committee).
+In particular, we give a quota of the variable part for each extra credit beyond the quorum threshold. In other words, considering two committees (Validation and Ratification) of 64 credits and a quorum of 43 credits, we split the variable part of the generator reward into 42 quotas ($(64-43) \times 2$). The block generator will receive as many quotas as the number of credits beyond 86 ($43 \times 2$).
 
 Formally:
 
@@ -103,7 +103,7 @@ Formally:
  
  $$ QuorumCredits = Supermajority \times 2 ,$$
  
- $$ ExtraCredits = (CommitteeCredits - Supermajority) \times 2 ,$$
+ $$ ExtraCredits = (CommitteeCredits \times 2) - QuorumCredits ,$$
 
  $$ Quota_{GR} = \frac{BlockReward{\times}0.1}{ExtraCredits} ,$$
 
@@ -112,6 +112,7 @@ where $CommitteeCredits$ and $Supermajority$ are defined as [global parameters][
 
 For instance, if the votes in the certificate sum up to 100 credits, the generator will get 70% of the block reward plus 14/42 of the variable part (i.e. 3.33%), for a total reward of 73.33% of the block reward. Including all votes earns the generator the full generator reward (80% of the block reward).
 
+Note that, depending on the amount, a small fraction of $BlockReward$ could be lost when splitting it into quotas. Specifically, $Quota_{GR} \times ExtraCredits$ can be less than $BlockReward{\times}0.1$ (the variable part of the Generator Reward). To take this into account, when $CertificateCredits = QuorumCredits + ExtraCredits$ we consider $GeneratorReward = BlockReward{\times}0.8$ (that is, we assign the totality of the variable part). Otherwise, we consider any extra fraction as burned along with unassigned quotas.
 
 
 #### Voters Reward
