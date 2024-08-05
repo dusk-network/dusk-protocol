@@ -139,6 +139,8 @@ Note that, if the certificate contains less credits then the size of both commit
 We currently employ two forms of penalties: *suspension* and *slashing*. Suspension is the exclusion of a misbehaving provisioner from the eligible set for a certain number of blocks. In contrast, slashing is the act of forcibly removing a certain amount from the provisioner stake.
 In turn, slashing is divided into *soft slashing*, which simply moves part of the stake to the provisioner $Reward$ amount (which do not count in the [sortition][ds] process), and *hard slashing* which effectively burns part of the stake.
 
+Note that slashing takes effect immediately, altering the provisioner set in the middle of an epoch. This is in contrast with [staking][pro], which takes effect at the beginning of the second epoch after the stake operation.
+
 #### Faults
 The application of penalties is based on the type of misbheavior, or *fault*. We currently consider two degree of faults: *minor faults* and *major faults*. Minor faults are punished with suspension and soft slashing; in contrast major faults are punished with hard slashing.
 
@@ -162,22 +164,23 @@ Suspension works as follows:
    - if the provisioner commits a new fault, it gets suspended for as many epochs as the consecutive number of faults it committed; in other words, if the provisioner is suspended of the $n\text{th}$ consecutive time, its suspension is of $n$ epochs.
 
 #### Soft Slashing
-When a provisioner gets suspended, a part of its stake is moved to its $Rewards$ amount. By doing so, the provisioner does not lose money but it weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
+When a provisioner gets suspended, a part of its stake is moved to its $Rewards$ amount. By doing so, the provisioner does not lose money but its weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
 
-The slashed amount follows this rule: if this is the $n\text{th}$ consecutive suspension, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again.
+The slashed amount follows this rule: if this is the $n\text{th}$ consecutive fault, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again. <!-- This is currently not true, since Reward can be withdrawn any time -->
 
-Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 would get frozen after a single suspension.
-Instead, a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, 10 is the upper bound of possible faults before getting frozen (since after 10 suspensions, the stake is reduced by 100%).
-
+Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 would get frozen after a single suspension, while a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, all stake are ensured to get frozen after 10 consecutive faults (as at the 10th fault, the slash would be 100% of the current stake). In other words, there is an upper bound of 10 consecutive faults for all provisioners, regardless of their stake amount.
 
 #### Hard Slashing
-Hard slashing consists in the burning of part of a provisioner stake. 
+Hard slashing consists in the burning of part of a provisioner's stake.
 
-We distinguish between the Invalid Block fault, and the Double block/double vote faults. In the Invalid Block case, the slashed amount is incremental with the number of consecutive invalid blocks: with the first invalid block the stake is slashed by 10%, with the second one is slashed by 20%, and so on. This approach is meant to take into account the fact that invalid blocks can result from outdated client versions and give provisioners time to fix the situation.
-On the other hand, publishing double blocks or double votes is considered as an attack and punished by a slash of the 25% of the initial stake. This means that 4 consecutive faults of these types will bring the stake to 0. As previously mentioned, the slashed amount in these cases is burned.
-Note that slashing has an immediate effect, in contrast with [staking][pro], which takes effect at the beginning of the second epoch after the stake operation.
+The logic to determine the slashed amount and the suspension time follows the same approach as soft slashing, with the quantities being multiplied by the number of consecutive faults ($n$). However, we additionally consider different levels of *severity*, which acts as a multiplier of the base slash amount (10%). Specifically, the hard slash amount is:
 
-In addition to hard slashing, major faults are also punished with suspension. Note however that no warnings are permitted in this case.
+$$ (severity \times 10) \times n $$
+
+The severity parameter is meant to differentiate between faults that can be committed by mistake from those that we consider as an attack. For instance, block can be voted as invalid if produced with an older version of the protocol or with a buggy client. On the other hand, publishing double blocks or double votes is considered as intentional. 
+We currently consider the Invalid Block case has having $severity = 1$ and the Double Block and Double Vote cases has having $severity = 2$. 
+
+Note that there are no *warnings* for hard slashing.
 
 <!----------------------- FOOTNOTES ----------------------->
 [^1]: Note that at the beginning of a new round is it possible to calculate all generators and voters for all iterations in the round. This is because the Deterministic Sortition only depends on previous-round data (plus the step for which the extraction is done).
