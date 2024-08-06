@@ -35,6 +35,36 @@ Additionally, we define the function $\texttt{running}(P)$ which outputs $true$ 
 
 When in a $\texttt{loop}$ we use $\texttt{break}$ to stop the execution and move on to the next iteration.
 
+## Aliases
+
+### Hash Functions
+We define the following aliases for hash functions:
+
+| Alias  | Hash Type |
+|--------|---------------|
+| SHA3   | SHA3-256      |
+| Blake2 | Blake2B       |
+| Blake3 | Blake3        |
+
+We use the $Latex$ format to indicate the hash digest type, and the *italic* font to indicate the function. For instance, we will use $SHA3$ to indicate a SHA3 digest, and *SHA3* to indicate the SHA3 function.
+
+## Types
+
+### Enum
+Some structure fields in our protocol are defined as *enumerations*.
+
+An enumeration (`Enum`) is a common data type, used in many languages, consisting of a set of named values called *variants*, each representing a different possible value that the enum can take. Variants may be simple names or carry associated data. 
+
+Typically, the size an Enum corresponds to the size of the biggest variant.
+
+
+
 <!----------------------- FOOTNOTES ----------------------->
 
 [^1]: This duality is mostly due to limitations in Markdown's formatting
+
+<!------------------------- LINKS ------------------------->
+<!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md -->
+
+[hash]: #hash-functions
+[en]:   #enum

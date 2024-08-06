@@ -8,7 +8,7 @@ This section describes the network messages exchanged by nodes to participate in
       - [`SignInfo`](#signinfo)
     - [Structures](#structures)
       - [`ConsensusInfo`](#consensusinfo)
-      - [`VoteInfo`](#voteinfo)
+      - [`Vote`](#vote)
     - [Messages](#messages)
       - [`Candidate`](#candidate)
       - [`Validation`](#validation)
@@ -20,6 +20,7 @@ This section describes the network messages exchanged by nodes to participate in
     - [Structures](#structures-1)
       - [`Inv`](#inv)
       - [`InvItem`](#invitem)
+      - [`InvParam` Enum](#invparam-enum)
     - [Messages](#messages-1)
       - [`Block`](#block)
       - [`Transaction`](#transaction)
@@ -54,7 +55,7 @@ Each message contains a *message signature* (included in the $Signature$ field) 
 
 Formally, given a message $\mathsf{M}$, we define its signature $\eta_\mathsf{M}$ as
 
-$$\eta_\mathsf{M} = Sign_{BLS}(Hash_{Blake2B}(\upsilon_\mathsf{M}), sk),$$
+$$\eta_\mathsf{M} = Sign_{BLS}([Blake2B][hash](\upsilon_\mathsf{M}), sk),$$
 
 where $sk$ is the secret key paired with the message's $Signer$, and $\upsilon$ is the *signature value*, that is, the content of the message being signed[^1].
 Note that the signature value depends on the message type.
@@ -88,27 +89,28 @@ Recall that there's a different candidate block for each round and iteration. Ho
 
 The `ConsensusInfo` structure is defined as follows:
 
-| Field       | Type    | Size     | Description         |
-|-------------|---------|----------|---------------------|
-| $PrevHash$  | SHA3    | 32 bytes | Previous block hash |
-| $Round$     | Integer | 64 bits  | Round number        |
-| $Iteration$ | Integer | 64 bits  | Iteration number    |
+| Field       | Type         | Size     | Description         |
+|-------------|--------------|----------|---------------------|
+| $PrevHash$  | [SHA3][hash] | 32 bytes | Previous block hash |
+| $Round$     | Unsigned Int | 64 bits  | Round number        |
+| $Iteration$ | Unsigned Int | 64 bits  | Iteration number    |
 
 The structure's total size is 48 bytes.
 
-#### `VoteInfo`
-This contains the information of a [Validation][val] or [Ratification][rat] vote.
+#### `Vote`
+<!-- TODO: move to Attestation ? -->
+This enum contains the information of a [Validation][val] or [Ratification][rat] vote.
 
-| Field           | Type    | Size     | Description            |
-|-----------------|---------|----------|------------------------|
-| $Vote$          | Integer | 1 byte   | Validation vote        |
-| $CandidateHash$ | SHA3    | 32 bytes | Candidate block's hash |
+It can have the following values:
 
-The structure's total size is 33 bytes.
+| Variant             | Data   | Size     | Description                                    |
+|---------------------|--------|----------|------------------------------------------------|
+| $NoCandidate$ ($0$) |        | 1 byte   | Vote for missing candidate                     |
+| $Valid$ ($1$)       | $SHA3$ | 33 bytes | Vote for valid candidate with specified hash   |
+| $Invalid$ ($2$)     | $SHA3$ | 33 bytes | Vote for invalid candidate with specified hash |
+| $NoQuorum$ ($3$)    |        | 1 byte   | Vote for no quorum reached                     |
 
-$Vote$ can be $NoCandidate$ ($0$), $Valid$ ($1$), $Invalid$ ($2$), or $NoQuorum$ ($3$).
-When $Vote$ is $NoCandidate$ or $NoQuorum$, $CandidateHash$ is empty.
-Note that an empty $CandidateHash$ is not included in the [*signature value*][sigs].
+The enum size is 33 bytes.
 
 ### Messages
 
@@ -117,11 +119,11 @@ This message is used by a block generator to broadcast a candidate block.
 
 The message has the following structure:
 
-| Field           | Type                    | Size      | Description     |
-|-----------------|-------------------------|-----------|-----------------|
-| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info  |
-| $Candidate$     | [`Block`][b]            |           | Candidate block |
-| $SignInfo$      | [`SignInfo`][sinf]      | 144 bytes | Signature info  |
+| Field           | Type                    | Size           | Description     |
+|-----------------|-------------------------|----------------|-----------------|
+| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes       | Consensus info  |
+| $Candidate$     | [`Block`][b]            | 410-1306 bytes | Candidate block |
+| $SignInfo$      | [`SignInfo`][sinf]      | 144 bytes      | Signature info  |
 
 The message has a variable size of 192 bytes plus the block size.
 
@@ -138,16 +140,16 @@ The message has the following structure:
 | Field           | Type                    | Size      | Description     |
 |-----------------|-------------------------|-----------|-----------------|
 | $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info  |
-| $VoteInfo$      | [`VoteInfo`][vinf]      | 33 byte   | Validation vote |
+| $Vote$          | [`Vote`][vote]          | 33 byte   | Validation vote |
 | $SignInfo$      | [`SignInfo`][sinf]      | 144 bytes | Signature info  |
 
 The message has a total size of 225 bytes.
 
-In this message, $Vote$ (part of $VoteInfo$) can be $Valid$, $Invalid$, or $NoCandidate$.
+In this message, $Vote$ can be $Valid$, $Invalid$, or $NoCandidate$.
 
 The message's [signature value][sigs] $\upsilon_\mathcal{M^V}$ is:
 
-$$\upsilon_\mathcal{M^V} = (ConsensusInfo || VoteInfo || ValStep)$$
+$$\upsilon_\mathcal{M^V} = (ConsensusInfo || Vote || ValStep)$$
 
 
 #### `Ratification`
@@ -157,19 +159,18 @@ The message has the following structure:
 | Field             | Type                    | Size      | Description                 |
 |-------------------|-------------------------|-----------|-----------------------------|
 | $ConsensusInfo$   | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info              |
-| $VoteInfo$        | [`VoteInfo`][vinf]      | 33 byte   | Ratification vote           |
+| $Vote$            | [`Vote`][vote]          | 33 byte   | Ratification vote           |
 | $ValidationVotes$ | [`StepVotes`][sv]       | 56 byte   | Aggregated Validation votes |
-| $Timestamp$       | Unsigned Integer        | 64 bits   | Timestamp in Unix format    |
+| $Timestamp$       | Unsigned Int            | 64 bits   | Timestamp in Unix format    |
 | $SignInfo$        | [`SignInfo`][sinf]      | 144 bytes | Signature info              |
 
 The message has a total size of 281 bytes.
 
-In this message, $Vote$ (part of $VoteInfo$) can be $NoCandidate$, $Valid$, $Invalid$, or $NoQuorum$.
 The $Timestamp$ field is reserved for a future feature.
 
 The message's [signature value][sigs] $\upsilon_\mathcal{M^R}$ is:
 
-$$\upsilon_\mathcal{M^R} = (ConsensusInfo || VoteInfo || RatStep)$$
+$$\upsilon_\mathcal{M^R} = (ConsensusInfo || Vote || RatStep)$$
 
 
 #### `Quorum`
@@ -178,12 +179,12 @@ This message is used at the end of a successful SA iteration to communicate to t
 | Field           | Type                    | Size      | Description           |
 |-----------------|-------------------------|-----------|-----------------------|
 | $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info        |
-| $VoteInfo$      | [`VoteInfo`][vinf]      | 33 byte   | Quorum vote           |
+| $Vote$          | [`Vote`][vote]          | 33 byte   | Quorum vote           |
 | $Attestation$   | [`Attestation`][att]    | 112 bytes | Iteration attestation |
 
 The message has a total size of 249 bytes.
 
-Note that this message is not signed, since the $Attestation$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $VoteInfo$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
+Note that this message is not signed, since the $Attestation$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $Vote$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
 
 ### Procedures
 
@@ -230,10 +231,10 @@ It is used both to advertise known resources as well as to request them.
 
 #### `InvItem`
 
-| Field      | Type         | Size          | Description                    |
-|------------|--------------|---------------|--------------------------------|
-| $InvType$  | Unsigned Int | 1 byte        | The type of the inventory item |
-| $InvParam$ | Unsigned Int | 40 bytes [^2] | The item ID                    |
+| Field      | Type         | Size     | Description                    |
+|------------|--------------|----------|--------------------------------|
+| $InvType$  | Unsigned Int | 1 byte   | The type of the inventory item |
+| $InvParam$ | `InvParam`   | 40 bytes | The item ID                    |
 
 $InvType$ can have the following values:
   - $0$: $MempoolTx$
@@ -241,14 +242,16 @@ $InvType$ can have the following values:
   - $2$: $BlockFromHeight$
   - $3$: $CandidateFromHash$
 
-$InvParam$ depends on $InvType$, and can be either of the following:
-- | Field  | Type         | Size     | Description       |
-  |--------|--------------|----------|-------------------|
-  | $Hash$ | Unsigned Int | 32 bytes | A hash value, used with $BlockFromHash$, $CandidateFromHash$, and $MempoolTx$ | 
+$InvParam$ is an Enum and depends on $InvType$
 
-- | Field    | Type         | Size    | Description       |
-  |----------|--------------|---------|-------------------|
-  | $Height$ | Unsigned Int | 8 bytes | A block height, used with $BlockFromHeight$ |
+#### `InvParam` Enum
+
+| Variant  | Data         | Size     | Description                                                                   |
+|----------|--------------|----------|-------------------------------------------------------------------------------|
+| $Hash$   | $SHA3$       | 32 bytes | A hash value, used with $BlockFromHash$, $CandidateFromHash$, and $MempoolTx$ |
+| $Height$ | Unsigned Int | 8 bytes  | A block height, used with $BlockFromHeight$                                   |
+
+The enum size is 40 bytes, given by: 1 "discriminant" byte, 32 bytes for the biggest possible value ($Hash$), plus 7 bytes to align the field to 8 bytes.
 
 
 ### Messages
@@ -368,9 +371,6 @@ This procedure represents a point-to-point message from the node to one of its p
 
 [^1]: Note that the BLS signature definition already includes the hashing of the message being signed. However, we explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
 
-[^2]: This value derives from the Rust reference implementation, where this field is represented by an `enum`. In particular, the $InvParam$ field size is given by: 1 "discriminant" byte, 32 bytes for the biggest possible value($Hash$), plus 7 bytes to align the field to 8 bytes.
-
-
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md -->
@@ -381,7 +381,7 @@ This procedure represents a point-to-point message from the node to one of its p
 [sinf]:  #signinfo
 
 [cinf]:  #consensusinfo
-[vinf]:  #voteinfo
+[vote]:  #vote
 
 [cmsg]:  #candidate
 [vmsg]:  #validation
@@ -406,6 +406,9 @@ This procedure represents a point-to-point message from the node to one of its p
 [rec]:   #receive
 [pmsg]:  #propagate
 [send]:  #send
+
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
 
 <!-- Basics -->
 [b]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#block-structure

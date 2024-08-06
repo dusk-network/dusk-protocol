@@ -285,8 +285,8 @@ The structure is defined as follows:
 
 | Field           | Type              | Size     | Description                  |
 |---------------- |-------------------|----------|------------------------------|
-| $Vote$          | Integer           | 8 bits   | The winning vote of the step |
-| $CandidateHash$ | SHA3              | 32 bytes | The candidate hash           |
+| $Vote$          | Int               | 8 bits   | The winning vote of the step |
+| $CandidateHash$ | [SHA3][hash]      | 32 bytes | The candidate hash           |
 | $SV$            | [`StepVotes`][sv] | 56 bytes | Aggregated signatures        |
 
 $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
@@ -403,6 +403,10 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 [av]:   #aggregatevote
 [va]:   #verifyattestation
 [vv]:   #verifyvotes
+
+
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
 
 <!-- Basics -->
 [rew]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#rewards

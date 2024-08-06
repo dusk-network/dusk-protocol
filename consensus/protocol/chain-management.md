@@ -280,8 +280,8 @@ The environment of synchronization procedures includes node-level parameters, co
 | $Syncing$     | Boolean              | $true$ if we are running a synchronization procedure with some peer, $false$ otherwise. |
 | $syncPeer$    | Peer ID              | It contains the ID of the peer the node is synchronizing with.                          |
 | $\tau_{Sync}$ | Timestamp            | It contains the time from when the $syncTimeout$ is checked against                     |
-| $syncFrom$    | Integer              | The height of the starting block during the synchronization process.                    |
-| $syncTo$      | Integer              | The heights of last blocks of synchronization process.                                  |
+| $syncFrom$    | Int              | The height of the starting block during the synchronization process.                    |
+| $syncTo$      | Int              | The heights of last blocks of synchronization process.                                  |
 
 ### Procedures
 

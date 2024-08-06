@@ -95,8 +95,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                              | Type                    | Description                       |
 |-----------------------------------|-------------------------| ----------------------------------|
-| $Round$                           | Integer                 | Current round number              |
-| $Iteration$                       | Integer                 | Current iteration number          |
+| $Round$                           | Int                 | Current round number              |
+| $Iteration$                       | Int                 | Current iteration number          |
 | $\mathsf{B}^c$                    | [`Block`][b]            | Candidate block                   |
 | $\mathsf{B}^w$                    | [`Block`][b]            | Winning block                     |
 | $\boldsymbol{FailedAttestations}$ | [`Attestation`][att][ ] | Attestations of failed iterations |

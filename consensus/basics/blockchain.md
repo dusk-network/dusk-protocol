@@ -46,32 +46,33 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 ### Structures
 #### `Block` Structure
 
-| Field          | Type                | Size                | Description        |
-|----------------|---------------------|---------------------|--------------------|
-| $Header$       | [`BlockHeader`][bh] | 522 Bytes - 28.8 KB | Block header       |
-| $Transactions$ | `Transaction`[ ]    | variable            | Block transactions |
+| Field          | Type                | Size             | Description        |
+|----------------|---------------------|------------------|--------------------|
+| $Header$       | [`BlockHeader`][bh] | 522 - 1418 bytes | Block header       |
+| $Transactions$ | `Transaction`[ ]    | variable         | Block transactions |
+| $Faults$       | [`Fault`][fau][ ]   | variable         | Fault proofs       |
 
 #### `BlockHeader` Structure
 
-| Field                  | Type                    | Size       | Description                                            |
-|------------------------|-------------------------|------------|--------------------------------------------------------|
-| $Version$              | Unsigned Integer        | 8 bits     | Block version                                          |
-| $Height$               | Unsigned Integer        | 64 bits    | Block height                                           |
-| $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                         |
-| $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                        |
-| $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced              |
-| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of the previous block                             |
-| $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed                 |
-| $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                   |
-| $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                       |
-| $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                    |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | [Certificate][cert] for the previous block             |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Fail Attestations of previous iterations |
-| $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                                |
-| $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block         |
+| Field                  | Type                    | Size        | Description                                    |
+|------------------------|-------------------------|-------------|------------------------------------------------|
+| $Version$              | Unsigned Int            | 8 bits      | Block version                                  |
+| $Height$               | Unsigned Int            | 64 bits     | Block height                                   |
+| $Timestamp$            | Unsigned Int            | 64 bits     | Block timestamp in Unix format                 |
+| $GasLimit$             | Unsigned Int            | 64 bits     | Block gas limit                                |
+| $Iteration$            | Unsigned Int            | 8 bits      | Iteration at which the block was produced      |
+| $PreviousBlock$        | [SHA3][hash]            | 32 bytes    | Hash of the previous block                     |
+| $Seed$                 | BLS Signature           | 48 bytes    | Signature of the previous block's seed         |
+| $Generator$            | BLS Public Key          | 96 bytes    | Generator Public Key                           |
+| $TransactionRoot$      | [Blake3][hash]          | 32 bytes    | Root of transactions Merkle tree               |
+| $StateRoot$            | [SHA3][hash]            | 32 bytes    | Root of contracts state Merkle tree            |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes   | [Certificate][cert] for the previous block     |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-896 bytes | Fail Attestations of previous iterations       |
+| $Hash$                 | [SHA3][hash]            | 32 bytes    | Hash of previous fields                        |
+| $Attestation$          | [`Attestation`][att]    | 112 bytes   | Attestation of the $Valid$ votes for the block |
 
-The `BlockHeader` structure has a variable total size of 522 to 28970 bytes (28.8 KB).
-This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
+The `BlockHeader` structure has a variable total size of 522 to 1418 bytes.
+This is reduced to 410-1306 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
 
 **Notation**
 
@@ -79,7 +80,7 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define the *hash* of a block $\mathsf{B}$ as:
 
-$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
+$\eta_\mathsf{B} = $[*SHA3*][hash]$(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
 $\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
 We also define the function $\eta(\mathsf{B})$ that given a block $\mathsf{B}$ outputs $\eta_\mathsf{B}$.
@@ -433,6 +434,9 @@ $\textit{UpdateFinalBlocks}():$
 [ucb]: #UpdateConfirmedBlocks
 [ufb]: #UpdateFinalBlocks
 
+
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
 
 <!-- Basics -->
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate

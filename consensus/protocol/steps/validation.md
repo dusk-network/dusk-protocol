@@ -30,6 +30,7 @@ The step output will be used as the input for the [Ratification][rat] step.
 ### Procedures
 
 #### *ValidationStep*
+<!-- TODO: use Valid(Hash) and Invalid(Hash) -->
 This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})`$, where $v^\mathsf{V}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^\mathsf{V}}$ is the aggregated vote of the quorum committee.
 
 The procedure performs two tasks: 
@@ -61,7 +62,7 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
       1. Verify $\mathsf{B}^c$ against $Tip$
       2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
       3. Otherwise, set $v$ to $Invalid$
-   4. Set $VoteInfo$ to $(v, \eta_{\mathsf{B}^c})$
+   4. Set $Vote$ to $(v, \eta_{\mathsf{B}^c})$
    5. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
    6. Broadcast $\mathsf{M}$
 

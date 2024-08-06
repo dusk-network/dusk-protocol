@@ -197,6 +197,10 @@ Note that there are no *warnings* for hard slashing.
 [pen]: #penalties
 [fau]: #faults
 
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
+[en]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#enum
+
 <!-- Basics -->
 [lc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 
