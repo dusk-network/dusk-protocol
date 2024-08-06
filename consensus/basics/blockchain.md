@@ -444,6 +444,8 @@ $\textit{UpdateFinalBlocks}():$
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
 [va]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#verifyattestation
 
+[fau]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#faults
+
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [eb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#emergencyblock
