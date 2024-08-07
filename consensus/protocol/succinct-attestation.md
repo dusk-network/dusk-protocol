@@ -95,8 +95,8 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                              | Type                    | Description                       |
 |-----------------------------------|-------------------------| ----------------------------------|
-| $Round$                           | Int                 | Current round number              |
-| $Iteration$                       | Int                 | Current iteration number          |
+| $Round$                           | Int                     | Current round number              |
+| $Iteration$                       | Int                     | Current iteration number          |
 | $\mathsf{B}^c$                    | [`Block`][b]            | Candidate block                   |
 | $\mathsf{B}^w$                    | [`Block`][b]            | Winning block                     |
 | $\boldsymbol{FailedAttestations}$ | [`Attestation`][att][ ] | Attestations of failed iterations |
@@ -169,9 +169,10 @@ If, for any reason, the round ends without a winning block, the node halts the c
 **Algorithm**
 
 1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
-3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-4. For $Iteration$ from 0 to $MaxIterations$
+2. Reset $\boldsymbol{FailedAttestations}$
+3. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
+4. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
+5. For $Iteration$ from 0 to $MaxIterations$
    1. If in Emergency Mode:
       1. Start [*SAIteration*][sai] as a thread
       2. Wait $MaxStepTimeout$ for each step
@@ -181,7 +182,7 @@ If, for any reason, the round ends without a winning block, the node halts the c
       1. Broadcast $\mathsf{B}^w$
       2. Accept $\mathsf{B}^w$ into the chain
       3. End round
-5. If we reached $MaxIterations$ without a winning block
+6. If we reached $MaxIterations$ without a winning block
    1. If we are a Dusk-owned node
       1. Produce an Emergency Block
    2. Otherwise, stop the SA loop (and wait for some block to be received)
@@ -191,9 +192,10 @@ If, for any reason, the round ends without a winning block, the node halts the c
 $\textit{SARound}():$
 1. $\texttt{set }$:
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-2. [*SetRoundTimeouts*][srt]$()$
-3. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
-4. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
+2. $\boldsymbol{FailedAttestations} = []$
+3. [*SetRoundTimeouts*][srt]$()$
+4. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
+5. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
    1. $\texttt{if } (I \ge EmergencyMode):$
       1. $\texttt{start}($[*SAIteration*][sai]$(Round, Iteration))$
       2. $\texttt{wait} (3 \times MaxStepTimeout)$
@@ -203,7 +205,7 @@ $\textit{SARound}():$
       1. [*Broadcast*][mx]$(\mathsf{B}^w)$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
-5. $\texttt{if } (\mathsf{B}^w = NIL)$
+6. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. If $\mathcal{N} = DuskKey$
       1. [*BroadcastEmergencyBlock*][beb]$()$
    2. $\texttt{stop}($[*SALoop*][sal]$)$
