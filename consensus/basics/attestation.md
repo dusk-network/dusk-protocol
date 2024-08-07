@@ -6,7 +6,6 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
 **ToC**
   - [Voting Committees](#voting-committees)
     - [Step Committees](#step-committees)
-    - [Votes](#votes)
     - [Step Numbers](#step-numbers)
     - [Block Generator Extraction](#block-generator-extraction)
     - [Procedures](#procedures)
@@ -14,6 +13,9 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [*ExtractCommittee*](#extractcommittee)
     - [*GetQuorum*](#getquorum)
     - [*GetStepNum*](#getstepnum)
+  - [Votes](#votes)
+    - [`Vote`](#vote)
+    - [Vote Signatures](#vote-signatures)
   - [Subcommittees](#subcommittees)
     - [Bitsets](#bitsets)
     - [Procedures](#procedures-1)
@@ -66,17 +68,6 @@ Voting Committees in the [Validation][val] and [Ratification][rat] steps have a 
 When counting votes, each vote is multiplied by the power of the voter in the committee. For instance, if a member has 3 credits, his vote will be counted 3 times.
 
 Hence, the $CommitteeCredits$ parameter determines the maximum number of members in a committee, and, indirectly, the degree of distribution of the voting process.
-
-### Votes
-In the Validation and Ratification steps, members of the voting committees cast their vote on the validity of the block, and to ratify the result of the Validation step.
-
-Votes are in the form of BLS signatures, which allow them to be aggregated and verified together. This removes the necessity to store multiple signatures in the block or in the messages. Instead, a single aggregated signature, along with a *bitset* to indicate the signature of which committee members are included, is sufficient to validate the quorum on a candidate block.
-
-In particular, each vote is the digital signature of the hash of the following fields: 
-  - the previous block's hash, which identifies both the round and the branch to which the candidate is for;
-  - the iteration number, to distinguish between votes for different candidates of the same round;
-  - the step number, to distinguish Validation and Ratification votes.
-  - the candidate block's hash, to ensure which candidate the vote is for;
 
 ### Step Numbers
 In some contexts, it is useful to numerically identify the SA step.
@@ -175,6 +166,31 @@ This procedure returns the absolute step number within the round. It is used for
 $\textit{GetStepNum}(I, Step):$
 - $\texttt{output } I \times + StepNum$ 
 
+<p><br></p>
+
+## Votes
+In the [Validation][val] and [Ratification][rat] steps, members of the [voting committees][vc] cast their vote on the validity of the block, and to ratify the result of the Validation step.
+
+Votes are in the form of enumerations, whose data includes the hash of the candidate block in case of $Valid$ and $Invalid$ votes.
+
+### `Vote`
+This enum contains the information of a [Validation][val] or [Ratification][rat] vote.
+
+It can have the following values:
+
+| Variant             | Data   | Size     | Description                                    |
+|---------------------|--------|----------|------------------------------------------------|
+| $NoCandidate$ ($0$) |    /   | 1 byte   | Vote for missing candidate                     |
+| $Valid$ ($1$)       | $SHA3$ | 33 bytes | Vote for valid candidate with specified hash   |
+| $Invalid$ ($2$)     | $SHA3$ | 33 bytes | Vote for invalid candidate with specified hash |
+| $NoQuorum$ ($3$)    |    /   | 1 byte   | Vote for no quorum reached                     |
+
+The enum size is 33 bytes.
+
+### Vote Signatures
+To ensure authentication and integrity, votes are [digitally signed][sigs] in the corresponding [`Validation`][vmsg] and [`Ratification`][rmsg] messages.
+
+Thanks to the use of BLS signatures, equal votes from different provisioners can be aggregated into a single signature. The aggregated vote can than be propagated, stored, and verified with the corresponding aggregated public keys of the voters. This efficient scheme is implemented in the [`StepVotes`][sv] structure, which is based on the concept of [subcommittees][subc].
 
 <p><br></p>
 
@@ -265,7 +281,7 @@ This structure contains the aggregated votes of the [Validation][val] and [Ratif
 The structure has a total size of 112 bytes.
 
 #### `StepVotes`
-This structure is used to store votes from the [Validation][val] and [Ratification][rat] steps.
+This structure is used to store votes in the [Validation][val] and [Ratification][rat] steps.
 Votes are stored as the aggregated BLS signatures of the members of the two Voting Committees. In fact, each [vote][vot] is signed together with the related *Consensus Information* (round, iteration, step) and the hash of the candidate to which the vote refers.
 To specify the votes from which committee members included in the aggregated signature, a [sub-committee bitset][bs] is used.
 
@@ -375,34 +391,38 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 3. $pk_{\boldsymbol{bs}} = AggregatePKs(C^{\boldsymbol{bs}})$
 4. $\texttt{output } Verify_{BLS}(\upsilon, pk_{\boldsymbol{bs}}, \sigma_{\boldsymbol{bs}})$
 
+
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md -->
-[vc]:   #voting-committees
-[sc]:   #step-committees
-[vot]:  #votes
-[sn]:   #step-numbers
-[bge]:  #block-generator-extraction
-[eg]:   #ExtractGenerator
-[ec]:   #ExtractCommittee
-[gq]:   #GetQuorum
-[gsn]:  #GetStepNum
+[vc]:    #voting-committees
+[sc]:    #step-committees
+[sn]:    #step-numbers
+[bge]:   #block-generator-extraction
+[eg]:    #ExtractGenerator
+[ec]:    #ExtractCommittee
+[gq]:    #GetQuorum
+[gsn]:   #GetStepNum
 
-[subc]: #subcommittees
-[bits]: #bitsets
-[bs]:   #bitset
-[sb]:   #setbit
-[csb]:  #countsetbits
-[sc]:   #subcommittee
-[cc]:   #countcredits
+[vot]:   #votes
+[vote]:  #vote
+[vsigs]: #vote-signatures
 
-[atts]: #attestations
-[cert]: #block-certificate
-[att]:  #attestation
-[sv]:   #stepvotes
-[sr]:   #stepresult
-[av]:   #aggregatevote
-[va]:   #verifyattestation
-[vv]:   #verifyvotes
+[subc]:  #subcommittees
+[bits]:  #bitsets
+[bs]:    #bitset
+[sb]:    #setbit
+[csb]:   #countsetbits
+[sc]:    #subcommittee
+[cc]:    #countcredits
+
+[atts]:  #attestations
+[cert]:  #block-certificate
+[att]:   #attestation
+[sv]:    #stepvotes
+[sr]:    #stepresult
+[av]:    #aggregatevote
+[va]:    #verifyattestation
+[vv]:    #verifyvotes
 
 
 <!-- Notation -->
@@ -424,3 +444,5 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 
 <!-- Messages -->
 [sigs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[vmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#validation
+[rmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#ratification

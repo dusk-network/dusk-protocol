@@ -4,20 +4,20 @@ This section describes the network messages exchanged by nodes to participate in
 **ToC**
   - [Consensus](#consensus)
       - [Sender](#sender)
-    - [Signatures](#signatures)
-      - [`SignInfo`](#signinfo)
-    - [Structures](#structures)
+    - [Preamble](#preamble)
       - [`ConsensusInfo`](#consensusinfo)
-      - [`Vote`](#vote)
+    - [Signatures](#signatures)
+    - [Procedures](#procedures)
+      - [`SignInfo`](#signinfo)
     - [Messages](#messages)
       - [`Candidate`](#candidate)
       - [`Validation`](#validation)
       - [`Ratification`](#ratification)
       - [`Quorum`](#quorum)
-    - [Procedures](#procedures)
+    - [Procedures](#procedures-1)
       - [*CMsg*](#cmsg)
   - [Data Exchange](#data-exchange)
-    - [Structures](#structures-1)
+    - [Structures](#structures)
       - [`Inv`](#inv)
       - [`InvItem`](#invitem)
       - [`InvParam` Enum](#invparam-enum)
@@ -30,7 +30,7 @@ This section describes the network messages exchanged by nodes to participate in
         - [Resource Discovery](#resource-discovery)
         - [Direct Request](#direct-request)
       - [`Inv`](#inv-1)
-  - [Procedures](#procedures-1)
+  - [Procedures](#procedures-2)
       - [*Broadcast*](#broadcast)
       - [*Receive*](#receive)
       - [*Propagate*](#propagate)
@@ -50,18 +50,44 @@ Consensus messages are composed of a [`ConsensusInfo`][cinf] structure, some fie
 All messages include a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. 
 For the sake of readability, this field is omitted from the structure definition.
 
+### Preamble
+All consensus messages includes the essential information to identify the round, iteration, and branch they belong to.
+We include all this information in the `ConsensusInfo` structure, which is the first field of all consensus messages.
+
+#### `ConsensusInfo`
+This structure is used for all consensus messages to identify the round and iteration they refer to. 
+The information included is the previous block hash, and the round and iteration numbers. 
+
+That the presence of the previous block allows to distinguish between messages for the same round and iteration but from different forks[^1].
+
+The structure is defined as follows:
+
+| Field       | Type         | Size     | Description         |
+|-------------|--------------|----------|---------------------|
+| $PrevHash$  | [SHA3][hash] | 32 bytes | Previous block hash |
+| $Round$     | Unsigned Int | 64 bits  | Round number        |
+| $Iteration$ | Unsigned Int | 64 bits  | Iteration number    |
+
+The structure's total size is 48 bytes.
+
+
 ### Signatures
-Each message contains a *message signature* (included in the $Signature$ field) which is used to verify the message authenticity but is also functional to prove the reached agreement over a candidate block (see [Attestations][atts])
+To ensure integrity and authenticity of votes, each message is digitally signed by the sender.
+
+In particular, all messages include a signature of the following information:
+- the [`ConsensusInfo`][cinf] structure
+- the message-specific payload (e.g., the candidate hash for `Candidate` messages, or the `Vote` for Validation and Ratification messages)
+
+This *message signature* is included in the $Signature$ field.
 
 Formally, given a message $\mathsf{M}$, we define its signature $\eta_\mathsf{M}$ as
 
 $$\eta_\mathsf{M} = Sign_{BLS}([Blake2B][hash](\upsilon_\mathsf{M}), sk),$$
 
-where $sk$ is the secret key paired with the message's $Signer$, and $\upsilon$ is the *signature value*, that is, the content of the message being signed[^1].
+where $sk$ is the secret key paired with the message's $Signer$, and $\upsilon$ is the *signature value*, that is, the content of the message being signed[^2].
 Note that the signature value depends on the message type.
 
-
-***Procedures***
+### Procedures
 With respect to message signatures, we also define the following procedures:
  - $SignMessage(\mathsf{M})$: takes a message $\mathsf{M}$ and outputs the message signature $\sigma_\mathsf{M}$;
  - $VerifyMessage(\mathsf{M})$: takes a message $\mathsf{M}$ and outputs $true$ if $\sigma_\mathsf{M}$ is a valid signature of $Signer$ over the signature value $\upsilon_\mathsf{M}$.
@@ -80,37 +106,6 @@ The $Signer$ field identifies the provisioner sending the message. For instance,
 
 The $Signature$ field is not just the signature of the whole message but varies depending on the message type. This signature is used for the consensus protocol, especially for `Validation` and `Ratification` messages, whose signature is used to prove the vote and, if a quorum is reached, to certify the quorum in an iteration.
 
-### Structures
-
-#### `ConsensusInfo`
-All consensus messages share a common `ConsensusInfo` structure that allows identifying the candidate block they refer to. The information included is the previous block hash, and the round and iteration numbers.
-
-Recall that there's a different candidate block for each round and iteration. However, in the case of a fork, two candidates could exist for the same round and iteration. Including the previous block's hash allows distinguishing the two candidates.
-
-The `ConsensusInfo` structure is defined as follows:
-
-| Field       | Type         | Size     | Description         |
-|-------------|--------------|----------|---------------------|
-| $PrevHash$  | [SHA3][hash] | 32 bytes | Previous block hash |
-| $Round$     | Unsigned Int | 64 bits  | Round number        |
-| $Iteration$ | Unsigned Int | 64 bits  | Iteration number    |
-
-The structure's total size is 48 bytes.
-
-#### `Vote`
-<!-- TODO: move to Attestation ? -->
-This enum contains the information of a [Validation][val] or [Ratification][rat] vote.
-
-It can have the following values:
-
-| Variant             | Data   | Size     | Description                                    |
-|---------------------|--------|----------|------------------------------------------------|
-| $NoCandidate$ ($0$) |        | 1 byte   | Vote for missing candidate                     |
-| $Valid$ ($1$)       | $SHA3$ | 33 bytes | Vote for valid candidate with specified hash   |
-| $Invalid$ ($2$)     | $SHA3$ | 33 bytes | Vote for invalid candidate with specified hash |
-| $NoQuorum$ ($3$)    |        | 1 byte   | Vote for no quorum reached                     |
-
-The enum size is 33 bytes.
 
 ### Messages
 
@@ -369,7 +364,9 @@ This procedure represents a point-to-point message from the node to one of its p
 
 <!----------------------- FOOTNOTES ----------------------->
 
-[^1]: Note that the BLS signature definition already includes the hashing of the message being signed. However, we explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
+[^1]: Note that the Round field is not strictly necessary to identify a specific iteration and fork. However, we include it to simplify the identification of the corresponding round.
+
+[^2]: Note that the BLS signature definition already includes the hashing of the message being signed. However, we explicitly show it here to make it clear and show the actual hash function used in our protocol (Blake2B).
 
 
 <!------------------------- LINKS ------------------------->
@@ -377,11 +374,10 @@ This procedure represents a point-to-point message from the node to one of its p
 
 [cmsgs]: #consensus
 [msen]:  #sender
-[sigs]:  #signatures
-[sinf]:  #signinfo
 
 [cinf]:  #consensusinfo
-[vote]:  #vote
+[sigs]:  #signatures
+[sinf]:  #signinfo
 
 [cmsg]:  #candidate
 [vmsg]:  #validation

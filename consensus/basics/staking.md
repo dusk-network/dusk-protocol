@@ -157,19 +157,19 @@ Major faults are:
 This structure is used to store a *fault proof* to include in a block. This is then used to enforce penalties.
 The `Fault` type is defined as an [enumeration][en], with the following possible values:
 
-| Variant                  | Data                                                 | Description                          |
-|--------------------------|------------------------------------------------------|--------------------------------------|
-| $DoubleCandidate$        | $(`FaultData`<Hash>, `FaultData`<Hash>)$             | Proof of double candidate fault      |
+| Variant                  | Data                                         | Description                          |
+|--------------------------|----------------------------------------------|--------------------------------------|
+| $DoubleCandidate$        | $(`FaultData`<Hash>, `FaultData`<Hash>)$     | Proof of double candidate fault      |
 | $DoubleRatificationVote$ | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Ratification |
 | $DoubleValidationVote$   | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Validation   |
 
 
 ##### `FaultData` Structure
 
-| Field       | Type                               | Size      | Description                 |
-|-------------|------------------------------------|-----------|-----------------------------|
-| $Header$    | [`ConsensusInfo`][cinf]            | 48 bytes  | Consensus message header    |
-| $Signature$ | [`SignInfo`][sinf]                 | 144 bytes | Consensus message signature |
+| Field       | Type                           | Size      | Description                 |
+|-------------|--------------------------------|-----------|-----------------------------|
+| $Header$    | [`ConsensusInfo`][cinf]        | 48 bytes  | Consensus message header    |
+| $Signature$ | [`SignInfo`][sinf]             | 144 bytes | Consensus message signature |
 | $Data$      | [SHA3][hash] or [`Vote`][vote] | 33 bytes  | Candidate hash or vote      |
 
 
@@ -226,6 +226,7 @@ Note that there are no *warnings* for hard slashing.
 [vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
+[vote]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#vote
 
 <!-- Protocol -->
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
@@ -238,7 +239,6 @@ Note that there are no *warnings* for hard slashing.
 
 [cinf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#consensusinfo
 [sinf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signinfo
-[vote]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#vote
 
 <!-- Tokenomics -->
 [ep]:      https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
