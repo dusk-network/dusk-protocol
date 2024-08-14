@@ -411,6 +411,8 @@ This procedure represents a point-to-point message from the node to one of its p
 [cb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#candidate-block
 [fb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#full-block
 [lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
+[vote]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#vote
+
 <!-- TODO -->
 [tx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#transaction
 

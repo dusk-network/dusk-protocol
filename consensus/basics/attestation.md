@@ -472,6 +472,8 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
+[cinf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#consensusinfo
+
 <!-- Messages -->
 [sigs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
 [vmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#validation

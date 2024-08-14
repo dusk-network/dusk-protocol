@@ -214,7 +214,7 @@ $\textit{SARound}():$
 
 #### *SAIteration*
 This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
-The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ is the vote is $NoQuorum$).
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult`][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ is the vote is $NoQuorum$).
 
 If a quorum was reached in both Validation and Ratification, a [`Quorum`][qmsg] message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the winning vote, and the two [`StepVotes`][sv] with the aggregated signatures of the quorum committee).
 
@@ -440,6 +440,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [gsn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 [atts]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
+[vote]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#vote
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [sb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#setbit
 [sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
