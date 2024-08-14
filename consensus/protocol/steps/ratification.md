@@ -65,11 +65,13 @@ Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In par
       1. If $\mathsf{M}$'s signature is valid
       2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
       3. and $\mathsf{M}$'s vote is valid ($NoQuorum$, $Valid$, $Invalid$, or $NoQuorum$)
-      4. and $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
+      4. and no other vote has been received for $\mathsf{M}$'s signer
+      5. and $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $\mathsf{V}$ into the aggregated $\mathsf{SV_V}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ otherwise
-         4. If votes in $\mathsf{SV_V}$ reach $Q$
+         3. Add $\mathsf{M}$'s signer to the $StepVoters$ set
+         4. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ otherwise
+         5. If votes in $\mathsf{SV_V}$ reach $Q$
             1. Store elapsed time
             2. Output $(\mathsf{V}, \mathsf{SV_V})$
 
@@ -108,11 +110,13 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       1. $\texttt{if } (pk_\mathsf{M} \in \mathcal{C})$
       2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M}) = true)$
       3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
-      4. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
+      4. $\texttt{and }(pk_\mathsf{M} \notin StepVoters)$
+      5. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
          1. [*Propagate*][mx]$(\mathsf{M})$
          2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )`$
-         3. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
-         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
+         3. $StepVoters = StepVoters \cup pk_\mathsf{M}$
+         4. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
+         5. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Ratification, \tau_{Now}-\tau_{Start})$
             2. $\texttt{output } (\mathsf{V}, \mathsf{SV_V})$
 

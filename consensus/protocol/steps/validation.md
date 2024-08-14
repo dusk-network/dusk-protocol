@@ -45,6 +45,8 @@ If $\mathsf{B}^c$'s parent is not $Tip$, it is discarded (it likely belongs to a
 
 Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $\mathsf{V}$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV_V}=(\sigma_\mathsf{V},\boldsymbol{bs}_\mathsf{V})$ is used.
 
+In the collection of votes, the $StepVoters$ set variable is used to track provisioners that voted for this step. Conflicting votes are discarded and can be liable to [slashing][pen].
+
 **Parameters**
 - $R$: round number
 - $I$: iteration number
@@ -69,10 +71,12 @@ Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In par
       1. If $\mathsf{M}$'s signature is valid
       2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
       3. and $\mathsf{M}$'s vote is valid ($NoQuorum$, $Valid$, or $Invalid$)
+      4. and no other vote has been received for $\mathsf{M}$'s signer
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $\mathsf{V}$ into the aggregated $\mathsf{SV_V}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ if $V$ is $Invalid$ or $NoCandidate$
-         4. If votes in $\mathsf{SV_V}$ reach $Q$
+         3. Add $\mathsf{M}$'s signer to the $StepVoters$ set
+         4. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ if $V$ is $Invalid$ or $NoCandidate$
+         5. If votes in $\mathsf{SV_V}$ reach $Q$
             1. Store elapsed time
             2. Output $(\mathsf{V}, \mathsf{SV_V})$
 
@@ -103,19 +107,22 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
    5. [*Broadcast*][mx]$(\mathsf{M})$
 
 4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Val}) \texttt{ and } (I \lt EmergencyMode):$
+   - $StepVoters = \emptyset$
    1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
       - $\texttt{set}:$
         - $\mathsf{CI}, \mathsf{V}, \mathsf{SI} \leftarrow \mathsf{M}$
         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
         - $pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}$
 
-      1. $\texttt{if } (pk_{\mathsf{M}} \in \mathcal{C})$
+      1. $\texttt{if } (pk_\mathsf{M} \in \mathcal{C})$
       2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M}) = true)$
-      3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid\}):$
+      3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid\})$
+      4. $\texttt{and }(pk_\mathsf{M} \notin StepVoters):$
          1. [*Propagate*][mx]$(\mathsf{M})$
-         2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_\mathsf{M} )`$
-         3. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
-         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
+         2. $\mathsf{SV_V} =$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_\mathsf{M} )`$
+         3. $StepVoters = StepVoters \cup pk_\mathsf{M}$
+         4. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
+         5. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Validation, \tau_{Now}-\tau_{Start})$
             2. $\texttt{output } (\mathsf{V}, \mathsf{SV_V})$
 
