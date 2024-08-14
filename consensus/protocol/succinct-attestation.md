@@ -99,7 +99,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 | $Iteration$                       | Int                     | Current iteration number          |
 | $\mathsf{B}^c$                    | [`Block`][b]            | Candidate block                   |
 | $\mathsf{B}^w$                    | [`Block`][b]            | Winning block                     |
-| $\boldsymbol{FailedAttestations}$ | [`Attestation`][att][ ] | Attestations of failed iterations |
+| $\boldsymbol{FailedIterations}$   | [`Attestation`][att][ ] | Attestations of failed iterations |
 
 
 ### Procedures
@@ -169,7 +169,7 @@ If, for any reason, the round ends without a winning block, the node halts the c
 **Algorithm**
 
 1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-2. Reset $\boldsymbol{FailedAttestations}$
+2. Reset $\boldsymbol{FailedIterations}$
 3. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
 4. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
 5. For $Iteration$ from 0 to $MaxIterations$
@@ -192,7 +192,7 @@ If, for any reason, the round ends without a winning block, the node halts the c
 $\textit{SARound}():$
 1. $\texttt{set }$:
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-2. $\boldsymbol{FailedAttestations} = []$
+2. $\boldsymbol{FailedIterations} = []$
 3. [*SetRoundTimeouts*][srt]$()$
 4. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
 5. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
@@ -256,8 +256,8 @@ $\textit{SAIteration}(R, I):$
    5. [*Broadcast*][mx]$(\mathsf{M})$
    6. $\texttt{if } (Result = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
-   6. $\texttt{else}:$
-      1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
+   7. $\texttt{else}:$
+      1. $\boldsymbol{FailedIterations}[I] = {\mathsf{A}}$
 
 <p><br></p>
 

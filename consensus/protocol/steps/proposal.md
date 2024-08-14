@@ -122,7 +122,7 @@ $\textit{GenerateBlock}(R,I, \mathsf{B}^p)$
 4. $`Seed_{\mathsf{B}^c} = Sign_{BLS}(sk_\mathcal{N}, Seed_{\mathsf{B}^p})`$
 5. $\tau_{\mathsf{B}^c} = Max(\tau_{now}, \mathsf{B}^p.Timestamp+10)$
 6. $`\mathsf{H}_{\mathsf{B}^c} = (Version,R,\tau_{\mathsf{B}^c},BlockGas,I,\eta_{\mathsf{B}_{\mathsf{B}^p}},Seed_{\mathsf{B}^c},pk_\mathcal{N},$
-   $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedAttestations})`$
+   $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedIterations})`$
     | Field                  | Value                              | 
     |------------------------|------------------------------------|
     | $Version$              | $V$                                |
@@ -136,7 +136,7 @@ $\textit{GenerateBlock}(R,I, \mathsf{B}^p)$
     | $TxRoot$               | $TxRoot_{\mathsf{B}^c}$            |
     | $State$                | $SystemState_{\mathsf{B}^c}$       |
     | $PrevBlockCertificate$ | $\mathsf{B}^p.Attestation$         | 
-    | $FailedIterations$     | $\boldsymbol{FailedAttestations}$  |
+    | $FailedIterations$     | $\boldsymbol{FailedIterations}$  |
     
 7. $`\mathsf{B}^c = (\mathsf{H}, \boldsymbol{tx})`$
     | Field          | Value                       | 

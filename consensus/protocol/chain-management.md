@@ -105,7 +105,7 @@ This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the
 
 If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
 
-If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedAttestations}$ array.
+If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedIterations}$ array.
 
 **Parameters**
 - [SA Environment][cenv]
@@ -126,7 +126,7 @@ If the message contains a [Fail Attestation][atts], and it does not refer to a [
                3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
                1. If the iteration is not in [Relaxed Mode][rm]:
-                  1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+                  1. Add $\mathsf{A}$ to the $\boldsymbol{FailedIterations}$ list
             4. Stop [*SAIteration*][sai]
 
 <!-- TODO: when receiving a Valid Quorum, we should stop SARound (all iterations)
@@ -156,7 +156,7 @@ $\textit{HandleQuorum}( R ):$
                 3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
              3. $\texttt{else } :$
                 1. $\texttt{if } \mathsf{M}^Q.Iteration \le RelaxMode$
-                   1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
+                   1. $\boldsymbol{FailedIterations}[I_{\mathsf{M}}] = {\mathsf{A}}$
              4. $\texttt{stop}$([*SAIteration*][sai])
 
 
