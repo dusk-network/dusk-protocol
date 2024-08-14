@@ -7,6 +7,7 @@
     - [*ProposalStep*](#proposalstep)
     - [*GenerateBlock*](#generateblock)
     - [*SelectTransactions*](#selecttransactions)
+    - [*FetchFaults*](#fetchfaults)
 
 ## Overview
 In the Proposal step, each provisioner node first executes the [*Deterministic Sortition*][ds] algorithm to extract the *block generator*. If the node is selected, it creates a new *candidate block*, and broadcasts it using a [`Candidate`][cmsg] message.
@@ -105,24 +106,28 @@ It is called by [*ProposalStep*][props], which will broadcast the returned block
 
 **Algorithm**
 1. Fetch transactions $\boldsymbol{txs}$ from Mempool
-2. Execute $\boldsymbol{txs}$ and get new state $SystemState_R$
-3. Compute transaction Merkle tree root $TxRoot_R$
-4. Set new $Seed_R$ by signing the previous one $Seed_{\mathsf{B}^p}$
-5. Set block's timestamp
-6. Create block header $`\mathsf{H}_{\mathsf{B}^c}`$
-7. Create candidate block $\mathsf{B}^c$
-8. Output $\mathsf{B}^c$
+2. Fetch faults from DB
+3. Execute state transition and get new state $SystemState_R$
+4. Compute transaction Merkle tree root
+5. Compute fault Merkle tree root
+6. Set new $Seed$ by signing the previous one $Seed_{\mathsf{B}^p}$
+7. Set block's timestamp
+8. Create block header $`\mathsf{H}_{\mathsf{B}^c}`$
+9. Create candidate block $\mathsf{B}^c$
+10. Output $\mathsf{B}^c$
 
 **Procedure**
 
 $\textit{GenerateBlock}(R,I, \mathsf{B}^p)$
 1. $\boldsymbol{txs} =$ [*SelectTransactions*][st]$()$
-2. $SystemState_{\mathsf{B}^c} =$ [*ExecuteStateTransition*][est]$`(\mathsf{B}^p.State, \boldsymbol{txs}, BlockGas,pk_\mathcal{N})`$
-3. $`TxRoot_{\mathsf{B}^c} = MerkleTree(\boldsymbol{txs}).Root`$
-4. $`Seed_{\mathsf{B}^c} = Sign_{BLS}(sk_\mathcal{N}, Seed_{\mathsf{B}^p})`$
-5. $\tau_{\mathsf{B}^c} = Max(\tau_{now}, \mathsf{B}^p.Timestamp+10)$
-6. $`\mathsf{H}_{\mathsf{B}^c} = (Version,R,\tau_{\mathsf{B}^c},BlockGas,I,\eta_{\mathsf{B}_{\mathsf{B}^p}},Seed_{\mathsf{B}^c},pk_\mathcal{N},$
-   $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedAttestations})`$
+2. $\boldsymbol{faults} =$ [*FetchFaults*][ff]$()$
+3. $SystemState_{\mathsf{B}^c} =$ [*ExecuteStateTransition*][est]$`(\mathsf{B}^p.State, \boldsymbol{txs}, \boldsymbol{faults}, BlockGas, pk_\mathcal{N})`$
+4. $`TxRoot_{\mathsf{B}^c} = MerkleTree(\boldsymbol{txs}).Root`$
+5. $`FaultRoot_{\mathsf{B}^c} = MerkleTree(\boldsymbol{faults}).Root`$
+6. $`Seed_{\mathsf{B}^c} = Sign_{BLS}(sk_\mathcal{N}, Seed_{\mathsf{B}^p})`$
+7. $\tau_{\mathsf{B}^c} = Max(\tau_{now}, \mathsf{B}^p.Timestamp+10)$
+8. $`\mathsf{H}_{\mathsf{B}^c} = \{Version,R,\tau_{\mathsf{B}^c},BlockGas,I,\eta_{\mathsf{B}_{\mathsf{B}^p}},Seed_{\mathsf{B}^c},pk_\mathcal{N},$
+   $TxRoot_R,SystemState_R,\mathsf{B}_{R-1}.Attestation, \boldsymbol{FailedIterations}\}`$
     | Field                  | Value                              | 
     |------------------------|------------------------------------|
     | $Version$              | $V$                                |
@@ -134,17 +139,19 @@ $\textit{GenerateBlock}(R,I, \mathsf{B}^p)$
     | $Seed$                 | $Seed_{\mathsf{B}^c}$              |
     | $Generator$            | $pk_\mathcal{N}$                   |
     | $TxRoot$               | $TxRoot_{\mathsf{B}^c}$            |
+    | $FaultRoot$            | $FaultRoot_{\mathsf{B}^c}$         |
     | $State$                | $SystemState_{\mathsf{B}^c}$       |
     | $PrevBlockCertificate$ | $\mathsf{B}^p.Attestation$         | 
-    | $FailedIterations$     | $\boldsymbol{FailedAttestations}$  |
+    | $FailedIterations$     | $\boldsymbol{FailedIterations}$    |
     
-7. $`\mathsf{B}^c = (\mathsf{H}, \boldsymbol{tx})`$
+9. $`\mathsf{B}^c = \{\mathsf{H}, \boldsymbol{txs}, \boldsymbol{faults}\}`$
     | Field          | Value                       | 
     |----------------|-----------------------------|
     | $Header$       | $\mathsf{H}_{\mathsf{B}^c}$ |
     | $Transactions$ | $\boldsymbol{txs}$          |
+    | $Faults$       | $\boldsymbol{faults}$       |
 
-8. $\texttt{output } \mathsf{B}^c$
+10. $\texttt{output } \mathsf{B}^c$
 
 <p><br></p>
 
@@ -155,12 +162,16 @@ The criteria used for the selection is arbitrary and is left to the Block Genera
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
+### *FetchFaults*
+This procedure returns all known faults which have not yet been included in any block.
+
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md -->
 [prop]:  #proposal
 [props]: #proposalstep
 [gb]:    #generateblock
 [st]:    #selecttransactions
+[ff]:    #fetchfaults
 
 <!-- Basics -->
 [eg]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#ExtractGenerator
@@ -183,5 +194,5 @@ In this respect, it can be assumed that transactions paying higher gas prices wi
 [cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
 [nmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
 
-<!-- TODO: Add ExecuteTransactions -->
+<!-- TODO: Add ExecuteStateTransition -->
 [est]:  https://github.com/dusk-network/dusk-protocol/tree/main/

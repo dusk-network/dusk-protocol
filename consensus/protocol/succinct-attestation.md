@@ -95,11 +95,11 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 **Round State**
 | Name                              | Type                    | Description                       |
 |-----------------------------------|-------------------------| ----------------------------------|
-| $Round$                           | Integer                 | Current round number              |
-| $Iteration$                       | Integer                 | Current iteration number          |
+| $Round$                           | Int                     | Current round number              |
+| $Iteration$                       | Int                     | Current iteration number          |
 | $\mathsf{B}^c$                    | [`Block`][b]            | Candidate block                   |
 | $\mathsf{B}^w$                    | [`Block`][b]            | Winning block                     |
-| $\boldsymbol{FailedAttestations}$ | [`Attestation`][att][ ] | Attestations of failed iterations |
+| $\boldsymbol{FailedIterations}$   | [`Attestation`][att][ ] | Attestations of failed iterations |
 
 
 ### Procedures
@@ -169,9 +169,10 @@ If, for any reason, the round ends without a winning block, the node halts the c
 **Algorithm**
 
 1. Set candidate block $\mathsf{B}^c$ and winning block $\mathsf{B}^w$ to $NIL$
-2. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
-3. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-4. For $Iteration$ from 0 to $MaxIterations$
+2. Reset $\boldsymbol{FailedIterations}$
+3. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
+4. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
+5. For $Iteration$ from 0 to $MaxIterations$
    1. If in Emergency Mode:
       1. Start [*SAIteration*][sai] as a thread
       2. Wait $MaxStepTimeout$ for each step
@@ -181,7 +182,7 @@ If, for any reason, the round ends without a winning block, the node halts the c
       1. Broadcast $\mathsf{B}^w$
       2. Accept $\mathsf{B}^w$ into the chain
       3. End round
-5. If we reached $MaxIterations$ without a winning block
+6. If we reached $MaxIterations$ without a winning block
    1. If we are a Dusk-owned node
       1. Produce an Emergency Block
    2. Otherwise, stop the SA loop (and wait for some block to be received)
@@ -191,9 +192,10 @@ If, for any reason, the round ends without a winning block, the node halts the c
 $\textit{SARound}():$
 1. $\texttt{set }$:
    - $\mathsf{B}^c, \mathsf{B}^w = NIL$
-2. [*SetRoundTimeouts*][srt]$()$
-3. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
-4. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
+2. $\boldsymbol{FailedIterations} = []$
+3. [*SetRoundTimeouts*][srt]$()$
+4. $\texttt{start}($[*HandleQuorum*][hq]$(Round))$
+5. $\texttt{for } Iteration = 0 \dots MaxIterations-1 :$
    1. $\texttt{if } (I \ge EmergencyMode):$
       1. $\texttt{start}($[*SAIteration*][sai]$(Round, Iteration))$
       2. $\texttt{wait} (3 \times MaxStepTimeout)$
@@ -203,7 +205,7 @@ $\textit{SARound}():$
       1. [*Broadcast*][mx]$(\mathsf{B}^w)$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
-5. $\texttt{if } (\mathsf{B}^w = NIL)$
+6. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. If $\mathcal{N} = DuskKey$
       1. [*BroadcastEmergencyBlock*][beb]$()$
    2. $\texttt{stop}($[*SALoop*][sal]$)$
@@ -212,23 +214,25 @@ $\textit{SARound}():$
 
 #### *SAIteration*
 This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
-The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult`][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ is the vote is $NoQuorum$).
 
-If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
+If a quorum was reached in both Validation and Ratification, a [`Quorum`][qmsg] message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the winning vote, and the two [`StepVotes`][sv] with the aggregated signatures of the quorum committee).
 
 **Algorithm**
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
-4. If Ratification reached a quorum on $v$: 
-   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
-   2. Set vote to $(v, \eta_{\mathsf{B}^c})$
-      1. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
-   3. Broadcast $\mathsf{M^Q}$
-   4. If the Ratification result is $Success$:
+4. If Ratification reached a quorum on $\mathsf{V}$: 
+   1. If $\mathsf{V}$ is $Valid$
+      1. Set the iteration result $Result$ to $Success$
+   2. Otherwise set $Result$ to $Fail$
+   3. Create an attestation $\mathsf{A}$ with the $Result$ and the Validation and Ratification step votes
+   4. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
+   5. Broadcast $\mathsf{M^Q}$
+   6. If the Ratification result is $Success$:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
-   5. If the Ratification result is $Fail$
-      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+   7. If the Ratification result is $Fail$
+      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedIterations}$ list
 
 **Procedure**
 $\textit{SAIteration}(R, I):$
@@ -236,25 +240,24 @@ $\textit{SAIteration}(R, I):$
 2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
 3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
 - $\texttt{set}:$
-  - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
-  - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
-4. $\texttt{if } (v \ne NoQuorum):$
-   1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
-   2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
+  - $`\_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
+  - $\mathsf{V}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
+1. $\texttt{if } (\mathsf{V} \ne NoQuorum):$
+   1. $\texttt{if } \mathsf{V} = Valid$:
+      1. $\texttt{set} Result = Success$
+   2. $\texttt{else}:$
+      1. $\texttt{set} Result = Fail$
+   3. $\mathsf{A} = ({Result, \mathsf{SV}^V, \mathsf{SV}^R})$
+   4. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Quorum}, \mathsf{A})$
       | Field           | Value                 |
       |-----------------|-----------------------|
-      | $PrevHash$      | $\eta_{Tip}$          |
-      | $Round$         | $R$                   |
-      | $Iteration$     | $I$                   |
-      | $Vote$          | $v$                   |
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
+      | $ConsensusInfo$ | $(\eta_{Tip}, R, I)$  |
       | $Attestation$   | $\mathsf{A}$          |
-   4. [*Broadcast*][mx]$(\mathsf{M})$
-   5. $\texttt{if } (v = Success):$
+   5. [*Broadcast*][mx]$(\mathsf{M})$
+   6. $\texttt{if } (Result = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
-   6. $\texttt{else}:$
-      1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
+   7. $\texttt{else}:$
+      1. $\boldsymbol{FailedIterations}[I] = {\mathsf{A}}$
 
 <p><br></p>
 
@@ -437,8 +440,11 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [gsn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 [atts]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
+[vote]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#vote
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [sb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#setbit
+[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
+[sr]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepresult
 
 [not]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md
 

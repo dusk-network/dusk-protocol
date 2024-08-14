@@ -105,7 +105,7 @@ This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the
 
 If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
 
-If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedAttestations}$ array.
+If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedIterations}$ array.
 
 **Parameters**
 - [SA Environment][cenv]
@@ -120,13 +120,13 @@ If the message contains a [Fail Attestation][atts], and it does not refer to a [
          1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
          2. If valid:
             1. Propagate $\mathsf{M}^Q$
-            2. If the quorum vote is $Valid$
-               1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
+            2. If the attestation result is $Success$
+               1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{A}$'s Vote
                2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetResource*][grmsg])
                3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
                1. If the iteration is not in [Relaxed Mode][rm]:
-                  1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+                  1. Add $\mathsf{A}$ to the $\boldsymbol{FailedIterations}$ list
             4. Stop [*SAIteration*][sai]
 
 <!-- TODO: when receiving a Valid Quorum, we should stop SARound (all iterations)
@@ -139,25 +139,24 @@ $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{CI}, \mathsf{VI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
+          - $`\mathsf{CI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
           - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
-          - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
-          - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
        1. $\texttt{if } (R_{\mathsf{M}} = Tip.Height):$
           1. $\texttt{break}$
        2. $\texttt{else}:$
-          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}, \upsilon)$
+          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL)$
           2. $\texttt{if } (isValid = true) :$
              1. [*Propagate*][mx]$(\mathsf{M}^Q)$
-             2. $\texttt{if } (v = Valid) :$
-                1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
+             2. $\texttt{if } (\mathsf{A}.Result = Success):$
+                - $\texttt{set} \eta^c = \mathsf{A}.Result.Hash$
+                1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta^c)$
                 2. $\texttt{if } (\mathsf{B}^c = NIL) :$
-                  - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta_{\mathsf{B}^c})$
+                  - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta^c)$
                 3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
              3. $\texttt{else } :$
                 1. $\texttt{if } \mathsf{M}^Q.Iteration \le RelaxMode$
-                   1. $\boldsymbol{FailedAttestations}[I_{\mathsf{M}}] = {\mathsf{A}}$
+                   1. $\boldsymbol{FailedIterations}[I_{\mathsf{M}}] = {\mathsf{A}}$
              4. $\texttt{stop}$([*SAIteration*][sai])
 
 
@@ -186,24 +185,24 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 - $\mathsf{B}$: the block to accept as the new chain tip
 
 **Algorithm**
-1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
-2. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
-3. Update the $Provisioners$ set
-4. Set $Tip$ to block $\mathsf{B}$
-5. Add $\mathsf{B}$ to the [local chain][lc] and update [finality][rf] labels
+1. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
+2. Update the $Provisioners$ set
+3. Set $Tip$ to block $\mathsf{B}$
+4. Add $\mathsf{B}$ to the [local chain][lc] and update [finality][rf] labels
 
 **Procedure**
 
 $\textit{AcceptBlock}(\mathsf{B}):$
-1. $\texttt{set }$:
+- $\texttt{set }$:
    - $\boldsymbol{txs} = \mathsf{B}.Transactions$
    - $gas = \mathsf{B}.GasLimit$
+   - $\boldsymbol{faults} = \mathsf{B}.Faults$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $SystemState =$ [*ExecuteTransactions*][est]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
-3. $Provisioners = SystemState.Provisioners$
-4. $Tip = \mathsf{B}$
-5. [*AddToLocalChain*][alc]$(\mathsf{B})$
+1. $SystemState =$ [*ExecuteStateTransition*][est]$(SystemState, \boldsymbol{txs}, gas, \boldsymbol{faults}, pk_{\mathcal{G}})$
+2. $Provisioners = SystemState.Provisioners$
+3. $Tip = \mathsf{B}$
+4. [*AddToLocalChain*][alc]$(\mathsf{B})$
 
 
 #### *Fallback*
@@ -280,8 +279,8 @@ The environment of synchronization procedures includes node-level parameters, co
 | $Syncing$     | Boolean              | $true$ if we are running a synchronization procedure with some peer, $false$ otherwise. |
 | $syncPeer$    | Peer ID              | It contains the ID of the peer the node is synchronizing with.                          |
 | $\tau_{Sync}$ | Timestamp            | It contains the time from when the $syncTimeout$ is checked against                     |
-| $syncFrom$    | Integer              | The height of the starting block during the synchronization process.                    |
-| $syncTo$      | Integer              | The heights of last blocks of synchronization process.                                  |
+| $syncFrom$    | Int              | The height of the starting block during the synchronization process.                    |
+| $syncTo$      | Int              | The heights of last blocks of synchronization process.                                  |
 
 ### Procedures
 

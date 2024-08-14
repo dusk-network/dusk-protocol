@@ -46,32 +46,34 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 ### Structures
 #### `Block` Structure
 
-| Field          | Type                | Size                | Description        |
-|----------------|---------------------|---------------------|--------------------|
-| $Header$       | [`BlockHeader`][bh] | 522 Bytes - 28.8 KB | Block header       |
-| $Transactions$ | `Transaction`[ ]    | variable            | Block transactions |
+| Field          | Type                | Size             | Description        |
+|----------------|---------------------|------------------|--------------------|
+| $Header$       | [`BlockHeader`][bh] | 522 - 1418 bytes | Block header       |
+| $Transactions$ | `Transaction`[ ]    | variable         | Block transactions |
+| $Faults$       | [`Fault`][fau][ ]   | variable         | Fault proofs       |
 
 #### `BlockHeader` Structure
 
-| Field                  | Type                    | Size       | Description                                            |
-|------------------------|-------------------------|------------|--------------------------------------------------------|
-| $Version$              | Unsigned Integer        | 8 bits     | Block version                                          |
-| $Height$               | Unsigned Integer        | 64 bits    | Block height                                           |
-| $Timestamp$            | Unsigned Integer        | 64 bits    | Block timestamp in Unix format                         |
-| $GasLimit$             | Unsigned Integer        | 64 bits    | Block gas limit                                        |
-| $Iteration$            | Unsigned Integer        | 8 bits     | Iteration at which the block was produced              |
-| $PreviousBlock$        | Sha3 Hash               | 32 bytes   | Hash of the previous block                             |
-| $Seed$                 | Signature               | 48 bytes   | Signature of the previous block's seed                 |
-| $Generator$            | Public Key              | 96 bytes   | Generator Public Key                                   |
-| $TransactionRoot$      | Blake3 Hash             | 32 bytes   | Root of transactions Merkle tree                       |
-| $StateRoot$            | Sha3 Hash               | 32 bytes   | Root of contracts state Merkle tree                    |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes  | [Certificate][cert] for the previous block             |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-28448 bytes (27.75 KB) | Fail Attestations of previous iterations |
-| $Hash$                 | Sha3 Hash               | 32 bytes   | Hash of previous fields                                |
-| $Attestation$          | [`Attestation`][att]    | 112 bytes  | Attestation of the $Valid$ votes for the block         |
+| Field                  | Type                    | Size        | Description                                    |
+|------------------------|-------------------------|-------------|------------------------------------------------|
+| $Version$              | Unsigned Int            | 8 bits      | Block version                                  |
+| $Height$               | Unsigned Int            | 64 bits     | Block height                                   |
+| $Timestamp$            | Unsigned Int            | 64 bits     | Block timestamp in Unix format                 |
+| $GasLimit$             | Unsigned Int            | 64 bits     | Block gas limit                                |
+| $Iteration$            | Unsigned Int            | 8 bits      | Iteration at which the block was produced      |
+| $PreviousBlock$        | [SHA3][hash]            | 32 bytes    | Hash of the previous block                     |
+| $Seed$                 | BLS Signature           | 48 bytes    | Signature of the previous block's seed         |
+| $Generator$            | BLS Public Key          | 96 bytes    | Generator Public Key                           |
+| $TransactionRoot$      | [Blake3][hash]          | 32 bytes    | Root of transactions Merkle tree               |
+| $FaultRoot$            | [Blake3][hash]          | 32 bytes    | Root of faults Merkle tree                     |
+| $StateRoot$            | [SHA3][hash]            | 32 bytes    | Root of contracts state Merkle tree            |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes   | [Certificate][cert] for the previous block     |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-896 bytes | Fail Attestations of previous iterations       |
+| $Hash$                 | [SHA3][hash]            | 32 bytes    | Hash of previous fields                        |
+| $Attestation$          | [`Attestation`][att]    | 152 bytes   | Attestation of the $Valid$ votes for the block |
 
-The `BlockHeader` structure has a variable total size of 522 to 28970 bytes (28.8 KB).
-This is reduced to 410-28448 bytes for a [*candidate block*][cb], since $Attestation$ is missing.
+The `BlockHeader` structure has a variable total size of 634 to 1530 bytes.
+This is reduced to 482-1378 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
 
 **Notation**
 
@@ -79,8 +81,8 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 
 We define the *hash* of a block $\mathsf{B}$ as:
 
-$\eta_\mathsf{B} = Hash_{SHA3}(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
-$\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
+$\eta_\mathsf{B} = $[*SHA3*][hash]$(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
+$\hspace{50pt}Generator||TransactionRoot||FaultRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
 We also define the function $\eta(\mathsf{B})$ that given a block $\mathsf{B}$ outputs $\eta_\mathsf{B}$.
 
@@ -120,22 +122,22 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
   - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
   - $\mathsf{A_B} = \mathsf{B}.Attestation$
-  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
-  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
+  - $\mathsf{CI} = {\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration}$
+  - $\mathsf{CI}^p = {\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration}$
+  
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
+3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success)`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
 5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
    1. $\texttt{output } true$
-6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
+6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success)`$
 7. $\texttt{if } (isValid = false): \texttt{output } false$
 8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
-      <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
-      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
+      - $\mathsf{CI}_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i)$
+      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail)$
       2. $\texttt{if } (isValid = false): \texttt{output } false$
 9.  $\texttt{output } true$
 
@@ -157,14 +159,15 @@ Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between 
 6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
 7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
 8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
-9. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+9. And $\mathsf{B}$'s fault root is correct with respect to the fault set
+10. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
    1. Output $true$
-10. Otherwise, output $false$
+11. Otherwise, output $false$
 
 **Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $SystemState_{\mathsf{B}^p} =$ [*ExecuteTransactions*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
+- $SystemState_{\mathsf{B}^p} =$ [*ExecuteStateTransition*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
 - $\texttt{if }$
   1. $(\mathsf{B}.Version = Version)$ 
   2. $\texttt{and } (\mathsf{B}.Hash = \eta(\mathsf{B}))$
@@ -174,10 +177,11 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
   7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
   8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
-  9. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+  9. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
+  10. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
      1. $\texttt{output } true$
 
-  10. $\texttt{else: output } false$
+  11. $\texttt{else: output } false$
 
 
 <p><br></p>
@@ -434,11 +438,16 @@ $\textit{UpdateFinalBlocks}():$
 [ufb]: #UpdateFinalBlocks
 
 
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
+
 <!-- Basics -->
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [att]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
 [va]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#verifyattestation
+
+[fau]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#faults
 
 <!-- Protocol -->
 [cenv]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment

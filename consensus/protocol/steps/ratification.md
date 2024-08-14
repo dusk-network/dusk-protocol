@@ -34,11 +34,11 @@ The output, together with the Validation output, will be used to determine the o
 ### Procedures
 
 #### *RatificationStep*
-This procedure takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $`\mathsf{SR}^R=(v^\mathsf{R}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{R}})`$, where $v^\mathsf{R}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, $\eta_{\mathsf{B}^c}$ is the candidate hash, and $\mathsf{SV}_{v^\mathsf{R}}$ is the aggregated vote of the quorum committee.
+This procedure takes in input the round $R$, the iteration $I$, and the Validation result $\mathsf{SR}^V$ (as returned from [*ValidationStep*][vals]) and outputs the Ratification result $`\mathsf{SR}^R=(\mathsf{V}^R, \mathsf{SV}_{\mathsf{V}^R})`$, where $\mathsf{V^R}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{\mathsf{V}^R}$ is the aggregated signature of the quorum committee.
 
 The procedure performs two tasks: 
 
-1. If the node is part of the Ratification committee $\mathcal{C}$, it broadcasts a `Ratification` message with the Validation result $(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})$.
+1. If the node is part of the Ratification committee $\mathcal{C}$, it broadcasts a [`Ratification`][rmsg] message with the Validation result $(\mathsf{V}^V, \mathsf{SV}_{\mathsf{V}^V})$.
 
 2. It collects `Ratification` messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
@@ -46,37 +46,36 @@ The procedure performs two tasks:
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
    - if the timeout $\tau_{Rat}$ expires, the step outputs $NoQuorum$.
 
-Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
+Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $\mathsf{V}$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV_V}=(\sigma_\mathsf{V},\boldsymbol{bs}_\mathsf{V})$ is used.
 
 **Parameters**
 - $R$: round number
 - $I$: iteration number
-- $\mathsf{SR}^V = (v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}})$ Validation result ([`StepResult`][sr])
+- $\mathsf{SR}^V$ : [`StepResult`][sr] of the previous Validation step
 
 **Algorithm**
 1. Extract committee $\mathcal{C}$ for the step ([*ExtractCommittee*][ec])
 2. Start step timeout $\tau_{Rat}$
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
-   1. Create a $\mathsf{Ratification}$ message $\mathsf{M}$ for vote $v^\mathsf{V}$
+   1. Create a $\mathsf{Ratification}$ message $\mathsf{M}$ for vote $\mathsf{V}$
    2. Broadcast $\mathsf{M}$
 
-4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
-   1. Initialize $\mathsf{SV}_v$
-
-5. While timeout $\tau_{Rat}$ has not expired:
-   1. If a $\mathsf{Ratification}$ message $\mathsf{M^R}$ is received for round $R$ and iteration $I$:
-      1. If $\mathsf{M^R}$'s signature is valid
-      2. and $\mathsf{M^R}$'s signer is in the committee $\mathcal{C}$
-      3. and $\mathsf{M^R}$'s vote is valid ($NoQuorum$, $Valid$, $Invalid$, or $NoQuorum$)
-      4. and $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
-         1. Propagate $\mathsf{M^R}$
-         2. Collect $\mathsf{M^R}$'s vote $v^\mathsf{R}$ into the aggregated $\mathsf{SV}_{v^\mathsf{R}}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $v^\mathsf{R}$ is $Valid$, or to $Majority$ otherwise
-         4. If votes in $\mathsf{SV}_{v^\mathsf{R}}$ reach $Q$
+4. While timeout $\tau_{Rat}$ has not expired:
+   1. If a $\mathsf{Ratification}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
+      1. If $\mathsf{M}$'s signature is valid
+      2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
+      3. and $\mathsf{M}$'s vote is valid ($NoQuorum$, $Valid$, $Invalid$, or $NoQuorum$)
+      4. and no other vote has been received for $\mathsf{M}$'s signer
+      5. and $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
+         1. Propagate $\mathsf{M}$
+         2. Collect $\mathsf{M}$'s vote $\mathsf{V}$ into the aggregated $\mathsf{SV_V}$
+         3. Add $\mathsf{M}$'s signer to the $StepVoters$ set
+         4. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ otherwise
+         5. If votes in $\mathsf{SV_V}$ reach $Q$
             1. Store elapsed time
-            2. Output $(v^\mathsf{R}, \mathsf{SV}_{v^\mathsf{R}})$
+            2. Output $(\mathsf{V}, \mathsf{SV_V})$
 
- 6. If timeout $\tau_{Rat}$ expired:
+ 5. If timeout $\tau_{Rat}$ expired:
     1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
@@ -84,53 +83,46 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 
 $RatificationStep( R, I, \mathsf{SR}^V ) :$
 - $\texttt{set}:$ 
-  - $v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}} \leftarrow \mathsf{SR}^V$
+  - $\mathsf{V}, \mathsf{SV_V} \leftarrow \mathsf{SR}^V$
 1. $\mathcal{C}=$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
 2. $\tau_{Start} = \tau_{Now}$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
-   1. $`\mathsf{M} = `$ [*CMsg*][cmsg]$`(\mathsf{Ratification}, v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}}, \tau_{Now})`$
-      | Field             | Value                        | 
-      |-------------------|------------------------------|
-      | $PrevHash$        | $\eta_{Tip}$                 |
-      | $Round$           | $R$                          |
-      | $Iteration$       | $I$                          |
-      | $Vote$            | $v^\mathsf{V}$               |
-      | $CandidateHash$   | $\eta_{\mathsf{B}^c}$        |
-      | $ValidationVotes$ | $\mathsf{SV}_{v^\mathsf{V}}$ |
-      | $Timestamp$       | $\tau_{Now}$                 |
-      | $Signer$          | $pk_\mathcal{N}$             |
-      | $Signature$       | $\sigma_\mathsf{M}$          |
+   1. $`\mathsf{M} = `$ [*CMsg*][cmsg]$`(\mathsf{Ratification}, \mathsf{V}, \mathsf{SV_V}, \tau_{Now})`$
+      | Field             | Value                                 |
+      |-------------------|---------------------------------------|
+      | $ConsensusInfo$   | $(\eta_{Tip}, R, I)$                  |
+      | $Vote$            | $\mathsf{V}$                          |
+      | $ValidationVotes$ | $\mathsf{SV_V}$                       |
+      | $Timestamp$       | $\tau_{Now}$                          |
+      | $SignInfo$        | $(pk_\mathcal{N}, \sigma_\mathsf{M})$ |
 
    2. [*Broadcast*][mx]$(\mathsf{M})$
 
-4. $\texttt{set}:$
-   - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate, NoQuorum]:$
-     - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
-
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Rat}) \texttt{ and } (I \lt EmergencyMode):$
-   1. $\texttt{if } (\mathsf{M^R} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
+4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Rat}) \texttt{ and } (I \lt EmergencyMode):$
+   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
       - $\texttt{set}:$
-        - $`\mathsf{CI}, \mathsf{VI}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M^R}`$
+        - $`\mathsf{CI}, \mathsf{V}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M}`$
         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
-        - $`v^\mathsf{R}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
-        - $`pk_\mathsf{M^R}, \sigma_\mathsf{M^R} \leftarrow \mathsf{SI}`$
-        - $\upsilon^V = (\mathsf{CI}||\mathsf{VI}||ValStep)$
-        - $Q^V =$ [*GetQuorum*][gq]$(v^\mathsf{R})$
+        - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}`$
+        - $\upsilon^V = (\mathsf{CI}||\mathsf{V}||ValStep)$
+        - $Q^V =$ [*GetQuorum*][gq]$(\mathsf{V})$
 
-      1. $\texttt{if } (pk_\mathsf{M^R} \in \mathcal{C})$
-      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M^R}) = true)$
-      3. $\texttt{and }(v^\mathsf{R} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
-      4. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
-         1. [*Propagate*][mx]$(\mathsf{M^R})$
-         2. $`\mathsf{SV}_{v^\mathsf{R}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{R}}, \mathcal{C}, \sigma_\mathsf{M^R}, pk_{\mathsf{M^R}} )`$
-         3. $Q =$ [*GetQuorum*][gq]$(v^\mathsf{R})$
-         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{v^\mathsf{R}}) \ge Q):$
+      1. $\texttt{if } (pk_\mathsf{M} \in \mathcal{C})$
+      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M}) = true)$
+      3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
+      4. $\texttt{and }(pk_\mathsf{M} \notin StepVoters)$
+      5. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
+         1. [*Propagate*][mx]$(\mathsf{M})$
+         2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )`$
+         3. $StepVoters = StepVoters \cup pk_\mathsf{M}$
+         4. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
+         5. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Ratification, \tau_{Now}-\tau_{Start})$
-            2. $\texttt{output } (v^\mathsf{R}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{R}})$
+            2. $\texttt{output } (\mathsf{V}, \mathsf{SV_V})$
 
- 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Rat}):$
+ 5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Rat}):$
     1. [*IncreaseTimeout*][it]$(Ratification)$
-    2. $\texttt{output } (NoQuorum, NIL, NIL)$
+    2. $\texttt{output } (NoQuorum, NIL)$
 
 
 <!----------------------- FOOTNOTES ----------------------->

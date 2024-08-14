@@ -153,6 +153,27 @@ Major faults are:
 - Double voting: if a provisioner publish two conflicting votes for the same candidate block; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block;
 - Double block: if a generator broadcasts two different candidates for the same iteration; the punishment takes effect when a proof of the misbehavior, consisting in the two headers and the two signatures, is included in a block.
 
+##### `Fault` Enum
+This structure is used to store a *fault proof* to include in a block. This is then used to enforce penalties.
+The `Fault` type is defined as an [enumeration][en], with the following possible values:
+
+| Variant                  | Data                                         | Description                          |
+|--------------------------|----------------------------------------------|--------------------------------------|
+| $DoubleCandidate$        | $(`FaultData`<Hash>, `FaultData`<Hash>)$     | Proof of double candidate fault      |
+| $DoubleRatificationVote$ | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Ratification |
+| $DoubleValidationVote$   | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Validation   |
+
+The enumeration's size is 451 bytes.
+
+##### `FaultData` Structure
+
+| Field       | Type                           | Size      | Description                 |
+|-------------|--------------------------------|-----------|-----------------------------|
+| $Header$    | [`ConsensusInfo`][cinf]        | 48 bytes  | Consensus message header    |
+| $Signature$ | [`SignInfo`][sinf]             | 144 bytes | Consensus message signature |
+| $Data$      | [SHA3][hash] or [`Vote`][vote] | 33 bytes  | Candidate hash or vote      |
+
+The structure's size is 225 bytes.
 
 #### Suspension
 This measure consists in removing a provisioner from the [eligible set][epo] for a number of [*epochs*][epo]. Doing this excludes the provisioner from the [Deterministic Sortition][ds] process, preventing it from being selected as block generator or committee member. This measure primarily aims at excluding offline provisioners from consensus, improving liveness and stability.
@@ -197,12 +218,17 @@ Note that there are no *warnings* for hard slashing.
 [pen]: #penalties
 [fau]: #faults
 
+<!-- Notation -->
+[hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
+[en]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#enum
+
 <!-- Basics -->
 [lc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 
 [vc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#voting-committees
 [atts]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestations
 [cert]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#block-certificate
+[vote]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#vote
 
 <!-- Protocol -->
 [sa]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#overview
@@ -212,6 +238,9 @@ Note that there are no *warnings* for hard slashing.
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
+
+[cinf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#consensusinfo
+[sinf]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signinfo
 
 <!-- Tokenomics -->
 [ep]:      https://github.com/dusk-network/dusk-protocol/tree/main/economic-protocol
