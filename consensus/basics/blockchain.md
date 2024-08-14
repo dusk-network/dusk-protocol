@@ -66,13 +66,13 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 | $Generator$            | BLS Public Key          | 96 bytes    | Generator Public Key                           |
 | $TransactionRoot$      | [Blake3][hash]          | 32 bytes    | Root of transactions Merkle tree               |
 | $StateRoot$            | [SHA3][hash]            | 32 bytes    | Root of contracts state Merkle tree            |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 112 bytes   | [Certificate][cert] for the previous block     |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes   | [Certificate][cert] for the previous block     |
 | $FailedIterations$     | [`Attestation`][att][ ] | 0-896 bytes | Fail Attestations of previous iterations       |
 | $Hash$                 | [SHA3][hash]            | 32 bytes    | Hash of previous fields                        |
-| $Attestation$          | [`Attestation`][att]    | 112 bytes   | Attestation of the $Valid$ votes for the block |
+| $Attestation$          | [`Attestation`][att]    | 152 bytes   | Attestation of the $Valid$ votes for the block |
 
-The `BlockHeader` structure has a variable total size of 522 to 1418 bytes.
-This is reduced to 410-1306 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
+The `BlockHeader` structure has a variable total size of 602 to 1498 bytes.
+This is reduced to 450-1346 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
 
 **Notation**
 
@@ -121,22 +121,22 @@ $\textit{VerifyBlock}(\mathsf{B}):$
 - $\textit{set }:$
   - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
   - $\mathsf{A_B} = \mathsf{B}.Attestation$
-  - $\upsilon_\mathsf{B} = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration,Valid,\eta_\mathsf{B})$
-  - $\upsilon_{\mathsf{B}^p} = (\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration,Valid,\eta_{\mathsf{B}^p})$
+  - $\mathsf{CI} = {\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration}$
+  - $\mathsf{CI}^p = {\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration}$
+  
 1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
 2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}^p},\upsilon_\mathsf{B})`$
+3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success)`$
 4. $\texttt{if } (isValid = false): \texttt{output } false$
 5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
    1. $\texttt{output } true$
-6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{A}_{\mathsf{B}},\upsilon_{\mathsf{B}^p})`$
+6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success)`$
 7. $\texttt{if } (isValid = false): \texttt{output } false$
 8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
-      <!-- TODO: support Invalid/NoQuorum votes -->
-      - $\upsilon_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i,NoCandidate)$
-      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}_i, \upsilon_i)$
+      - $\mathsf{CI}_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i)$
+      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail)$
       2. $\texttt{if } (isValid = false): \texttt{output } false$
 9.  $\texttt{output } true$
 

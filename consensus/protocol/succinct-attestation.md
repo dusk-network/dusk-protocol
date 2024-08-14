@@ -214,23 +214,25 @@ $\textit{SARound}():$
 
 #### *SAIteration*
 This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
-The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which, if a quorum is reached, outputs the aggregated Validation votes $\mathsf{SV}^V$; these are passed to *Ratification*, which, if a quorum is reached, outputs the aggregated Ratification votes $\mathsf{SV}^R$.
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ is the vote is $NoQuorum$).
 
-If a quorum was reached in both Validation and Ratification, a `Quorum` message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the two `StepVotes` $\mathsf{SV}^V$ and $\mathsf{SV}^R$).
+If a quorum was reached in both Validation and Ratification, a [`Quorum`][qmsg] message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the winning vote, and the two [`StepVotes`][sv] with the aggregated signatures of the quorum committee).
 
 **Algorithm**
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
 2. Run *Validation* on $\mathsf{B}^c$
 3. Run *Ratification* on the Validation result
-4. If Ratification reached a quorum on $v$: 
-   1. Create an attestation $\mathsf{A}$ with the Validation and Ratification votes
-   2. Set vote to $(v, \eta_{\mathsf{B}^c})$
-      1. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
-   3. Broadcast $\mathsf{M^Q}$
-   4. If the Ratification result is $Success$:
+4. If Ratification reached a quorum on $\mathsf{V}$: 
+   1. If $\mathsf{V}$ is $Valid$
+      1. Set the iteration result $Result$ to $Success$
+   2. Otherwise set $Result$ to $Fail$
+   3. Create an attestation $\mathsf{A}$ with the $Result$ and the Validation and Ratification step votes
+   4. Create $\mathsf{Quorum}$ message $\mathsf{M^Q}$
+   5. Broadcast $\mathsf{M^Q}$
+   6. If the Ratification result is $Success$:
       1. Make $\mathsf{B}^c$ the winning block [*MakeWinning*][mw]
-   5. If the Ratification result is $Fail$
-      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedAttestations}$ list
+   7. If the Ratification result is $Fail$
+      1. Add $\mathsf{A}$ to the $\boldsymbol{FailedIterations}$ list
 
 **Procedure**
 $\textit{SAIteration}(R, I):$
@@ -238,22 +240,21 @@ $\textit{SAIteration}(R, I):$
 2. $\mathsf{SR}^V =$ [*ValidationStep*][vs]$(R, I, \mathsf{B}^c)$
 3. $\mathsf{SR}^R =$ [*RatificationStep*][rs]$(R, I, \mathsf{SR}^V)$
 - $\texttt{set}:$
-  - $`\_, \_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
-  - $v, \eta_{\mathsf{B}^c}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
-4. $\texttt{if } (v \ne NoQuorum):$
-   1. $\mathsf{A} = ({\mathsf{SV}^V, \mathsf{SV}^R})$
-   2. $\mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   3. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Quorum}, \mathsf{VI}, \mathsf{A})$
+  - $`\_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
+  - $\mathsf{V}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
+1. $\texttt{if } (\mathsf{V} \ne NoQuorum):$
+   1. $\texttt{if } \mathsf{V} = Valid$:
+      1. $\texttt{set} Result = Success$
+   2. $\texttt{else}:$
+      1. $\texttt{set} Result = Fail$
+   3. $\mathsf{A} = ({Result, \mathsf{SV}^V, \mathsf{SV}^R})$
+   4. $\mathsf{M} =$ [*CMsg*][nmsg]$(\mathsf{Quorum}, \mathsf{A})$
       | Field           | Value                 |
       |-----------------|-----------------------|
-      | $PrevHash$      | $\eta_{Tip}$          |
-      | $Round$         | $R$                   |
-      | $Iteration$     | $I$                   |
-      | $Vote$          | $v$                   |
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
+      | $ConsensusInfo$ | $(\eta_{Tip}, R, I)$  |
       | $Attestation$   | $\mathsf{A}$          |
-   4. [*Broadcast*][mx]$(\mathsf{M})$
-   5. $\texttt{if } (v = Success):$
+   5. [*Broadcast*][mx]$(\mathsf{M})$
+   6. $\texttt{if } (Result = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
    6. $\texttt{else}:$
       1. $\boldsymbol{FailedAttestations}[I] = {\mathsf{A}}$
@@ -441,6 +442,8 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [att]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#attestation
 [sc]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#subcommittee
 [sb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#setbit
+[sv]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepvotes
+[sr]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#stepresult
 
 [not]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md
 

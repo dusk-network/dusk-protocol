@@ -120,8 +120,8 @@ If the message contains a [Fail Attestation][atts], and it does not refer to a [
          1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
          2. If valid:
             1. Propagate $\mathsf{M}^Q$
-            2. If the quorum vote is $Valid$
-               1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{M}^Q.BlockHash$
+            2. If the attestation result is $Success$
+               1. Fetch candidate $\mathsf{B}^c$ from $\mathsf{A}$'s Vote
                2. If $\mathsf{B}^c$ is unknown, request it to peers ([*GetResource*][grmsg])
                3. Set the winning block $\mathsf{B}^w$ by adding $\mathsf{A}$ to $\mathsf{B}^c$
             3. Otherwise
@@ -139,21 +139,20 @@ $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
    1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
-          - $`\mathsf{CI}, \mathsf{VI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
+          - $`\mathsf{CI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
           - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
-          - $`v, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}`$
-          - $\upsilon = (\eta_{\mathsf{B}^p}||I_{\mathsf{M}}||v||\eta_\mathsf{B})$
 
        1. $\texttt{if } (R_{\mathsf{M}} = Tip.Height):$
           1. $\texttt{break}$
        2. $\texttt{else}:$
-          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{A}, \upsilon)$
+          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL)$
           2. $\texttt{if } (isValid = true) :$
              1. [*Propagate*][mx]$(\mathsf{M}^Q)$
-             2. $\texttt{if } (v = Valid) :$
-                1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta_{\mathsf{B}^c})$
+             2. $\texttt{if } (\mathsf{A}.Result = Success):$
+                - $\texttt{set} \eta^c = \mathsf{A}.Result.Hash$
+                1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta^c)$
                 2. $\texttt{if } (\mathsf{B}^c = NIL) :$
-                  - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta_{\mathsf{B}^c})$
+                  - $\mathsf{B}^c =$ [*GetResource*][grmsg]$(\eta^c)$
                 3. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
              3. $\texttt{else } :$
                 1. $\texttt{if } \mathsf{M}^Q.Iteration \le RelaxMode$

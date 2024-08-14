@@ -174,10 +174,9 @@ This message is used at the end of a successful SA iteration to communicate to t
 | Field           | Type                    | Size      | Description           |
 |-----------------|-------------------------|-----------|-----------------------|
 | $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info        |
-| $Vote$          | [`Vote`][vote]          | 33 byte   | Quorum vote           |
-| $Attestation$   | [`Attestation`][att]    | 112 bytes | Iteration attestation |
+| $Attestation$   | [`Attestation`][att]    | 152 bytes | Iteration attestation |
 
-The message has a total size of 249 bytes.
+The message has a total size of 289 bytes.
 
 Note that this message is not signed, since the $Attestation$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $Vote$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
 

@@ -30,6 +30,7 @@ When an agreement is reached on a candidate block, by a quorum of votes from bot
       - [`Attestation`](#attestation-1)
       - [`StepVotes`](#stepvotes)
       - [`StepResult`](#stepresult)
+      - [`IterationResult`](#iterationresult)
     - [Procedures](#procedures-2)
       - [*AggregateVote*](#aggregatevote)
       - [*VerifyAttestation*](#verifyattestation)
@@ -259,8 +260,9 @@ $\textit{CountCredits}(\mathcal{C}, \boldsymbol{bs}) \rightarrow credits$:
 
 
 ## Attestations
-An *attestation* is an aggregate collection of votes from a specific iteration. It includes the votes of the [Validation][val] and [Ratification][rat] steps and is used as proof of a reached agreement in an iteration: if the iteration was successful, it proves a supermajority quorum of $Valid$ votes was cast in both steps, while if the iteration failed, it proves there was a majority quorum of $Invalid$, $NoCandidate$ or $NoQuorum$ votes. 
-We use the terms *Success Attestation* and *Fail Attestation* to refer to the two types of quorum being proved.
+An *attestation* is a proof of a reached agreement for a specific iteration. It includes the quorum-reaching vote along with the aggregated signatures of the quorum committees from the [Validation][val] and [Ratification][rat] steps
+As such, an attestation proves a either supermajority of $Valid$ votes was cast in both steps, if the iteration succeeded, or that there was a majority of $Invalid$, $NoCandidate$ or $NoQuorum$ votes, if the iteration failed. 
+We use the terms *Success Attestation* and *Fail Attestation* to refer to the two types of results being proved.
 
 #### Block Certificate
 Note that, for each [candidate block][cb], there might be multiple Success Attestations, one for each possible subset of quorum voters. This might generate ambiguity in the handling of quorum-specific mechanisms, such as the assignment of [rewards][rew].
@@ -269,16 +271,21 @@ To make such mechanisms deterministic, the official set of voters that brought t
 This is done by including in the candidate an attestation of the previous block. Such an attestation is referred to as the *certificate* of the previous block.
 
 ### Structures
+We define the following Attestation-related structures: 
+  - [`Attestation`][att]: it contains a quorum of votes for the Validation and Ratification steps of a single iteration, in aggregated form;
+  - [`StepVotes`][sv]: it contains votes for a specific step, in aggregated form;
+  - [`StepResult`][sr]: it contains the winning vote of a step (the one reaching the quorum), and the corresponding signatures, in aggregated form;
+
 #### `Attestation`
-This structure contains the aggregated votes of the [Validation][val] and [Ratification][rat] steps of a single iteration. The votes of each step are contained in a [`StepVotes`][sv] structure.
+This structure contains the result of an iteration ([`IterationResult`][ir]) along with the aggregated signatures ([`StepVotes`][sv]) of the [Validation][val] and [Ratification][rat] steps.
 
+| Field          | Type                    | Size     | Description                               |
+|----------------|-------------------------|----------|-------------------------------------------|
+| $Result$       | [`IterationResult`][ir] | 40 bytes | Result and vote of the iteration          |
+| $Validation$   | [`StepVotes`][sv]       | 56 bytes | Aggregated votes of the Validation step   |
+| $Ratification$ | [`StepVotes`][sv]       | 56 bytes | Aggregated votes of the Ratification step |
 
-| Field          | Type              | Size     | Description                               |
-|----------------|-------------------|----------|-------------------------------------------|
-| $Validation$   | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Validation step   |
-| $Ratification$ | [`StepVotes`][sv] | 56 bytes | Aggregated votes of the Ratification step |
-
-The structure has a total size of 112 bytes.
+The structure has a total size of 152 bytes.
 
 #### `StepVotes`
 This structure is used to store votes in the [Validation][val] and [Ratification][rat] steps.
@@ -307,6 +314,21 @@ The structure is defined as follows:
 
 $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
+This structure has a total size of 89 bytes.
+
+#### `IterationResult`
+This enumeration contains the final result of an iteration, which can be $Success$ if a quorum of $Valid$ votes has been reached, or $Fail$, if any other quorum has been reached. 
+Note that if no quorum has been reached, no Attestation can be created.
+
+
+| Variant   | Data           | Size     | Description                                                                             |
+|-----------|----------------|----------|-----------------------------------------------------------------------------------------|
+| $Success$ | [`Vote`][vote] | 33 bytes | It represents a successful iteration; `Vote` can only be $Valid$                        |
+| $Fail$    | [`Vote`][vote] | 33 bytes | It represents a failed iteration; `Vote` can be `NoCandidate`, `NoQuorum`, or `Invalid` |
+
+This enumeration's size is 40 bytes
+
+
 ### Procedures
 We define the following Attestation-related procedures: 
   - [*AggregateVote*][av]: adds a vote to a [`StepVotes`][sv]
@@ -331,38 +353,46 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 
 #### *VerifyAttestation*
-This procedure checks a block's Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures against the respective committees.
+This procedure checks an Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures of the Vote against the respective committees.
+It takes an optional $ExpectedResult$ against which to verify the Attestation's $Result$.
 
 **Parameters**
+- $\mathsf{CI}$: the [`ConsensusInfo`][cinf] for the Attestation
 - $\mathsf{A}$: the [Attestation][att] to verify
-- $\upsilon$: the vote's data, containing: the previous block's hash, the iteration number, the winning vote, the block's hash
+- $ExpectedResult$: the expected result of the attestation ($Success$ or $Fail$)
 
 **Algorithm**
-1. Check both Validation and Ratification votes are present
-2. Verify Validation votes
-3. If votes are not valid, output $false$
-4. Verify Ratification votes
-5. If votes are not valid, output $false$
-6. Output $true$
+1. Check the $Result$ against the $ExpectedResult$
+2. Check both Validation and Ratification votes are present
+3. Verify Validation votes
+4. If votes are not valid, output $false$
+5. Verify Ratification votes
+6. If votes are not valid, output $false$
+7. Output $true$
 
 **Procedure**
 
-$\textit{VerifyAttestation}(\mathsf{A}, \upsilon):$
+$\textit{VerifyAttestation}(\mathsf{CI}, \mathsf{A}, ExpectedResult):$
 - $\texttt{set}:$
-   - $`\mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
-   - $\eta_{\mathsf{B}}^p, R, I, v, \eta_{\mathsf{B}} \leftarrow \upsilon$
+   - $\eta_{\mathsf{B}}^p, R, I \leftarrow \mathsf{CI}$
+   - $`\mathsf{IR}, \mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
    - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
-   - $\upsilon^V = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||ValStep)$ 
    - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
-   - $\upsilon^R = (\eta_{\mathsf{B}}^p||R||I||v||\eta_{\mathsf{B}}||RatStep)$
-   - $Q =$ [*GetQuorum*][gq]$(v)$
-1. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL):$
-   1. $\texttt{output } false$
-2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
-3. $\texttt{if } (isValid{=}false): \texttt{output } false$
-4. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
-5. $\texttt{if } (isValid{=}false): \texttt{output } false$
-6. $\texttt{output } true$
+   - $\mathsf{V}: \mathsf{IR}.Vote$
+   - $\upsilon^V = (\mathsf{CI}||\mathsf{V}||ValStep)$ 
+   - $\upsilon^R = (\mathsf{CI}||\mathsf{V}||RatStep)$
+   - $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
+
+1. $\texttt{if } (ExpectedResult \ne NIL) \texttt{ and } (\mathsf{IR} \ne ExpectedResult): \texttt{output } false$
+2. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL): \texttt{output } false$
+
+3. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
+4. $\texttt{if } (isValid{=}false): \texttt{output } false$
+
+5. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
+6. $\texttt{if } (isValid{=}false): \texttt{output } false$
+
+7. $\texttt{output } true$
 
 #### *VerifyVotes*
 This procedure checks the aggregated votes are valid and reach the target quorum.
@@ -420,6 +450,7 @@ $\textit{VerifyVotes}(\mathsf{SV}, \upsilon, Q)$:
 [att]:   #attestation
 [sv]:    #stepvotes
 [sr]:    #stepresult
+[ir]:    #iterationresult
 [av]:    #aggregatevote
 [va]:    #verifyattestation
 [vv]:    #verifyvotes
