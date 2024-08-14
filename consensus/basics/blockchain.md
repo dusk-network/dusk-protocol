@@ -65,14 +65,15 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 | $Seed$                 | BLS Signature           | 48 bytes    | Signature of the previous block's seed         |
 | $Generator$            | BLS Public Key          | 96 bytes    | Generator Public Key                           |
 | $TransactionRoot$      | [Blake3][hash]          | 32 bytes    | Root of transactions Merkle tree               |
+| $FaultRoot$            | [Blake3][hash]          | 32 bytes    | Root of faults Merkle tree                     |
 | $StateRoot$            | [SHA3][hash]            | 32 bytes    | Root of contracts state Merkle tree            |
 | $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes   | [Certificate][cert] for the previous block     |
 | $FailedIterations$     | [`Attestation`][att][ ] | 0-896 bytes | Fail Attestations of previous iterations       |
 | $Hash$                 | [SHA3][hash]            | 32 bytes    | Hash of previous fields                        |
 | $Attestation$          | [`Attestation`][att]    | 152 bytes   | Attestation of the $Valid$ votes for the block |
 
-The `BlockHeader` structure has a variable total size of 602 to 1498 bytes.
-This is reduced to 450-1346 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
+The `BlockHeader` structure has a variable total size of 634 to 1530 bytes.
+This is reduced to 482-1378 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
 
 **Notation**
 
@@ -81,7 +82,7 @@ We denote the header of a block $\mathsf{B}$ as $\mathsf{H_B}$.
 We define the *hash* of a block $\mathsf{B}$ as:
 
 $\eta_\mathsf{B} = $[*SHA3*][hash]$(Version||Height||Timestamp||GasLimit||Iteration||PreviousBlock||Seed||$
-$\hspace{50pt}Generator||TransactionRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
+$\hspace{50pt}Generator||TransactionRoot||FaultRoot||StateRoot||PrevBlockCertificate||FailedIterations)$
 
 We also define the function $\eta(\mathsf{B})$ that given a block $\mathsf{B}$ outputs $\eta_\mathsf{B}$.
 
@@ -158,14 +159,15 @@ Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between 
 6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
 7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
 8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
-9. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+9. And $\mathsf{B}$'s fault root is correct with respect to the fault set
+10. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
    1. Output $true$
-10. Otherwise, output $false$
+11. Otherwise, output $false$
 
 **Procedure**
 
 $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
-- $SystemState_{\mathsf{B}^p} =$ [*ExecuteTransactions*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
+- $SystemState_{\mathsf{B}^p} =$ [*ExecuteStateTransition*][est]$(SystemState_{\mathsf{B}^p}, \mathsf{B}.Transactions, BlockGas, pk_{G_\mathsf{B}})$
 - $\texttt{if }$
   1. $(\mathsf{B}.Version = Version)$ 
   2. $\texttt{and } (\mathsf{B}.Hash = \eta(\mathsf{B}))$
@@ -175,10 +177,11 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
   7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
   8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
-  9. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+  9. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
+  10. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
      1. $\texttt{output } true$
 
-  10. $\texttt{else: output } false$
+  11. $\texttt{else: output } false$
 
 
 <p><br></p>

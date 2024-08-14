@@ -185,24 +185,24 @@ This procedure sets a block $\mathsf{B}$ as the new chain $Tip$. It also updates
 - $\mathsf{B}$: the block to accept as the new chain tip
 
 **Algorithm**
-1. Extract $Transactions$, $GasLimit$, and $Generator$ from block $\mathsf{B}$
-2. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
-3. Update the $Provisioners$ set
-4. Set $Tip$ to block $\mathsf{B}$
-5. Add $\mathsf{B}$ to the [local chain][lc] and update [finality][rf] labels
+1. Update $SystemState$ by executing $Transactions$ and assigning the block [rewards and penalties][inc]
+2. Update the $Provisioners$ set
+3. Set $Tip$ to block $\mathsf{B}$
+4. Add $\mathsf{B}$ to the [local chain][lc] and update [finality][rf] labels
 
 **Procedure**
 
 $\textit{AcceptBlock}(\mathsf{B}):$
-1. $\texttt{set }$:
+- $\texttt{set }$:
    - $\boldsymbol{txs} = \mathsf{B}.Transactions$
    - $gas = \mathsf{B}.GasLimit$
+   - $\boldsymbol{faults} = \mathsf{B}.Faults$
    - $pk_{\mathcal{G}} = \mathsf{B}.Generator$
    - $h = \mathsf{H_B}.Height$
-2. $SystemState =$ [*ExecuteTransactions*][est]$(SystemState, \boldsymbol{txs}, gas, pk_{\mathcal{G}})$
-3. $Provisioners = SystemState.Provisioners$
-4. $Tip = \mathsf{B}$
-5. [*AddToLocalChain*][alc]$(\mathsf{B})$
+1. $SystemState =$ [*ExecuteStateTransition*][est]$(SystemState, \boldsymbol{txs}, gas, \boldsymbol{faults}, pk_{\mathcal{G}})$
+2. $Provisioners = SystemState.Provisioners$
+3. $Tip = \mathsf{B}$
+4. [*AddToLocalChain*][alc]$(\mathsf{B})$
 
 
 #### *Fallback*
