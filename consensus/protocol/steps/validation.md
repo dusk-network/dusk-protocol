@@ -30,21 +30,20 @@ The step output will be used as the input for the [Ratification][rat] step.
 ### Procedures
 
 #### *ValidationStep*
-<!-- TODO: use Valid(Hash) and Invalid(Hash) -->
-This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})`$, where $v^\mathsf{V}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV}_{v^\mathsf{V}}$ is the aggregated vote of the quorum committee.
+This procedure takes in input the round $R$, the iteration $I$, and the candidate block $\mathsf{B}^c$ (as returned by [*ProposalStep*][props]) and outputs the Validation result $`(\mathsf{V}, \mathsf{SV_V})`$, where $\mathsf{V}$ is $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$, and $\mathsf{SV_V}$ is the aggregated signature of the quorum committee.
 
 The procedure performs two tasks: 
 
-1. If the node is part of the Validation committee $\mathcal{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a [`Validation`][vmsg] message with its vote: $Valid$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid$ if it's not, and $NoCandidate$ if it's $NIL$ (no candidate has been received).
+1. If the node is part of the Validation committee $\mathcal{C}$, it verifies the candidate $\mathsf{B}^c$ and broadcasts a [`Validation`][vmsg] message with its vote: $Valid(\eta_{\mathsf{B}^c})$ if $\mathsf{B}^c$ is a valid successor of the local $Tip$, $Invalid((\eta_{\mathsf{B}^c}))$ if it's not, and $NoCandidate$ if no candidate has been received.
 If $\mathsf{B}^c$'s parent is not $Tip$, it is discarded (it likely belongs to a fork)[^2].
 
-2. It collects `Validation` messages from all committee members, and sets the result depending on the votes:
+1. It collects `Validation` messages from all committee members, and sets the result depending on the votes:
    - if $Valid$ votes reach $Supermajority$, the step outputs $Valid$;
    - if $Invalid$ votes reach $Majority$, the step outputs $Invalid$;
    - if $NoCandidate$ votes reach $Majority$, the step outputs $NoCandidate$;
    - if the timeout $\tau_{Val}$ expires, the step outputs $NoQuorum$.
 
-Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $v$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV}_v=(\sigma_v,\boldsymbol{bs}_v)$ is used.
+Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In particular, for each vote $\mathsf{V}$ ($Valid$ / $Invalid$ / $NoCandidate$ / $NoQuorum$), a $\mathsf{SV_V}=(\sigma_\mathsf{V},\boldsymbol{bs}_\mathsf{V})$ is used.
 
 **Parameters**
 - $R$: round number
@@ -57,31 +56,27 @@ Collected votes are aggregated in [`StepVotes`][sv] structures. In particular, f
 3. If the node $\mathcal{N}$ is part of $\mathcal{C}$:
    1. If candidate $\mathsf{B}^c$ is empty
    2. or the previous block is not $Tip$:
-      1. Set vote $v$ to $NoCandidate$
+      1. Set vote $\mathsf{V}$ to $NoCandidate$
    3. Otherwise:
       1. Verify $\mathsf{B}^c$ against $Tip$
-      2. If $\mathsf{B}^c$ is valid, set vote $v$ to $Valid$
-      3. Otherwise, set $v$ to $Invalid$
-   4. Set $Vote$ to $(v, \eta_{\mathsf{B}^c})$
-   5. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $v$
-   6. Broadcast $\mathsf{M}$
+      2. If $\mathsf{B}^c$ is valid, set vote $\mathsf{V}$ to $Valid(\eta_{\mathsf{B}^c})$
+      3. Otherwise, set $\mathsf{V}$ to $Invalid(\eta_{\mathsf{B}^c})$
+   4. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $\mathsf{V}$
+   5. Broadcast $\mathsf{M}$
 
-4. For each vote $v$ ($Valid$, $Invalid$, $NoCandidate$)
-   1. Initialize $\mathsf{SV}_v$
-
-5. While timeout $\tau_{Val}$ has not expired:
-   1. If a $\mathsf{Validation}$ message $\mathsf{M^V}$ is received for round $R$ and iteration $I$:
-      1. If $\mathsf{M^V}$'s signature is valid
-      2. and $\mathsf{M^V}$'s signer is in the committee $\mathcal{C}$
-      3. and $\mathsf{M^V}$'s vote is valid ($NoQuorum$, $Valid$, or $Invalid$)
-         1. Propagate $\mathsf{M^V}$
-         2. Collect $\mathsf{M^V}$'s vote $v^\mathsf{V}$ into the aggregated $\mathsf{SV}_{v^\mathsf{V}}$
-         3. Set the target quorum $Q$ to $Supermajority$ if $v^\mathsf{V}$ is $Valid$, or to $Majority$ if $^V$ is $Invalid$ or $NoCandidate$
-         4. If votes in $\mathsf{SV}_{v^\mathsf{V}}$ reach $Q$
+4. While timeout $\tau_{Val}$ has not expired:
+   1. If a $\mathsf{Validation}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
+      1. If $\mathsf{M}$'s signature is valid
+      2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
+      3. and $\mathsf{M}$'s vote is valid ($NoQuorum$, $Valid$, or $Invalid$)
+         1. Propagate $\mathsf{M}$
+         2. Collect $\mathsf{M}$'s vote $\mathsf{V}$ into the aggregated $\mathsf{SV_V}$
+         3. Set the target quorum $Q$ to $Supermajority$ if $\mathsf{V}$ is $Valid$, or to $Majority$ if $V$ is $Invalid$ or $NoCandidate$
+         4. If votes in $\mathsf{SV_V}$ reach $Q$
             1. Store elapsed time
-            2. Output $(v^\mathsf{V}, \mathsf{SV}_{v^\mathsf{V}})$
+            2. Output $(\mathsf{V}, \mathsf{SV_V})$
 
- 6. If timeout $\tau_{Val}$ expired:
+ 5. If timeout $\tau_{Val}$ expired:
     1. Increase timeout
     2. Output $(NoQuorum, NIL)$
 
@@ -93,50 +88,40 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 3. $\texttt{if } (pk_\mathcal{N} \in \mathcal{C}):$
    1. $\texttt{if } (\mathsf{B}^c = NIL)$
    2. $\texttt{or } (\mathsf{B}^c.PreviousBlock \ne Tip.Hash):$
-      1. $v = NoCandidate$
+      1. $\mathsf{V} = NoCandidate$
    3. $\texttt{else}:$
       1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
-      2. $\texttt{if } (isValid = true) : v = Valid$
-      3. $\texttt{else}: v = Invalid$
-   4. $\texttt{set}: \mathsf{VI} = (v, \eta_{\mathsf{B}^c})$
-   5. $`\mathsf{M} = `$ [*CMsg*][cmsg]$(\mathsf{Validation}, \mathsf{VI})$
-      | Field           | Value                 | 
-      |-----------------|-----------------------|
-      | $PrevHash$      | $\eta_{Tip}$          |
-      | $Round$         | $R$                   |
-      | $Iteration$     | $I$                   |
-      | $Vote$          | $v$                   |
-      | $CandidateHash$ | $\eta_{\mathsf{B}^c}$ |
-      | $Signer$        | $pk_\mathcal{N}$      |
-      | $Signature$     | $\sigma_\mathsf{M}$   |
+      2. $\texttt{if } (isValid = true) : \mathsf{V} = Valid(\eta_{\mathsf{B}^c})$
+      3. $\texttt{else}: \mathsf{V} = Invalid(\eta_{\mathsf{B}^c})$
+   4. $`\mathsf{M} = `$ [*CMsg*][cmsg]$(\mathsf{Validation}, \mathsf{V})$
+      | Field           | Value                                 |
+      |-----------------|---------------------------------------|
+      | $ConsensusInfo$ | $(\eta_{Tip}, R, I)$                  |
+      | $Vote$          | $\mathsf{V}$                          |
+      | $SignInfo$      | $(pk_\mathcal{N}, \sigma_\mathsf{M})$ |
 
-   6. [*Broadcast*][mx]$(\mathsf{M})$
+   5. [*Broadcast*][mx]$(\mathsf{M})$
 
-4. $\texttt{set}:$
-   - $\texttt{for } v \texttt{ in } [Valid, Invalid, NoCandidate]:$
-     - $\mathsf{SV}_v = (\sigma_v, \boldsymbol{bs}_v)$
-
-5. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Val}) \texttt{ and } (I \lt EmergencyMode):$
-   1. $\texttt{if } (\mathsf{M^V} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
+4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Val}) \texttt{ and } (I \lt EmergencyMode):$
+   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Validation},R,I) \ne NIL):$
       - $\texttt{set}:$
-        - $\mathsf{CI}, \mathsf{VI}, \mathsf{SI} \leftarrow \mathsf{M^V}$
+        - $\mathsf{CI}, \mathsf{V}, \mathsf{SI} \leftarrow \mathsf{M}$
         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
-        - $v^\mathsf{V}, \eta_{\mathsf{B}^c} \leftarrow \mathsf{VI}$
-        - $pk_\mathsf{M^V}, \sigma_\mathsf{M^V} \leftarrow \mathsf{SI}$
+        - $pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}$
 
-      1. $\texttt{if } (pk_{\mathsf{M^V}} \in \mathcal{C})$
-      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M^V}) = true)$
-      3. $\texttt{and }(v^\mathsf{V} \in \{NoCandidate,Valid,Invalid\}):$
-         1. [*Propagate*][mx]$(\mathsf{M^V})$
-         2. $`\mathsf{SV}_{v^\mathsf{V}} =`$ [*AggregateVote*][av]$`( \mathsf{SV}_{v^\mathsf{V}}, \mathcal{C}, \sigma_\mathsf{M^V}, pk_\mathsf{M^V} )`$
-         3. $Q =$ [*GetQuorum*][gq]$(v^\mathsf{V})$
-         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{v^\mathsf{V}}) \ge Q):$
+      1. $\texttt{if } (pk_{\mathsf{M}} \in \mathcal{C})$
+      2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M}) = true)$
+      3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid\}):$
+         1. [*Propagate*][mx]$(\mathsf{M})$
+         2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_\mathsf{M} )`$
+         3. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
+         4. $\texttt{if }($[*countSetBits*][csb]$(\boldsymbol{bs}_{\mathsf{V}}) \ge Q):$
             1. [*StoreElapsedTime*][set]$(Validation, \tau_{Now}-\tau_{Start})$
-            2. $\texttt{output } (v^\mathsf{V}, \eta_{\mathsf{B}^c}, \mathsf{SV}_{v^\mathsf{V}})$
+            2. $\texttt{output } (\mathsf{V}, \mathsf{SV_V})$
 
- 6. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Val}):$
+ 5. $\texttt{if } (\tau_{Now} \gt \tau_{Start}+\tau_{Val}):$
     1. [*IncreaseTimeout*][it]$(Validation)$
-    2. $\texttt{output } (NoQuorum, NIL, NIL)$
+    2. $\texttt{output } (NoQuorum, NIL)$
 
 
 <!----------------------- FOOTNOTES ----------------------->

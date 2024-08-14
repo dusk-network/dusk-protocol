@@ -142,9 +142,9 @@ The message has a total size of 225 bytes.
 
 In this message, $Vote$ can be $Valid$, $Invalid$, or $NoCandidate$.
 
-The message's [signature value][sigs] $\upsilon_\mathcal{M^V}$ is:
+The message's [signature value][sigs] $\upsilon_\mathcal{M}$ is:
 
-$$\upsilon_\mathcal{M^V} = (ConsensusInfo || Vote || ValStep)$$
+$$\upsilon_\mathcal{M} = (ConsensusInfo || Vote || ValStep)$$
 
 
 #### `Ratification`

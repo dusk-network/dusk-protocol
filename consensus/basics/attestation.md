@@ -144,15 +144,15 @@ $\textit{ExtractCommittee}(R,I, StepNum)$
 
 
 ### *GetQuorum*
-This procedure returns the quorum target depending on the vote $v$
+This procedure returns the quorum target depending on the vote $\mathsf{V}$
 
 **Parameters**
-- $v$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
+- $\mathsf{V}$: the vote type ($Valid$, $Invalid$, $NoCandidate$, $NoQuorum$)
 
 **Procedure**
 
-$\textit{GetQuorum}(v):$
-- $\texttt{if } (v = Valid): \texttt{output } Supermajority$
+$\textit{GetQuorum}(\mathsf{V}):$
+- $\texttt{if } (\mathsf{V} = Valid): \texttt{output } Supermajority$
 - $\texttt{else}: \texttt{output } Majority$
 
 ### *GetStepNum*
@@ -306,11 +306,10 @@ This structure contains the result of a [Validation][val] or [Ratification][rat]
 
 The structure is defined as follows:
 
-| Field           | Type              | Size     | Description                  |
-|---------------- |-------------------|----------|------------------------------|
-| $Vote$          | Int               | 8 bits   | The winning vote of the step |
-| $CandidateHash$ | [SHA3][hash]      | 32 bytes | The candidate hash           |
-| $SV$            | [`StepVotes`][sv] | 56 bytes | Aggregated signatures        |
+| Field  | Type              | Size     | Description                  |
+|--------|-------------------|----------|------------------------------|
+| $Vote$ | [`Vote`][vote]    | 33 bytes | The winning vote of the step |
+| $SV$   | [`StepVotes`][sv] | 56 bytes | Aggregated signatures        |
 
 $Vote$ can be $Valid$, $Invalid$, $NoCandidate$, or $NoQuorum$.
 
