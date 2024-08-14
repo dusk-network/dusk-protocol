@@ -246,7 +246,7 @@ $InvParam$ is an Enum and depends on $InvType$
 | $Hash$   | $SHA3$       | 32 bytes | A hash value, used with $BlockFromHash$, $CandidateFromHash$, and $MempoolTx$ |
 | $Height$ | Unsigned Int | 8 bytes  | A block height, used with $BlockFromHeight$                                   |
 
-The enum size is 40 bytes, given by: 1 "discriminant" byte, 32 bytes for the biggest possible value ($Hash$), plus 7 bytes to align the field to 8 bytes.
+The enum size is 40 bytes.
 
 
 ### Messages
@@ -388,6 +388,7 @@ This procedure represents a point-to-point message from the node to one of its p
 [dx]:    #data-exchange
 [inv]:   #inv
 [ii]:    #invitem
+[ip]:    #invparam-enum
 [bmsg]:  #block
 [txmsg]: #transaction
 [gmmsg]: #getmempool

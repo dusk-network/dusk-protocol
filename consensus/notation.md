@@ -55,7 +55,9 @@ Some structure fields in our protocol are defined as *enumerations*.
 
 An enumeration (`Enum`) is a common data type, used in many languages, consisting of a set of named values called *variants*, each representing a different possible value that the enum can take. Variants may be simple names or carry associated data. 
 
-Typically, the size an Enum corresponds to the size of the biggest variant.
+The size of an Enum is computed by considering enough bytes to discriminate between variants, the size of the biggest variant, and the alignment to 8 bytes.
+
+For instance, the size of [`InvParam`][ip] is given by: 1 "discriminant" byte, 32 bytes for the biggest possible value ($Hash$), plus 7 bytes to align the field to 8 bytes.
 
 
 
@@ -68,3 +70,5 @@ Typically, the size an Enum corresponds to the size of the biggest variant.
 
 [hash]: #hash-functions
 [en]:   #enum
+
+[ip]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#invparam-enum
