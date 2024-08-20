@@ -80,13 +80,17 @@ To mitigate this harmful incentive, we include several mechanisms:
 
 ### Rewards
 Rewards are assigned with each new block accepted into the chain. In particular, for each block, a *block reward*, consisting of newly-emitted coins (according to the Dusk [emission schedule][tok]) and all the transaction fees, is distributed among Dusk and the provisioners that contributed to the block production: the block generator and the voters of the Validation and Ratification committees.
-In particular, as Dusk is assigned 10% of the block reward, the remainder is divided into two portions: the 90% goes the generator (we call this amount the *generator reward*), and the 10% goes to the block voters (we call this amount the *voters reward*).
+
+The block reward is distributed as follows:
+ - 10% goes to Dusk;
+ - 80% goes to the generator (*generator reward*);
+ - 10% goes to the voters (*voters reward*);
 
 <!-- (for more details on fee distribution see the [Economic Protocol][ep]).  -->
 
-These rewards are not only a generic incentive for provisioners to stay online, but also aims at mitigating the [Future-Iteration Incentive][fgi] problem. 
+These rewards are not only a generic incentive for provisioners to stay online, but also aim at mitigating the [Future-Iteration Incentive][fgi] problem. 
 
-In addition, we also incentivize the block generator to include as many votes as possible in the [block certificate][cert] by making a portion of the block reward subject to the number of signatures included. This is intended to disincentivize the block generator from cherry-picking signatures to penalize other provisioners.
+Since the voters reward is assigned based on the votes included [block certificate][cert], and this certificate is created by the block generator, we make a portion of the generator reward, namely the 10% of the block reward, conditioned on the inclusion of more-than-quorum votes. This is intended to disincentivize the block generator from cherry-picking voters in order to favor or penalize competitors.
 
 Rewards are not added to the provisioner stake, but they are collected into a $Reward$ amount, from which the provisioner can later withdraw coins. This is done to limit the power-increasing effect of provisioners with bigger stakes being selected more (see [Deterministic Sortition][ds]).
 
