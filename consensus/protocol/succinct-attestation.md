@@ -363,13 +363,18 @@ $\textit{IncreaseTimeout}(Step):$
 To mitigate the increase of the block size when having many failed iterations in one round, we limit the number of iterations for which to include a [Fail Attestation][atts] in the candidate block (see the $FailedIterations$ field in the [BlockHeader][bh] structure). In particular, candidate blocks only include Fail Attestations for the first $RelaxedMode$ iterations (see [Global Parameters][cenv]).
 
 ## Emergency Mode
-In extreme cases where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the lack of block generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol implements an *emergency mode*.
+In extreme cases, where most provisioners are offline or isolated, multiple consecutive iterations may fail due to the absence of the appointed generators or voters. In such a situation, the maximum number of iterations for a round may be reached. To avoid ending a round without an accepted block, the SA protocol can switch to the *Emergency Mode*.
 
-This mode activates when the iteration number approaches its limit ($MaxIterations$) and consists in disabling the step timeouts. By doing so, the last iterations will be considered active until they reach a quorum on a candidate block ($Valid$ or $Invalid$). In other words, in emergency mode, iterations only end if a candidate block is generated and a quorum is reached in both Validation and Ratification. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in emergency mode.
+This mode activates upon reaching iteration $EmergencyMode$ and essentially consists in disabling the [step timeouts][tim]. 
+Without timeouts, iterations in Emergency Mode, or *emergency iterations*, do not terminate until a candidate block is generated and a quorum is reached in both [Validation][val] and [Ratification][rat]. In particular, an emergency iteration only moves to the next step if the previous step succeeds. As a consequence, $NoCandidate$ and $NoQuorum$ votes are disabled in Emergency Mode.
+We refer to an active emergency iteration as an *open iteration*.
 
-Iterations in emergency mode are run in parallel (although a sum of the step timeouts is waited before starting a new iteration), with each iteration moving forward only if the current step succeeds. As a consequence, the possibility of forks is increased. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning blocks for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
-<!-- TODO: check the following is implemented: -->
-In this respect, note that, if a block is accepted for the round, all active iterations are interrupted. This decreases the chances of other candidate blocks reaching quorum.
+In Emergency Mode, new iterations are started after the maximum iteration time ($MaxStepTimeout \times 3$) elapsed. However, since iterations only terminates when a quorum is reached on a candidate, it is possible to have multiple open iterations at the same time.
+
+This increases the possibility of producing a block for the round, but also the probability of forks. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning blocks for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
+Note that, if a block is accepted for the round, all open iterations are terminated. This decreases the chances of other candidate blocks reaching quorum.
+
+When the last iteration ($MaxIterations$) is reached, all open iterations keep executing indefinitely, until either a quorum is reached on a candidate, or an [Emergency Block][eb] is received.
 
 ### Emergency Block
 If even emergency-mode iterations fail to produce a new block, the last iteration is reserved for Dusk-owned nodes to produce an *Emergency Block*.
