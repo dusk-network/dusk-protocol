@@ -27,7 +27,6 @@ Before reading, please make sure you are familiar with the system [basics][bas] 
   - [Emergency Mode](#emergency-mode)
     - [Emergency Block](#emergency-block)
     - [Procedures](#procedures-2)
-      - [*BroadcastEmergencyBlock*](#broadcastemergencyblock)
       - [*isEmergencyBlock*](#isemergencyblock)
 
 
@@ -183,9 +182,8 @@ If, for any reason, the round ends without a winning block, the node halts the c
       2. Accept $\mathsf{B}^w$ into the chain
       3. End round
 6. If we reached $MaxIterations$ without a winning block
-   1. If we are a Dusk-owned node
-      1. Produce an Emergency Block
-   2. Otherwise, stop the SA loop (and wait for some block to be received)
+   1. Create an Emergency Block Request message
+   2. Broadcast the message
 
 **Procedure**
 
@@ -206,9 +204,8 @@ $\textit{SARound}():$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
 6. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. If $\mathcal{N} = DuskKey$
-      1. [*BroadcastEmergencyBlock*][beb]$()$
-   2. $\texttt{stop}($[*SALoop*][sal]$)$
+   1. $\mathsf{M} =$ [*CMsg*][nmsg]$(EmergencyBlockRequest)$
+   2. [*Broadcast*][mx]$(\mathsf{M})$
 
 <p><br></p>
 
@@ -377,17 +374,19 @@ Note that, if a block is accepted for the round, all open iterations are termina
 When the last iteration ($MaxIterations$) is reached, all open iterations keep executing indefinitely, until either a quorum is reached on a candidate, or an [Emergency Block][eb] is received.
 
 ### Emergency Block
-If even emergency-mode iterations fail to produce a new block, the last iteration is reserved for Dusk-owned nodes to produce an *Emergency Block*.
-This block is empty (i.e., it contains no transactions) and signed with a private key belonging to Dusk. The corresponding public key is a [global parameter][cenv] ($DuskKey$) known to all nodes.
+When the maximum iteration time ($MaxStepTimeout \times 3$) of the last iteration has elapsed, nodes broadcast an *Emergency Block Request* (EBR) to the network. This message is used to request special Dusk-owned nodes to produce an *Emergency Block*.
 
-If a node receives an Emergency Block it accepts it into its local chain and moves to the next round. Nevertheless, the Emergency Block is $Accepted$ by definition, so it can be replaced if a lower-iteration block is received for the same round (unless it gets finalized due to [Rolling Finality][rf]).
+In particular, if such a request is received for a majority of the total stake in the network, the Emergency Block is produced.
+This block has no transactions, but contains a new seed signed by Dusk (and verifiable with the [global parameter][cenv] $DuskKey$).
+Additionally, a proof of the EBRs is included as the aggregated signatures on such messages.
 
-Note that multiple nodes owned by Dusk can produce the exact same block, since it contains no transactions and will thus have the same hash. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
+If a node receives an Emergency Block, it accepts it into its local chain and moves to the next round. Nevertheless, the Emergency Block is marked as $Accepted$ (see [Consensus State][cs]), so it can be replaced by a lower-iteration block for the same round (unless it gets finalized due to [Rolling Finality][rf]).
+
+Note that multiple Dusk nodes can generate the same block (with the exception of the EBRs proof, which is not included in the block hash), since it contains no transactions and is signed with the same key. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
+
+Also note that an Emergency Block is only accepted when the last iteration maximum time has elapsed.
 
 ### Procedures
-
-#### *BroadcastEmergencyBlock*
-This procedure creates a block $\mathsf{B}$ with no transactions and signed with the private $DuskKey$.
 
 #### *isEmergencyBlock*
 This procedure outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
@@ -395,6 +394,7 @@ This procedure outputs $true$ if the input block $\mathsf{B}$ is a valid Emergen
 $`\textit{isEmergencyBlock}(\mathsf{B})`$
 - $\texttt{if} (\mathsf{B}.Iteration = MaxIterations)$
 - $\texttt{and} (\mathsf{B}.Transactions = NIL)$
+- $\texttt{and} (\mathsf{B}.Faults = NIL)$
 - $\texttt{and} (\mathsf{B}.Generator = DuskKey):$
   - $\texttt{output} true$
 
@@ -410,7 +410,6 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [rm]:   #relaxed-mode
 [em]:   #emergency-mode
 [eb]:   #emergency-block
-[beb]:  #broadcastemergencyblock
 [ieb]:  #isemergencyblock
 
 [cenv]: #environment
@@ -436,6 +435,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [chb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#chainblock-structure
 [sys]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#system-state
 [vms]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#vmstate-structure
+[cs]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#consensus-state
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
 [pro]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
