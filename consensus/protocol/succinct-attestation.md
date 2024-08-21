@@ -123,8 +123,9 @@ When the node is synchronized, it starts [*SALoop*][sal] to execute the consensu
    1. Check $S$'s validity
    2. Set $SystemState$ to $S$
    3. Set $Tip$ to last block
-4. Start SA loop ([*SALoop*][sal])
-5. Start Block message handler ([*HandleBlock*][hb])
+4. Synchronize mempool (request transactions from 5 peers)
+5. Start SA loop ([*SALoop*][sal])
+6. Start Block message handler ([*HandleBlock*][hb])
 
 **Procedure**
 
@@ -136,8 +137,9 @@ $\textit{SAInit}():$
    1. *ValidateState*$(S)$    <!-- TODO -->
    2. $SystemState = S.SystemState$
    3. $Tip = S.Tip$
-4. $\texttt{start}$([*SALoop*][sal])
-5. $\texttt{start}$([*HandleBlock*][hb])
+4. [*SendMulti*][sendm]$(5, \mathsf{GetMempool})$
+5. $\texttt{start}$([*SALoop*][sal])
+6. $\texttt{start}$([*HandleBlock*][hb])
 
 <p><br></p>
 
@@ -479,6 +481,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
 [mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
+[sendm]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sendmulti
 
 <!-- Network -->
 [net]:   https://github.com/dusk-network/dusk-protocol/tree/main/network/README.md
