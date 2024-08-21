@@ -79,7 +79,7 @@ The procedure acts depending on the block's height: if the block has the same he
 
 $\textit{HandleBlock}():$
 1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M^B} =$ [*Receive*][mx]$(\mathsf{Block}) \ne NIL):$
+   1.  $\texttt{if } (\mathsf{M^B} =$ [*Receive*][recv]$(\mathsf{Block}) \ne NIL):$
        - $\texttt{set}:$
         - $`\mathsf{B} \leftarrow \mathsf{M^B}`$
         - $\eta^p = \mathsf{B}.PrevBlockHash$
@@ -137,7 +137,7 @@ If the message contains a [Fail Attestation][atts], and it does not refer to a [
 <!-- TODO: define candidate pool/db and functions, eg FetchCandidate -->
 $\textit{HandleQuorum}( R ):$
 1. $\texttt{loop}$:   
-   1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][mx]$(\mathsf{Quorum}, R) \ne NIL):$
+   1.  $\texttt{if } (\mathsf{M}^Q =$ [*Receive*][recv]$(\mathsf{Quorum}, R) \ne NIL):$
        -  $\texttt{set}:$
           - $`\mathsf{CI}, \mathsf{A} \leftarrow \mathsf{M}^Q`$
           - $`\eta_{\mathsf{B}^p}, R_{\mathsf{M}}, I_{\mathsf{M}}, \leftarrow \mathsf{CI}`$
@@ -147,7 +147,7 @@ $\textit{HandleQuorum}( R ):$
        2. $\texttt{else}:$
           1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL)$
           2. $\texttt{if } (isValid = true) :$
-             1. [*Propagate*][mx]$(\mathsf{M}^Q)$
+             1. [*Propagate*][propm]$(\mathsf{M}^Q)$
              2. $\texttt{if } (\mathsf{A}.Result = Success):$
                 - $\texttt{set} \eta^c = \mathsf{A}.Result.Hash$
                 1. $\mathsf{B}^c =$ *FetchCandidate* $(\eta^c)$
@@ -346,7 +346,7 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
           1. $\texttt{if } (\mathcal{S} = syncPeer):$
              1. [*StartSync*][ss]$()$
           2. $\texttt{else}:$
-             1. [*Propagate*][mx]$(\mathsf{M^B})$
+             1. [*Propagate*][propm]$(\mathsf{M^B})$
              2. $\texttt{start}$([*SALoop*][sl])
          <!-- Syncing -->
       4. $\texttt{else}:$
@@ -385,7 +385,7 @@ $\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
 1. $syncFrom = Tip.Height$
 2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
 3. $syncPeer = \mathcal{S}$
-4. [*Send*][mx]$(\mathcal{S}, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1))$
+4. [*Send*][send]$(\mathcal{S}, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1))$
 5. $\tau_{Sync} = \tau_{Now}$
 6. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
 
@@ -401,7 +401,7 @@ While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 **Procedure**
 
 $\textit{StartSync}():$
-1. [*Send*][mx]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
+1. [*Send*][send]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
 2. $Syncing = true$
 
 #### *HandleSyncTimeout*
@@ -493,11 +493,13 @@ $\textit{AcceptPoolBlocks}():$
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
 <!-- Messages -->
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [grmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#getresource
 [dx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#data-exchange
+[recv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#receive
+[propm]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#propagate
+[send]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#send
 
 <!-- TODO -->
 [est]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

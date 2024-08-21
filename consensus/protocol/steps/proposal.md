@@ -70,7 +70,7 @@ $\textit{ProposalStep}(R, I)$:
       | $Signer$    | $pk_\mathcal{N}$    |
       | $Signature$ | $\sigma_\mathsf{M}$ |
 
-   3. [*Broadcast*][mx]$(\mathsf{M})$
+   3. [*Broadcast*][broad]$(\mathsf{M})$
    4. $\texttt{output } \mathsf{B}^c$
 
 3. $\texttt{else}:$
@@ -78,7 +78,7 @@ $\textit{ProposalStep}(R, I)$:
       1. $\texttt{sleep}(Tip.Timestamp+MinBlockTime - \tau_{Now})$
    2. $\tau_{Start} = \tau_{Now}$
    3. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Prop}) \texttt{ and } (I \lt EmergencyMode):$
-      1. $\mathsf{M^C} =$ [*Receive*][mx]$(\mathsf{Candidate},R,I)$
+      1. $\mathsf{M^C} =$ [*Receive*][recv]$(\mathsf{Candidate},R,I)$
          $\texttt{if } (\mathsf{M^C} \ne NIL):$
          - $`\mathsf{CI}, \mathsf{B}^c, \mathsf{SI} \leftarrow \mathsf{M^C}`$
          - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
@@ -86,7 +86,7 @@ $\textit{ProposalStep}(R, I)$:
          1. $`\texttt{if }(\text{ }$ [*VerifyMessage*][sigs]$(\mathsf{M^C}) = true \text{ })`$
          2. $\texttt{and }(\eta_{\mathsf{B}^p} = \eta_{Tip})$
          3. $`\texttt{and }(\text{ } pk_\mathsf{M} = \mathcal{G} \text{ }):`$
-            1. [*Propagate*][mx]$(\mathsf{M^C})$
+            1. [*Propagate*][propm]$(\mathsf{M^C})$
             2. [*StoreElapsedTime*][set]$(Proposal, \tau_{Now}-\tau_{Start})$
             3. $\texttt{output } \mathsf{B}^c$
    4. $\texttt{if } (\tau_{Now} > \tau_{Start}+\tau_{Prop}):$
@@ -189,10 +189,12 @@ This procedure returns all known faults which have not yet been included in any 
 [dsp]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md#deterministic-sortition-ds
 
 <!-- Messages -->
-[sigs]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
-[mx]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures
-[cmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
-[nmsg]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
+[sigs]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#signatures
+[cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#candidate
+[nmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
+[broad]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#broadcast
+[recv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#receive
+[propm]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#propagate
 
 <!-- TODO: Add ExecuteStateTransition -->
 [est]:  https://github.com/dusk-network/dusk-protocol/tree/main/

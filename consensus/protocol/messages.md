@@ -408,8 +408,8 @@ $SendMulti(NumPeers, \mathsf{M}):$
 
 [mx]:    #procedures-1
 [broad]: #broadcast
-[rec]:   #receive
-[pmsg]:  #propagate
+[recv]:  #receive
+[propm]: #propagate
 [send]:  #send
 [sendm]: #sendmulti
 

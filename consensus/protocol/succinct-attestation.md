@@ -202,12 +202,12 @@ $\textit{SARound}():$
    2. $\texttt{else}:$
       1. [*SAIteration*][sai]$(Round, Iteration)$
    3. $\texttt{if }(\mathsf{B}^w \ne NIL):$
-      1. [*Broadcast*][mx]$(\mathsf{B}^w)$
+      1. [*Broadcast*][broad]$(\mathsf{B}^w)$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
 6. $\texttt{if } (\mathsf{B}^w = NIL)$
    1. $\mathsf{M} =$ [*CMsg*][nmsg]$(EmergencyBlockRequest)$
-   2. [*Broadcast*][mx]$(\mathsf{M})$
+   2. [*Broadcast*][broad]$(\mathsf{M})$
 
 <p><br></p>
 
@@ -252,7 +252,7 @@ $\textit{SAIteration}(R, I):$
       |-----------------|-----------------------|
       | $ConsensusInfo$ | $(\eta_{Tip}, R, I)$  |
       | $Attestation$   | $\mathsf{A}$          |
-   5. [*Broadcast*][mx]$(\mathsf{M})$
+   5. [*Broadcast*][broad]$(\mathsf{M})$
    6. $\texttt{if } (Result = Success):$
       1. [*MakeWinning*][mw]$(\mathsf{B}^c, \mathsf{A})$
    7. $\texttt{else}:$
@@ -480,7 +480,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [nmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
+[broad]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#broadcast
 [sendm]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#sendmulti
 
 <!-- Network -->

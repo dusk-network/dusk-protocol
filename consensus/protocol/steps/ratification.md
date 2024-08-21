@@ -96,10 +96,10 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       | $Timestamp$       | $\tau_{Now}$                          |
       | $SignInfo$        | $(pk_\mathcal{N}, \sigma_\mathsf{M})$ |
 
-   2. [*Broadcast*][mx]$(\mathsf{M})$
+   2. [*Broadcast*][broad]$(\mathsf{M})$
 
 4. $\texttt{while } (\tau_{now} \le \tau_{Start}+\tau_{Rat}) \texttt{ and } (I \lt EmergencyMode):$
-   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][mx]$(\mathsf{Ratification},R,I) \ne NIL):$
+   1. $\texttt{if } (\mathsf{M} =$ [*Receive*][recv]$(\mathsf{Ratification},R,I) \ne NIL):$
       - $\texttt{set}:$
         - $`\mathsf{CI}, \mathsf{V}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M}`$
         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
@@ -112,7 +112,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
       4. $\texttt{and }(pk_\mathsf{M} \notin StepVoters)$
       5. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
-         1. [*Propagate*][mx]$(\mathsf{M})$
+         1. [*Propagate*][propm]$(\mathsf{M})$
          2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )`$
          3. $StepVoters = StepVoters \cup pk_\mathsf{M}$
          4. $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
@@ -170,4 +170,6 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
 [rmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#ratification
 [qmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#quorum
 [cmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#cmsg
-[mx]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#procedures-1
+[broad]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#broadcast
+[recv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#receive
+[propm]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#propagate
