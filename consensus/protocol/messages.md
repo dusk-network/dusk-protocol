@@ -35,6 +35,7 @@ This section describes the network messages exchanged by nodes to participate in
       - [*Receive*](#receive)
       - [*Propagate*](#propagate)
       - [*Send*](#send)
+      - [*SendMulti*](#sendmulti)
 
 
 ## Consensus
@@ -360,6 +361,14 @@ We assume that if the message was originally broadcasted by the local node it is
 #### *Send*
 This procedure represents a point-to-point message from the node to one of its peers. Its defined as *Send*$(\mathcal{P},\mathsf{M})$, where $\mathcal{P}$ is the recipient peer, and $\mathsf{M}$ is the message to send.
 
+#### *SendMulti*
+This procedure selects a number of random peers and send them a direct message.
+
+$SendMulti(NumPeers, \mathsf{M}):$
+1. $\boldsymbol{DestPeers} = $*SelectPeers*$()$
+2. $\texttt{for } Peer \texttt{ in } \boldsymbol{DestPeers} :$
+   1. [*Send*][send]$(Peer, \mathsf{M})$
+
 
 <!----------------------- FOOTNOTES ----------------------->
 
@@ -402,6 +411,7 @@ This procedure represents a point-to-point message from the node to one of its p
 [rec]:   #receive
 [pmsg]:  #propagate
 [send]:  #send
+[sendm]: #sendmulti
 
 <!-- Notation -->
 [hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
