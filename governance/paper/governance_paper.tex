@@ -1,0 +1,44 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage[
+backend=biber,
+style=alphabetic,
+sorting=ynt
+]{biblatex}
+\addbibresource{bibliography.bib}
+\usepackage{hyperref}
+
+\title{Dusk Network Governance Paper}
+\author{Jelle Pol\\Dusk Network\\\texttt{jelle@dusk.network}}
+\date{\today\\\texttt{Version 1.0.0}}
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    This paper outlines the governance procedures for the privacy-oriented blockchain-based generalized compute protocol called \emph{Dusk Network}. Specifically, the paper outlines the off-chain and on-chain governance procedures and the scope of the aforementioned two procedures.
+\end{abstract}
+
+\section{Overview}
+Dusk Network \cite{maharramov1} is a privacy-oriented blockchain-based permission-less protocol which facilitates the deployment of quasi-Turing complete smart contracts with native support for zero-knowledge proofs and the accompanying zero-knowledge proof-friendly primitives. Concretely, the protocol was primarily conceived with regulatory compliant security tokenization and lifecycle management in mind.\\\\
+Dusk Network\footnote{Denotes the legal entity from hereon, unless stated otherwise.} is comprised of the \emph{Business Team} responsible for defining and executing the use cases for the underlying protocol (i.e. the Dusk Network protocol) as well as for deciding on the allocation of the company funds\footnote{\url{https://dusk.network/uploads/Dusk-Network-Biannual-Report-2020.pdf}}, and the Core R\&D Team responsible for the implementation of the primitives capable of facilitating the aforementioned use cases within or outside the scope of the protocol. The \emph{Core R\&D Team} retains autonomy with regards to the technical decisions as long as the said decisions do not contradict the use cases defined by the Business Team.
+\section{Off-Chain Governance}
+Off-chain governance can be conceptually separated into two distinct categories:
+\begin{enumerate}
+    \item \emph{the Dusk Network protocol governance} and
+    \item \emph{the Dusk Network Development Fund governance}.
+\end{enumerate}
+The former is under the oversight of the Core R\&D Team, which is responsible for making amendments to the reference Dusk Network protocol specification, either in form of bug fixes or protocol upgrades. Specifically, the amendment decisions are predominantly based upon the protocol improvement proposals, the structure of which closely adheres to the RFC\cite{ietf} format. The protocol improvement proposals can be submitted by anyone.\\\\
+The latter, on the other hand, is under the oversight of \emph{Dusk Network Governance Council}, a community governance committee responsible for allocating funds to issues outside the scope of the reference protocol, such as wallet implementations, research efforts focusing on a specific problem, etc. The committee structure and election procedure is based upon the process outlined in \cite{zcash}. The Dusk Network Development Fund is community-funded through the procedure presented in \cite{maharramov}. The aforementioned paper specifies that $\frac{1}{10}$ of the total block rewards from the Dusk Network Mainnet are allocated to the Dusk Network Development Fund, which is instantiated as a multisignature contract on the Dusk Network Mainnet. Dusk Network reserves the right to provide additional funding to the contract if a need arises.
+\section{On-Chain Governance}
+The protocol upgrade procedure is accomplished via an on-chain procedure derived from \cite{goodman}. Specifically, via a staking contract $\mathsf{Contract^{Stake}}$ utilized to track the latest set of eligible Provisioners $\mathsf{Provisioners}$ as well as for the accounting of the deposits and the withdrawals of eligible stakes. The Dusk Network protocol versioning is defined with semantic versioning \cite{preston-werner} comprised of three numbers denoted as $\mathsf{major}$, $\mathsf{minor}$ and $\mathsf{patch}$ (e.g. \texttt{version 1.0.0}). Each valid stake $\mathsf{stake}$ includes a field defined as $\mathsf{version}$, which denotes the protocol version deployed on the device of the Provisioner in the possession of the secret key $sk$ corresponding to the public key $pk$ specified in the aforementioned $\mathsf{stake}$. If $\geq \frac{3}{4}$ of the active amount of DUSK staked (equivalent to the total amount staked by the Provisioners eligible to participate in the consensus) are operated on a device running a protocol version with greater $\mathsf{major}$ or $\mathsf{minor}$ than the one recorded in the contract, then the protocol is to initiate the upgrade.
+\section{Future Work}
+The team at Dusk Network strives to achieve the balance between governance decentralization and efficiency. As a result, we are exploring the possibility of deprecating the Dusk Network Governance Council in favour of a Decentralized Autonomous Organization \cite{wang} in the future.
+
+\clearpage
+
+\printbibliography
+
+
+\end{document}
