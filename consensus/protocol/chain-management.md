@@ -101,7 +101,7 @@ $\textit{HandleBlock}():$
                 4. $\texttt{start}($[*SALoop*][sl]$)$
 
 #### *HandleQuorum*
-This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the message was received from the network, it is first verified ([*VerifyQuorum*][vq]) and then propagated. The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
+This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the message was received from the network, it is first verified ([*VerifyAttestation*][va]) and then propagated. The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
 If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
 
@@ -117,7 +117,7 @@ If the message contains a [Fail Attestation][atts], and it does not refer to a [
       1. If $\mathsf{M}^Q.Round$ is $Tip$'s height:
          1. Stop
       2. Otherwise:
-         1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyQuorum*][vq])
+         1. Verify $\mathsf{M}^Q.Attestation$ ($\mathsf{A}$) is valid ([*VerifyAttestation*][va])
          2. If valid:
             1. Propagate $\mathsf{M}^Q$
             2. If the attestation result is $Success$
@@ -468,7 +468,6 @@ $\textit{AcceptPoolBlocks}():$
 
 [hq]:  #HandleQuorum
 [mw]:  #makewinning
-[vq]:  #VerifyQuorum
 
 
 <!-- Basics -->
