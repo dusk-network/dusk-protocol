@@ -201,7 +201,7 @@ Hard slashing consists in the burning of part of a provisioner's stake.
 
 The logic to determine the slashed amount and the suspension time follows the same approach as soft slashing, with the quantities being multiplied by the number of consecutive faults ($n$). However, we additionally consider different levels of *severity*, which acts as a multiplier of the base slash amount (10%). Specifically, the hard slash amount is:
 
-$$ (severity \times 10) \times n $$
+$$ (severity \times 10) \times n \% $$
 
 The severity parameter is meant to differentiate between faults that can be committed by mistake from those that we consider as an attack. For instance, block can be voted as invalid if produced with an older version of the protocol or with a buggy client. On the other hand, publishing double blocks or double votes is considered as intentional. 
 We currently consider the Invalid Block case has having $severity = 1$ and the Double Block and Double Vote cases has having $severity = 2$. 
