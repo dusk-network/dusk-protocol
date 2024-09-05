@@ -6,7 +6,8 @@ This repository is intended to host complete and formal documentation about the 
 
 ## Available Documentation
 Currently, you can read a complete and detailed documentation on:
- - Dusk consensus protocol, a.k.a Succinct Attestation (see [consensus](./consensus)).
+ - Dusk consensus protocol, a.k.a [Succinct Attestation](./consensus).
+ - Dusk [economic protocol](./economics)
 
 ## Future Work
 Soon, we will add a detailed description of the following components:
