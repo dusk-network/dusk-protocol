@@ -4,6 +4,6 @@ In this section, you will find a description of the [economic protocol][ep], and
 
 
 <!-- Links -->
-[ep]:  https://github.com/dusk-network/dusk-protocol/tree/main/economics/economic-protocol
+[ep]:  https://dusk-network.github.io/dusk-protocol/economic-protocol.pdf
 [apr]: https://github.com/dusk-network/dusk-protocol/tree/main/economics/DuskAPR.pdf
 [de]:  https://github.com/dusk-network/dusk-protocol/tree/main/economics/analysis
