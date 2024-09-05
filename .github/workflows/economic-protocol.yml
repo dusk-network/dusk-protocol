@@ -2,12 +2,12 @@ name: Economic Protocol
 on:
   pull_request:
     paths:
-      - economic-protocol/**
+      - economics/economic-protocol/**
   push:
     branches:
       - main
     paths:
-      - economic-protocol/**
+      - economics/economic-protocol/**
 
 jobs:
   generate_pdf:
@@ -21,13 +21,13 @@ jobs:
         uses: xu-cheng/latex-action@v3
         with:
           root_file: economic-protocol.tex
-          working_directory: ./economic-protocol
+          working_directory: ./economics/economic-protocol
 
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: dusk-economic-protocol-${{ github.sha }}
-          path: economic-protocol/economic-protocol.pdf
+          path: economics/economic-protocol/economic-protocol.pdf
 
   publish_pages:
     name: Publish to GitHub Pages
