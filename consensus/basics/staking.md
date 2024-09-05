@@ -163,9 +163,9 @@ The `Fault` type is defined as an [enumeration][en], with the following possible
 
 | Variant                  | Data                                         | Description                          |
 |--------------------------|----------------------------------------------|--------------------------------------|
-| $DoubleCandidate$        | $(`FaultData`<Hash>, `FaultData`<Hash>)$     | Proof of double candidate fault      |
-| $DoubleRatificationVote$ | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Ratification |
-| $DoubleValidationVote$   | $(`FaultData`<`Vote`>, `FaultData`<`Vote`>)$ | Proof of double vote on Validation   |
+| $DoubleCandidate$        | $(\mathsf{FaultData}<Hash>, \mathsf{FaultData}<Hash>)$     | Proof of double candidate fault      |
+| $DoubleRatificationVote$ | $(\mathsf{FaultData}<\mathsf{Vote}>, \mathsf{FaultData}<\mathsf{Vote}>)$ | Proof of double vote on Ratification |
+| $DoubleValidationVote$   | $(\mathsf{FaultData}<\mathsf{Vote}>, \mathsf{FaultData}<\mathsf{Vote}>)$ | Proof of double vote on Validation   |
 
 The enumeration's size is 451 bytes.
 
