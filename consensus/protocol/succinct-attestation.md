@@ -64,23 +64,25 @@ Additionally, we denote the node running the protocol with $\mathcal{N}$ and ref
 **Global Parameters**
 All global values (except for the genesis block) refer to version $0$ of the protocol.
 
-| Name               | Value                                    | Description                                                              |
-|--------------------|------------------------------------------|--------------------------------------------------------------------------|
-| $Version$          | 0                                        | Protocol version number                                                  |
-| $GenesisBlock$     | $\mathsf{B}_0$                           | Genesis block of the network                                             |
-| $Dusk$             | 1000000000                               | Value of one unit of Dusk (in lux)                                       |
-| $MinStake$         | 1000                                     | Minimum amount of a single stake (in Dusk)                               |
-| $BlockGas$         | 5.000.000.000                            | Gas limit for a single block                                             |
-| $Epoch$            | 2160                                     | Epoch duration in number of blocks                                       |
-| $MinBlockTime$     | 10                                       | Minimum time between blocks (in seconds)                                 |
-| $TimestampMargin$  | 3                                        | Margin of error when checking timestamps against local time (in seconds) |
-| $CommitteeCredits$ | 64                                       | Total credits in a voting committee                                      |
-| $Supermajority$    | $CommitteeCredits \times \frac{2}{3}$    | Supermajority quorum (43 credits)                                        |
-| $Majority$         | $CommitteeCredits \times \frac{1}{2} +1$ | Majority quorum (33 credits)                                             |
-| $MaxIterations$    | 50                                       | Maximum number of iterations in a single round                           |
-| $RelaxedMode$      | 8                                        | Iteration after which the Relaxed mode is enabled                        |
-| $EmergencyMode$    | $16$                                     | Iteration at which [Emergency Mode][em] is enabled                       |
-| $DuskKey$          | $pk_\mathcal{Dusk}$                      | A Dusk-owned public key used to sign the [Emergency Block][eb]           |
+| Name               | Value                                 | Description                                                    |
+|--------------------|---------------------------------------|----------------------------------------------------------------|
+| $Version$          | 0                                     | Protocol version number                                        |
+| $GenesisBlock$     | $\mathsf{B}_0$                        | Genesis block of the network                                   |
+| $Dusk$             | 1000000000                            | Value of one unit of Dusk (in lux)                             |
+| $MinStake$         | 1000                                  | Minimum amount of a single stake (in Dusk)                     |
+| $BlockGas$         | 5.000.000.000                         | Gas limit for a single block                                   |
+| $Epoch$            | 2160                                  | Epoch duration in number of blocks                             |
+| $MinBlockTime$     | 10                                    | Minimum time between blocks (in seconds)                       |
+| $MaxTransactions$  | 1000                                  | Maximum number of transactions in a block                      |
+| $MaxFaults$        | 100                                   | Maximum number of faults in a block                            |
+| $TimestampMargin$  | 3                                     | Margin of error when checking timestamps (in seconds)          |
+| $CommitteeCredits$ | 64                                    | Total credits in a voting committee                            |
+| $Supermajority$    | $\frac{CommitteeCredits \times 2}{3}$ | Supermajority quorum (43 credits)                              |
+| $Majority$         | $\frac{CommitteeCredits}{2} +1$       | Majority quorum (33 credits)                                   |
+| $MaxIterations$    | 50                                    | Maximum number of iterations in a single round                 |
+| $RelaxedMode$      | 8                                     | Iteration after which the Relaxed mode is enabled              |
+| $EmergencyMode$    | $16$                                  | Iteration at which [Emergency Mode][em] is enabled             |
+| $DuskKey$          | $pk_\mathcal{Dusk}$                   | A Dusk-owned public key used to sign the [Emergency Block][eb] |
 
 
 **Chain State**
