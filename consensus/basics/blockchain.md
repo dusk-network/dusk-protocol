@@ -104,16 +104,19 @@ This procedure is used in the [Validation][vals] step to verify the validity of 
 - $\mathsf{B}$: the block to verify
 - $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
 - $IsCandidate$: Boolean; $true$ if $\mathsf{B}$ is a candidate block (ie., with no $Attestation$), $false$ otherwise
+- [Global Parameters][cenv]: $MaxTransactions$, $MaxFaults$
 
 **Algorithm**
-1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
-2. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_{\mathsf{B}^p}$ ([*VerifyAttestation*][va])
-3. If $\mathsf{B}$ is a valid Emergency Block: output $true$
-4. For each attestation $\mathsf{A}_i$ in $FailedIterations$
+1. Verify transaction number
+2. Verify faults number
+3. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
+4. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_{\mathsf{B}^p}$ ([*VerifyAttestation*][va])
+5. If $\mathsf{B}$ is a valid Emergency Block: output $true$
+6. For each attestation $\mathsf{A}_i$ in $FailedIterations$
    1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
-5. If $\mathsf{B}$ is not a Candidate:
+7. If $\mathsf{B}$ is not a Candidate:
    1. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
-6.  If all verifications succeeded, output $true$
+8.  If all verifications succeeded, output $true$
 
 **Procedure**
 
@@ -124,17 +127,19 @@ $\textit{VerifyBlock}(\mathsf{B}, \mathsf{B}^p, IsCandidate):$
   - $\mathsf{CI} = {\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration}$
   - $\mathsf{CI}^p = {\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration}$
   
-1. $\texttt{if } ($[*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B}) = false): \texttt{output } false$
-2. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success) = false): \texttt{output } false`$
-3. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true): \texttt{output } true$
-4. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
+1. $\texttt{if } (|\mathsf{B}.Transactions| > MaxTransactions) \texttt{output } false$
+2. $\texttt{if } (|\mathsf{B}.Faults| > MaxFaults) \texttt{output } false$
+3. $\texttt{if } ($[*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B}) = false): \texttt{output } false$
+4. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success) = false): \texttt{output } false`$
+5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true): \texttt{output } true$
+6. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       - $\mathsf{CI}_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i)$
       1. $\texttt{if } ($[*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail) = false): \texttt{output } false$
-5. $\texttt{if } (IsCandidate \ne true) :$
+7. $\texttt{if } (IsCandidate \ne true) :$
    1. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success) = false): \texttt{output } false`$
-6.  $\texttt{output } true$
+8.  $\texttt{output } true$
 
 #### *VerifyBlockHeader*
 This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
