@@ -27,7 +27,7 @@ In the procedure, the node first extracts the *generator* $\mathcal{G}$ with [*E
 We impose a minimum block time of 10 seconds. This is enforced by having nodes wait until at least 10 seconds have passed since the previous block. This is further verified in the Candidate header verification.
 
 **Parameters** 
-- [SA Environment][env]
+- [SA Environment][cenv]
 - $R$: round number
 - $I$: iteration number
 
@@ -162,8 +162,14 @@ The criteria used for the selection is arbitrary and is left to the Block Genera
 Typically, the Generator's strategy will aim at maximizing profits by selecting transactions paying higher gas price.
 In this respect, it can be assumed that transactions paying higher gas prices will be prioritized by most block generators, and will then be included in the blockchain earlier.
 
+A maximum of $MaxTransactions$ (see [Global Parameters][cenv]) items are returned.
+
 ### *FetchFaults*
 This procedure returns all known faults which have not yet been included in any block.
+
+A maximum of $MaxFaults$ (see [Global Parameters][cenv]) items are returned.
+Priority is given to older faults.
+
 
 <!------------------------- LINKS ------------------------->
 <!-- https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md -->
@@ -178,7 +184,7 @@ This procedure returns all known faults which have not yet been included in any 
 [gsn]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/attestation.md#GetStepNum
 
 <!-- Protocol -->
-[env]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
+[cenv]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#environment
 [set]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#storeelapsedtime
 [it]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#increasetimeout
 [sai]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#saiteration
