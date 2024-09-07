@@ -68,7 +68,7 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 | $FaultRoot$            | [Blake3][hash]          | 32 bytes     | Root of faults Merkle tree                     |
 | $StateRoot$            | [SHA3][hash]            | 32 bytes     | Root of contracts state Merkle tree            |
 | $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes    | [Certificate][cert] for the previous block     |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-1216 bytes | Fail Attestations of previous iterations (up to $RelaxMode$ items) |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-1216 bytes | Fail Attestations of previous iterations (up to $RelaxedMode$ items) |
 | $Hash$                 | [SHA3][hash]            | 32 bytes     | Hash of previous fields                        |
 | $Attestation$          | [`Attestation`][att]    | 152 bytes    | Attestation of the $Valid$ votes for the block |
 
