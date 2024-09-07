@@ -95,51 +95,51 @@ We define the following Block-related procedures:
   - [*VerifyBlockHeader*][vbh]: verifies the validity of a [`BlockHeader`][bh]
 
 #### *VerifyBlock*
-This procedure verifies a block is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a Success Attestation. If both conditions are met, it returns $true$, otherwise, it returns $false$.
-
+This procedure verifies if a block $\mathsf{B}$ is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a [Success Attestation][atts]. If both conditions are met, it returns $true$, otherwise, it returns $false$. If the block is a [Candidate][cb], the Attestation field is not verified.
 If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
+
+This procedure is used in the [Validation][vals] step to verify the validity of the Candidate block, and to verify [`Block`][bmsg] messages from the network ([*HandleBlock*][hb], [*SyncBlock*][sb], [*AcceptPoolBlocks*][apb]).
 
 **Parameters**
 - $\mathsf{B}$: the block to verify
 - $\mathsf{B}^p$: the alleged $\mathsf{B}$'s parent
+- $IsCandidate$: Boolean; $true$ if $\mathsf{B}$ is a candidate block (ie., with no $Attestation$), $false$ otherwise
+- [Global Parameters][cenv]: $MaxTransactions$, $MaxFaults$
 
 **Algorithm**
-1. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
-2. If header's not valid, output $false$
-3. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_\mathsf{B^p}$ ([*VerifyAttestation*][va])
-4. If $\mathsf{A}^p$ is not valid, output $false$
-5. If $\mathsf{B}$ is an Emergency Block
-   1. Output $true$
-6. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
-7. If attestation is not valid, output $false$
-8. For each attestation $\mathsf{A}_i$ in $FailedIterations$
+1. Verify transaction number
+2. Verify faults number
+3. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
+4. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_{\mathsf{B}^p}$ ([*VerifyAttestation*][va])
+5. If $\mathsf{B}$ is a valid Emergency Block: output $true$
+6. For each attestation $\mathsf{A}_i$ in $FailedIterations$
    1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
-   2. If $\mathsf{A}_i$ is not valid, output $false$
-9.  If all verifications succeeded, output $true$
+7. If $\mathsf{B}$ is not a Candidate:
+   1. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
+8.  If all verifications succeeded, output $true$
 
 **Procedure**
-$\textit{VerifyBlock}(\mathsf{B}):$
+
+$\textit{VerifyBlock}(\mathsf{B}, \mathsf{B}^p, IsCandidate):$
 - $\textit{set }:$
   - $\mathsf{A}_{\mathsf{B}^p} = \mathsf{B}.PrevBlockCertificate$
   - $\mathsf{A_B} = \mathsf{B}.Attestation$
   - $\mathsf{CI} = {\mathsf{B}.PrevBlock,\mathsf{B}.Round,\mathsf{B}.Iteration}$
   - $\mathsf{CI}^p = {\mathsf{B}^p.PrevBlock,\mathsf{B}^p.Round,\mathsf{B}^p.Iteration}$
   
-1. $isValid$ = [*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B})$
-2. $\texttt{if } (isValid = false): \texttt{output } false$
-3. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success)`$
-4. $\texttt{if } (isValid = false): \texttt{output } false$
-5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true):$
-   1. $\texttt{output } true$
-6. $isValid$ = [*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success)`$
-7. $\texttt{if } (isValid = false): \texttt{output } false$
-8. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
+1. $\texttt{if } (|\mathsf{B}.Transactions| > MaxTransactions) \texttt{output } false$
+2. $\texttt{if } (|\mathsf{B}.Faults| > MaxFaults) \texttt{output } false$
+3. $\texttt{if } ($[*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B}) = false): \texttt{output } false$
+4. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success) = false): \texttt{output } false`$
+5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true): \texttt{output } true$
+6. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       - $\mathsf{CI}_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i)$
-      1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail)$
-      2. $\texttt{if } (isValid = false): \texttt{output } false$
-9.  $\texttt{output } true$
+      1. $\texttt{if } ($[*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail) = false): \texttt{output } false$
+7. $\texttt{if } (IsCandidate \ne true) :$
+   1. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success) = false): \texttt{output } false`$
+8.  $\texttt{output } true$
 
 #### *VerifyBlockHeader*
 This procedure returns $true$ if all block header fields are valid with respect to the previous block and the included transactions. If so, it outputs $true$, otherwise, it outputs $false$.
@@ -456,12 +456,18 @@ $\textit{UpdateFinalBlocks}():$
 
 [prop]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/proposal.md
 [val]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md
+[vals]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/validation.md#validation-step
 [rat]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/steps/ratification.md
 
 [ds]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/sortition.md
 
 [cm]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md
 [fal]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#fallback
+[hb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#HandleBlock
+[sb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#syncblock
+[apb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#acceptpoolblocks
+
+[bmsg]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/messages.md#block
 
 <!-- TODO -->
 [est]:    https://github.com/dusk-network/dusk-protocol/tree/main/virtual-machine

@@ -60,9 +60,9 @@ In the collection of votes, the $StepVoters$ set variable is used to track provi
    2. or the previous block is not $Tip$:
       1. Set vote $\mathsf{V}$ to $NoCandidate$
    3. Otherwise:
-      1. Verify $\mathsf{B}^c$ against $Tip$
-      2. If $\mathsf{B}^c$ is valid, set vote $\mathsf{V}$ to $Valid(\eta_{\mathsf{B}^c})$
-      3. Otherwise, set $\mathsf{V}$ to $Invalid(\eta_{\mathsf{B}^c})$
+      1. If $\mathsf{B}^c$ is a valid successor of $Tip$
+         1. Set vote $\mathsf{V}$ to $Valid(\eta_{\mathsf{B}^c})$
+      2. Otherwise, set $\mathsf{V}$ to $Invalid(\eta_{\mathsf{B}^c})$
    4. Create a $\mathsf{Validation}$ message $\mathsf{M}$ for vote $\mathsf{V}$
    5. Broadcast $\mathsf{M}$
 
@@ -94,9 +94,9 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
    2. $\texttt{or } (\mathsf{B}^c.PreviousBlock \ne Tip.Hash):$
       1. $\mathsf{V} = NoCandidate$
    3. $\texttt{else}:$
-      1. $isValid$ = [*VerifyBlockHeader*][vbh]$(Tip,\mathsf{B}^c)$
-      2. $\texttt{if } (isValid = true) : \mathsf{V} = Valid(\eta_{\mathsf{B}^c})$
-      3. $\texttt{else}: \mathsf{V} = Invalid(\eta_{\mathsf{B}^c})$
+      1. $\texttt{if } ($[*VerifyBlock*][vb]$(\mathsf{B}^c, Tip, true) = true) :$ 
+         1. $\mathsf{V} = Valid(\eta_{\mathsf{B}^c})$
+      2. $\texttt{else}: \mathsf{V} = Invalid(\eta_{\mathsf{B}^c})$
    4. $`\mathsf{M} = `$ [*CMsg*][cmsg]$(\mathsf{Validation}, \mathsf{V})$
       | Field           | Value                                 |
       |-----------------|---------------------------------------|
@@ -156,7 +156,7 @@ $ValidationStep( R, I, \mathsf{B}^c ) :$
 
 
 <!-- Basics -->
-[vbh]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblockheader
+[vb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblock
 [rf]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
 
 [p]:     https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/staking.md#provisioners-and-stakes
