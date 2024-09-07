@@ -54,26 +54,26 @@ A full block is a candidate block that reached a quorum agreement on both the [V
 
 #### `BlockHeader` Structure
 
-| Field                  | Type                    | Size        | Description                                    |
-|------------------------|-------------------------|-------------|------------------------------------------------|
-| $Version$              | Unsigned Int            | 8 bits      | Block version                                  |
-| $Height$               | Unsigned Int            | 64 bits     | Block height                                   |
-| $Timestamp$            | Unsigned Int            | 64 bits     | Block timestamp in Unix format                 |
-| $GasLimit$             | Unsigned Int            | 64 bits     | Block gas limit                                |
-| $Iteration$            | Unsigned Int            | 8 bits      | Iteration at which the block was produced      |
-| $PreviousBlock$        | [SHA3][hash]            | 32 bytes    | Hash of the previous block                     |
-| $Seed$                 | BLS Signature           | 48 bytes    | Signature of the previous block's seed         |
-| $Generator$            | BLS Public Key          | 96 bytes    | Generator Public Key                           |
-| $TransactionRoot$      | [Blake3][hash]          | 32 bytes    | Root of transactions Merkle tree               |
-| $FaultRoot$            | [Blake3][hash]          | 32 bytes    | Root of faults Merkle tree                     |
-| $StateRoot$            | [SHA3][hash]            | 32 bytes    | Root of contracts state Merkle tree            |
-| $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes   | [Certificate][cert] for the previous block     |
-| $FailedIterations$     | [`Attestation`][att][ ] | 0-896 bytes | Fail Attestations of previous iterations       |
-| $Hash$                 | [SHA3][hash]            | 32 bytes    | Hash of previous fields                        |
-| $Attestation$          | [`Attestation`][att]    | 152 bytes   | Attestation of the $Valid$ votes for the block |
+| Field                  | Type                    | Size         | Description                                    |
+|------------------------|-------------------------|--------------|------------------------------------------------|
+| $Version$              | Unsigned Int            | 8 bits       | Block version                                  |
+| $Height$               | Unsigned Int            | 64 bits      | Block height                                   |
+| $Timestamp$            | Unsigned Int            | 64 bits      | Block timestamp in Unix format                 |
+| $GasLimit$             | Unsigned Int            | 64 bits      | Block gas limit                                |
+| $Iteration$            | Unsigned Int            | 8 bits       | Iteration at which the block was produced      |
+| $PreviousBlock$        | [SHA3][hash]            | 32 bytes     | Hash of the previous block                     |
+| $Seed$                 | BLS Signature           | 48 bytes     | Signature of the previous block's seed         |
+| $Generator$            | BLS Public Key          | 96 bytes     | Generator Public Key                           |
+| $TransactionRoot$      | [Blake3][hash]          | 32 bytes     | Root of transactions Merkle tree               |
+| $FaultRoot$            | [Blake3][hash]          | 32 bytes     | Root of faults Merkle tree                     |
+| $StateRoot$            | [SHA3][hash]            | 32 bytes     | Root of contracts state Merkle tree            |
+| $PrevBlockCertificate$ | [`Attestation`][att]    | 152 bytes    | [Certificate][cert] for the previous block     |
+| $FailedIterations$     | [`Attestation`][att][ ] | 0-1216 bytes | Fail Attestations of previous iterations (up to $RelaxMode$ items) |
+| $Hash$                 | [SHA3][hash]            | 32 bytes     | Hash of previous fields                        |
+| $Attestation$          | [`Attestation`][att]    | 152 bytes    | Attestation of the $Valid$ votes for the block |
 
-The `BlockHeader` structure has a variable total size of 634 to 1530 bytes.
-This is reduced to 482-1378 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
+The `BlockHeader` structure has a variable total size of 634 to 1850 bytes.
+This is reduced to 482-1698 bytes for a [*candidate block*][cb], since the $Attestation$ field is empty.
 
 **Notation**
 
