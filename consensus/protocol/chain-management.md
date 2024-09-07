@@ -93,7 +93,7 @@ $\textit{HandleBlock}():$
           1. $\texttt{if } (\mathsf{B} \in \textbf{Chain}):  \texttt{break}$
           2. $\texttt{if } (\eta^p \in \textbf{Chain})$
           3. $\texttt{and } (\mathsf{B}.Iteration \lt \textbf{Chain}[\mathsf{B}.Height].Iteration):$
-             1. $isValid =$ [*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{\eta^p})$
+             1. $isValid =$ [*VerifyBlock*][vb]$(\mathsf{B}, \mathsf{B}_{\eta^p}, false)$
              2. $\texttt{if } (isValid = true)$
                 1. $\texttt{stop}($[*SALoop*][sl]$)$
                 2. [*Fallback*][fal]$(\eta^p)$
@@ -337,7 +337,7 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
       1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
 <!-- B = Tip+1 -->
 1. $\texttt{else if } (\mathsf{B}.Height = Tip.Height+1) :$
-   1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip)$
+   1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip, false)$
    2. $\texttt{if } (isValid = true):$
       1. $\texttt{stop}$([*SALoop*][sl])
       2. [*AcceptBlock*][ab]$(\mathsf{B})$
@@ -443,7 +443,7 @@ This procedure accepts all successive blocks in $BlockPool$ from height $Tip.Hei
 $\textit{AcceptPoolBlocks}():$
 1. $\boldsymbol{Successors} =$ *getFrom*$(BlockPool, \mathsf{B}_{Tip.Height+1})$
 2. $\texttt{for } i = 0 \dots |\boldsymbol{Successors}|{-}1 :$
-   1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip)$
+   1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}_i, Tip, false)$
       1. $\texttt{if } (isValid = false): \texttt{break}$
    2. [*AcceptBlock*][ab]$(\mathsf{B}_i)$
    3. $\tau_{Sync} = \tau_{Now}$
@@ -471,7 +471,7 @@ $\textit{AcceptPoolBlocks}():$
 
 
 <!-- Basics -->
-[vb]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblock
+[vb]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#verifyblock
 [lc]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#local-chain
 [alc]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#AddToLocalChain
 [rf]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/basics/blockchain.md#rolling-finality
