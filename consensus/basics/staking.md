@@ -190,11 +190,11 @@ Suspension works as follows:
    - if the provisioner commits a new fault, it gets suspended for as many epochs as the consecutive number of faults it committed; in other words, if the provisioner is suspended of the $n\text{th}$ consecutive time, its suspension is of $n$ epochs.
 
 #### Soft Slashing
-When a provisioner gets suspended, a part of its stake is moved to its $Rewards$ amount. By doing so, the provisioner does not lose money but its weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
+When a provisioner gets suspended, a part of its stake is locked. By doing so, the provisioner does not lose money but its weight in the sortition process is reduced, thus reducing its probability of being selected as generator or voter.
 
-The slashed amount follows this rule: if this is the $n\text{th}$ consecutive fault, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake gets frozen and can only be recovered by unstaking and restaking again. <!-- This is currently not true, since Reward can be withdrawn any time -->
+The slashed amount follows this rule: if this is the $n\text{th}$ consecutive fault, soft-slash the $(n \times 10)$\% of the stake (that is, the 10\% the first time, the 20\% the second time, and so on). When the stake goes beyond the minimum stake amount (see $MinStake$ [global parameter][cenv]), the stake becomes [ineligible][epo] and can only be recovered by unstaking and restaking again.
 
-Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 would get frozen after a single suspension, while a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, all stake are ensured to get frozen after 10 consecutive faults (as at the 10th fault, the slash would be 100% of the current stake). In other words, there is an upper bound of 10 consecutive faults for all provisioners, regardless of their stake amount.
+Generally speaking, bigger stakes are able to keep their eligibility for longer than smaller ones. For instance, on one extreme, a minimum stake of 1000 (see $MinStake$ in [global parameters][cenv]) would get frozen after a single suspension, while a stake of 10.000.000 would get frozen at the 10th suspension. Nevertheless, all stake are ensured to get frozen after 10 consecutive faults (as at the 10th fault, the slash would be 100% of the current stake). In other words, there is an upper bound of 10 consecutive faults for all provisioners, regardless of their stake amount.
 
 #### Hard Slashing
 Hard slashing consists in the burning of part of a provisioner's stake.
