@@ -66,7 +66,7 @@ All global values (except for the genesis block) refer to version $0$ of the pro
 
 | Name               | Value                                 | Description                                                    |
 |--------------------|---------------------------------------|----------------------------------------------------------------|
-| $Version$          | 0                                     | Protocol version number                                        |
+| $Version$          | 1                                     | Block version number                                           |
 | $GenesisBlock$     | $\mathsf{B}_0$                        | Genesis block of the network                                   |
 | $Dusk$             | 1000000000                            | Value of one unit of Dusk (in lux)                             |
 | $MinStake$         | 1000                                  | Minimum amount of a single stake (in Dusk)                     |
