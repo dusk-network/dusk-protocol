@@ -47,6 +47,8 @@ Each iteration is composed of three phases, or ***steps***:
 If a quorum of $Valid$ votes is reached in both the Validation and Ratification steps, the candidate block generated in the Proposal step is accepted as the new tip of the chain.
 Conversely, if the Ratification result is a failure or unknown, a new iteration is executed (that is a new candidate block is produced and voted upon).
 
+Note that, while $\frac{1}{3}{+}1$ of $\text{non-}Valid$ votes would be sufficient to prove a failed iteration, waiting for a majority ensures a consensus was reached on a single vote. This allows using Fail Attestations for [penalizing][pen] misbehaving provisioners (e.g., slashing for a missed block).
+
 The round terminates when an iteration is successful.
 
 The maximum number of iterations executed within a single round is determined by the global parameter $MaxIterations$.

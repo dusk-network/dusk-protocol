@@ -19,7 +19,6 @@ The vote is broadcast using a [`Validation`][vmsg] message.
 
 Then, all nodes, including the committee members, collect votes from the network until a *supermajority* ($\frac{2}{3}$ of the committee credits[^1]) of $Valid$ votes is reached, a *majority* ($\frac{1}{2}{+}1$) of $\text{non-}Valid$ votes is reached, or the step timeout expires.
 Specifically, if a supermajority of $Valid$ votes is received, the step outputs $Valid$; if a majority of $Invalid$ or $NoCandidate$ votes is received, the step outputs $Invalid$ or $NoCandidate$, respectively.
-Note that, while $\frac{1}{3}{+}1$ of $Invalid$ or $NoCandidate$ votes would be sufficient to prove a failed iteration, waiting for a majority of votes allows reducing the risk of [punishing][pen] unfairly (e.g., slashing for a missed block based on a minority of votes).
 
 If the step timeout expires, the step outputs $NoQuorum$, which represents an unknown result: it is possible that casted votes reach a quorum or a majority but the node did not see it.
 
