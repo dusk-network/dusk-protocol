@@ -297,9 +297,9 @@ The Consensus State of each block in the local chain is determined by the follow
  - If a block is $Accepted$, it is marked as $Confirmed$ after $2 \times PNI$ consecutive $Attested$ or $Confirmed$ blocks;
  - If a block is $Confirmed$ and its parent is $Final$, it is marked as $Final$.
 
-For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Fail Attestation, it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 2 = 4$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
+For instance, if a block has $Iteration = 5$ and only 2 previous iterations have a Fail Attestation (hence, $PNI=3$), it is initially marked as $Accepted$ and becomes $Confirmed$ when the following $2 \times 3 = 6$ blocks are either $Attested$ or $Confirmed$. If, when marked as $Confirmed$, its parent block is $Final$, it is also marked as $Final$.
 
-Note that the value of $PNI$ can be directly derived from the Attestations in the $FailedIterations$ field of a block.
+Note that the value of $PNI$ can be directly derived from the Attestations in the $FailedIterations$ field the accepted block.
 
 
 ### Last Final Block
