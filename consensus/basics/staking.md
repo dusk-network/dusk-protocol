@@ -54,7 +54,7 @@ $$M = 2{\times}Epoch - (Height_\mathsf{S} \mod Epoch),$$
 
 where $Epoch$ corresponds to a fixed number of blocks defined as [global parameter][cenv] (currently set to $2160$).
 
-Note that we use the term ***Epoch*** to refer to a specific range of $Epoch$ blocks, starting from height $0$. For instance, the 1st Epoch corresponds to blocks $0$ to $Epoch-1$, the 2nd Epoch starts at block $Epoch{\times}2$, and so on. As such, "time" in the Dusk blockchain is effectively divided into Epochs, which mark participation in the consensus protocol. 
+Note that we use the term ***Epoch*** to refer to a specific range of $Epoch$ blocks, starting from height $0$. For instance, the 1st Epoch corresponds to blocks $0$ to $Epoch-1$, the 2nd Epoch starts at block $Epoch$, and so on. As such, "time" in the Dusk blockchain is effectively divided into Epochs, which mark participation in the consensus protocol. 
 
 For instance, the Maturity period of a Stake, after which it becomes eligible, corresponds to the remainder of the Epoch in which the `stake` transaction was included, plus another full Epoch. As a consequence, all stakes become eligible at the beginning of a new Epoch.
 
