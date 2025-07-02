@@ -248,7 +248,7 @@ Note that there are no *warnings* for hard slashing.
 
 <!-- Tokenomics -->
 [ep]:  https://dusk-network.github.io/dusk-protocol/economic-protocol.pdf
-[tok]: https://docs.dusk.network/learn/economy/tokenomics/#token-emission-schedule
+[tok]: https://docs.dusk.network/learn/tokenomics/#token-emission-schedule
 
 <!-- TODO: these links point to missing pages -->
 [vm]:      https://github.com/dusk-network/dusk-protocol/tree/main/vm
