@@ -165,7 +165,7 @@ This procedure returns the absolute step number within the round. It is used for
 **Procedure**
 
 $\textit{GetStepNum}(I, Step):$
-- $\texttt{output } I \times + StepNum$ 
+- $\texttt{output } I \times 3 + StepNum$ 
 
 <p><br></p>
 
