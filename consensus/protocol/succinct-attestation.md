@@ -211,9 +211,9 @@ $\textit{SARound}():$
 
 #### *SAIteration*
 This procedure executes the sequence of [*Proposal*][prop], [*Validation*][val], and [*Ratification*][rat] steps.
-The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult`][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ is the vote is $NoQuorum$).
+The *Proposal* outputs the candidate block $\mathsf{B}^c$ for the iteration; this is passed to *Validation*, which outputs the step result with the quorum-reaching vote or $NoQuorum$ if the timeout expired; the Validation's result is then passed to the Ratification step, which, also outputs the step result. Step results are in the form of [`StepResult`][sr] structures, which contain the quorum-reaching [`Vote`][vote] and the aggregated signature of the quorum committee (or $NIL$ if the step reached no quorum).
 
-If a quorum was reached in both Validation and Ratification, a [`Quorum`][qmsg] message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the winning vote, and the two [`StepVotes`][sv] with the aggregated signatures of the quorum committee).
+If a quorum was reached in Ratification, a [`Quorum`][qmsg] message is broadcast with the [`Attestation`][atts] of the iteration (i.e. the winning vote, and the two [`StepVotes`][sv] with the aggregated signatures of the quorum committee; for a $NoQuorum$ vote, the Validation one is empty).
 
 **Algorithm**
 1. Run *Proposal* to generate the *candidate* block $\mathsf{B}^c$
@@ -239,7 +239,7 @@ $\textit{SAIteration}(R, I):$
 - $\texttt{set}:$
   - $`\_, \mathsf{SV}^V \leftarrow \mathsf{SR}^V`$
   - $\mathsf{V}, \mathsf{SV}^R \leftarrow \mathsf{SR}^R$
-1. $\texttt{if } (\mathsf{V} \ne NoQuorum):$
+1. $\texttt{if } (\mathsf{SV}^R \ne NIL):$
    1. $\texttt{if } \mathsf{V} = Valid$:
       1. $\texttt{set} Result = Success$
    2. $\texttt{else}:$

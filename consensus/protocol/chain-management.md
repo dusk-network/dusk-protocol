@@ -145,7 +145,7 @@ $\textit{HandleQuorum}( R ):$
        1. $\texttt{if } (R_{\mathsf{M}} = Tip.Height):$
           1. $\texttt{break}$
        2. $\texttt{else}:$
-          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL)$
+          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL, NIL)$
           2. $\texttt{if } (isValid = true) :$
              1. [*Propagate*][propm]$(\mathsf{M}^Q)$
              2. $\texttt{if } (\mathsf{A}.Result = Success):$

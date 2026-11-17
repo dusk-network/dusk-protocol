@@ -64,9 +64,9 @@ Collected vote signatures are aggregated in [`StepVotes`][sv] structures. In par
    1. If a $\mathsf{Ratification}$ message $\mathsf{M}$ is received for round $R$ and iteration $I$:
       1. If $\mathsf{M}$'s signature is valid
       2. and $\mathsf{M}$'s signer is in the committee $\mathcal{C}$
-      3. and $\mathsf{M}$'s vote is valid ($NoQuorum$, $Valid$, $Invalid$, or $NoQuorum$)
+      3. and $\mathsf{M}$'s vote is valid ($NoCandidate$, $Valid$, $Invalid$, or $NoQuorum$)
       4. and no other vote has been received for $\mathsf{M}$'s signer
-      5. and $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
+      5. and, if the vote is $NoQuorum$, $ValidationVotes$ is empty, or otherwise $ValidationVotes$ is a valid quorum of votes for the previous Validation step :
          1. Propagate $\mathsf{M}$
          2. Collect $\mathsf{M}$'s vote $\mathsf{V}$ into the aggregated $\mathsf{SV_V}$
          3. Add $\mathsf{M}$'s signer to the $StepVoters$ set
@@ -111,7 +111,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
       2. $\texttt{and }($[*VerifyMessage*][sigs]$(\mathsf{M}) = true)$
       3. $\texttt{and }(\mathsf{V} \in \{NoCandidate,Valid,Invalid,NoQuorum\})$
       4. $\texttt{and }(pk_\mathsf{M} \notin StepVoters)$
-      5. $\texttt{and }($[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true):$
+      5. $\texttt{and }((\mathsf{V} = NoQuorum \texttt{ and } \mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{V} \ne NoQuorum \texttt{ and }$[*VerifyVotes*][vv]$(\mathsf{SV}^V, \upsilon^V, Q^V, \mathcal{C}^V) = true)):$
          1. [*Propagate*][propm]$(\mathsf{M})$
          2. $`\mathsf{SV_V} =`$ [*AggregateVote*][av]$`( \mathsf{SV_V}, \mathcal{C}, \sigma_\mathsf{M}, pk_{\mathsf{M}} )`$
          3. $StepVoters = StepVoters \cup pk_\mathsf{M}$
