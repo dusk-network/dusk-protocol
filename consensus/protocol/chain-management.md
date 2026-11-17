@@ -32,7 +32,7 @@ There are two main reasons a network block is not in the chain:
  
  - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
 
- - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the parent of the received block and then accepts the received block as the new tip.
 
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
@@ -215,16 +215,16 @@ It is triggered by [*HandleBlock*][hb] when receiving a block with height equal 
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
-Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
+The deleted block at height $\mathsf{B}_\eta.Height+1$, which is replaced by the lower-iteration block, is blacklisted (because it belongs to a lower-priority fork). The transactions of all deleted blocks are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
 
 **Parameters**
 - $\eta$: the hash of the block to which to revert
 
 **Algorithm**
-1. For each block $`\mathsf{B}_i`$ between $Tip$ and $\mathsf{B}_\eta$
+1. For each block $`\mathsf{B}_i`$ from $Tip$ down to $\mathsf{B}_\eta$'s successor
    1. Push $\mathsf{B}_i$'s transactions back to mempool
    2. Delete $\mathsf{B}_i$ from the chain
-   3. Blacklist $\mathsf{B}_i$
+   3. If $\mathsf{B}_i$ is $\mathsf{B}_\eta$'s successor, blacklist $\mathsf{B}_i$
 2. Set $Tip$ to $\mathsf{B}_\eta$
 3. Revert VM state to $\mathsf{B}_\eta$'s state
 4. Update $Provisioners$
@@ -232,10 +232,10 @@ Deleted blocks are blacklisted (because they belong to a lower-priority fork) an
 **Procedure**
 
 $\textit{Fallback}():$
-1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height :$
+1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height+1 :$
    1. $Mempool = Mempool \cup \{ \mathsf{B}_i.Transactions \}$
    2. $\textbf{Chain}[i] = NIL$
-   3. $Blacklist = Blacklist \cup \mathsf{B}_i$
+   3. $\texttt{if } (i = \mathsf{B}_\eta.Height+1): Blacklist = Blacklist \cup \mathsf{B}_i$
 2. $Tip = \mathsf{B}_\eta$
 3. $SystemState = VM.Revert(\mathsf{B}_\eta)$
 4. $Provisioners = SystemState.Provisioners$
