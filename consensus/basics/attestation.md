@@ -378,8 +378,8 @@ $\textit{VerifyAttestation}(\mathsf{CI}, \mathsf{A}, ExpectedResult):$
    - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
    - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
    - $\mathsf{V}: \mathsf{IR}.Vote$
-   - $\upsilon^V = (\mathsf{CI}||\mathsf{V}||ValStep)$ 
-   - $\upsilon^R = (\mathsf{CI}||\mathsf{V}||RatStep)$
+   - $\upsilon^V = (\mathsf{CI}||ValStep||\mathsf{V})$ 
+   - $\upsilon^R = (\mathsf{CI}||RatStep||\mathsf{V})$
    - $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
 
 1. $\texttt{if } (ExpectedResult \ne NIL) \texttt{ and } (\mathsf{IR} \ne ExpectedResult): \texttt{output } false$

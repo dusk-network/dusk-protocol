@@ -167,17 +167,17 @@ The `Fault` type is defined as an [enumeration][en], with the following possible
 | $DoubleRatificationVote$ | $(\mathsf{FaultData}<\mathsf{Vote}>, \mathsf{FaultData}<\mathsf{Vote}>)$ | Proof of double vote on Ratification |
 | $DoubleValidationVote$   | $(\mathsf{FaultData}<\mathsf{Vote}>, \mathsf{FaultData}<\mathsf{Vote}>)$ | Proof of double vote on Validation   |
 
-The enumeration's size is 451 bytes.
+The enumeration's size is 437 bytes.
 
 ##### `FaultData` Structure
 
 | Field       | Type                           | Size      | Description                 |
 |-------------|--------------------------------|-----------|-----------------------------|
-| $Header$    | [`ConsensusInfo`][cinf]        | 48 bytes  | Consensus message header    |
+| $Header$    | [`ConsensusInfo`][cinf]        | 41 bytes  | Consensus message header    |
 | $Signature$ | [`SignInfo`][sinf]             | 144 bytes | Consensus message signature |
 | $Data$      | [SHA3][hash] or [`Vote`][vote] | 33 bytes  | Candidate hash or vote      |
 
-The structure's size is 225 bytes.
+The structure's size is 218 bytes.
 
 #### Suspension
 This measure consists in removing a provisioner from the [eligible set][epo] for a number of [*epochs*][epo]. Doing this excludes the provisioner from the [Deterministic Sortition][ds] process, preventing it from being selected as block generator or committee member. This measure primarily aims at excluding offline provisioners from consensus, improving liveness and stability.

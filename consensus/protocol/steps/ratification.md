@@ -104,7 +104,7 @@ $RatificationStep( R, I, \mathsf{SR}^V ) :$
         - $`\mathsf{CI}, \mathsf{V}, \mathsf{SV}^V, \_, \mathsf{SI} \leftarrow \mathsf{M}`$
         - $`\eta_{\mathsf{B}^p}, \_, \_, \leftarrow \mathsf{CI}`$
         - $`pk_\mathsf{M}, \sigma_\mathsf{M} \leftarrow \mathsf{SI}`$
-        - $\upsilon^V = (\mathsf{CI}||\mathsf{V}||ValStep)$
+        - $\upsilon^V = (\mathsf{CI}||ValStep||\mathsf{V})$
         - $Q^V =$ [*GetQuorum*][gq]$(\mathsf{V})$
 
       1. $\texttt{if } (pk_\mathsf{M} \in \mathcal{C})$
