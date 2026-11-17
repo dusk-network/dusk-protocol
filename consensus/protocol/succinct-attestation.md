@@ -116,7 +116,7 @@ This procedure is the entry point of a consensus node.
 Upon boot, the node checks if there is a local state saved and, if so, loads it. Otherwise, it sets the local $Tip$ to *GenesisBlock*. 
 Then, it probes the network to check if it is in sync or not with the main chain. If not, it starts a synchronization procedure. 
 
-When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds* and [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages. 
+When the node is synchronized, it starts [*SALoop*][sal] to execute the consensus *rounds*, [*HandleBlock*][hb] to handle incoming [`Block`][bmsg] messages, and [*HandleFutureQuorum*][hfq] to handle `Quorum` messages for later rounds. 
 
 **Algorithm**
 
@@ -128,8 +128,10 @@ When the node is synchronized, it starts [*SALoop*][sal] to execute the consensu
    2. Set $SystemState$ to $S$
    3. Set $Tip$ to last block
 4. Synchronize mempool (request transactions from 5 peers)
-5. Start SA loop ([*SALoop*][sal])
-6. Start Block message handler ([*HandleBlock*][hb])
+5. Request the blocks after the $Tip$ from 16 peers ($\mathsf{GetBlocks}$ with the $Tip$ as $Locator$)
+6. Start SA loop ([*SALoop*][sal])
+7. Start Block message handler ([*HandleBlock*][hb])
+8. Start the handler of `Quorum` messages for later rounds ([*HandleFutureQuorum*][hfq])
 
 **Procedure**
 
@@ -142,8 +144,10 @@ $\textit{SAInit}():$
    2. $SystemState = S.SystemState$
    3. $Tip = S.Tip$
 4. [*SendMulti*][sendm]$(5, \mathsf{GetMempool})$
-5. $\texttt{start}$([*SALoop*][sal])
-6. $\texttt{start}$([*HandleBlock*][hb])
+5. [*SendMulti*][sendm]$(16, \mathsf{GetBlocks}(\eta_{Tip}))$
+6. $\texttt{start}$([*SALoop*][sal])
+7. $\texttt{start}$([*HandleBlock*][hb])
+8. $\texttt{start}$([*HandleFutureQuorum*][hfq])
 
 <p><br></p>
 
@@ -470,6 +474,7 @@ $`\textit{isEmergencyBlock}(\mathsf{B})`$
 [ab]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#acceptblock
 [hb]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#handleblock
 [hq]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#handlequorum
+[hfq]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#handlefuturequorum
 [mw]:    https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#makewinning
 [fal]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#fallback
 [syn]:   https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/chain-management.md#synchronization

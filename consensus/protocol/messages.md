@@ -273,8 +273,10 @@ The expected message flow is the following: $\mathsf{GetMempool}$ -> $\mathsf{In
 This messages is sent to synchronize the blockchain with a peer. Its payload includes a $Locator$ block hash indicating the highest block known to the sender. 
 
 This message is used in two situations:
- - if the block acceptance timeout expires (i.e., no new block is accepted for 20 seconds) <!-- TODO: define BLOCK_ACCEPTANCE_TIMEOUT -->
- - when the node starts a [synchronization procedure][syn] with a peer;
+ - if no new block is accepted for $AcceptTimeout$ (60 seconds); in this case, $Locator$ is the last finalized block, and the message is sent again every $StalledTimeout$ (30 seconds) until a new block is accepted;
+ - when the node starts, with its $Tip$ as $Locator$ ([*SAInit*][init]);
+
+<!-- TODO: define the procedure that sends `GetBlocks` after $AcceptTimeout$ -->
 
 The response to this message should be an $\mathsf{Inv}$ message containing a vector of type $BlockFromHash$ with the list of all blocks in the [local chain][lc] that are successors of $Locator$.
 
@@ -412,6 +414,7 @@ $SendMulti(NumPeers, \mathsf{M}):$
 [propm]: #propagate
 [send]:  #send
 [sendm]: #sendmulti
+[init]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#sainit
 
 <!-- Notation -->
 [hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions
