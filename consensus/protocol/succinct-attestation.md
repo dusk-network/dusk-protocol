@@ -177,7 +177,7 @@ If, for any reason, the round ends without a winning block, the node halts the c
 2. Reset $\boldsymbol{FailedIterations}$
 3. Adjust step base timeouts ([*SetRoundTimeouts*][srt])
 4. Start $\mathsf{Quorum}$ message handler ([*HandleQuorum*][hq])
-5. For $Iteration$ from 0 to $MaxIterations$
+5. For $Iteration$ from 0 to $MaxIterations-1$
    1. If in Emergency Mode:
       1. Start [*SAIteration*][sai] as a thread
       2. Wait $MaxStepTimeout$ for each step
@@ -187,9 +187,6 @@ If, for any reason, the round ends without a winning block, the node halts the c
       1. Broadcast $\mathsf{B}^w$
       2. Accept $\mathsf{B}^w$ into the chain
       3. End round
-6. If we reached $MaxIterations$ without a winning block
-   1. Create an Emergency Block Request message
-   2. Broadcast the message
 
 **Procedure**
 
@@ -209,9 +206,6 @@ $\textit{SARound}():$
       1. [*Broadcast*][broad]$(\mathsf{B}^w)$
       2. [*AcceptBlock*][ab]$(\mathsf{B}^w)$
       3. $\texttt{break}$
-6. $\texttt{if } (\mathsf{B}^w = NIL)$
-   1. $\mathsf{M} =$ [*CMsg*][nmsg]$(EmergencyBlockRequest)$
-   2. [*Broadcast*][broad]$(\mathsf{M})$
 
 <p><br></p>
 
@@ -377,20 +371,20 @@ In Emergency Mode, new iterations are started after the maximum iteration time (
 This increases the possibility of producing a block for the round, but also the probability of forks. In fact, each of the running iterations could reach agreement on a candidate block, possibly generating multiple winning blocks for the same round. Nonetheless, forks are still automatically resolved by always choosing the lowest-iteration block (see [Chain Management][cm]).
 Note that, if a block is accepted for the round, all open iterations are terminated. This decreases the chances of other candidate blocks reaching quorum.
 
-When the last iteration ($MaxIterations$) is reached, all open iterations keep executing indefinitely, until either a quorum is reached on a candidate, or an [Emergency Block][eb] is received.
+When the last iteration ($MaxIterations-1$) is reached, all open iterations keep executing indefinitely, until either a quorum is reached on a candidate, or an [Emergency Block][eb] is received.
 
 ### Emergency Block
-When the maximum iteration time ($MaxStepTimeout \times 3$) of the last iteration has elapsed, nodes broadcast an *Emergency Block Request* (EBR) to the network. This message is used to request special Dusk-owned nodes to produce an *Emergency Block*.
-
-In particular, if such a request is received for a majority of the total stake in the network, the Emergency Block is produced.
+If no winning block is produced for a round, Dusk can produce an *Emergency Block*.
 This block has no transactions, but contains a new seed signed by Dusk (and verifiable with the [global parameter][cenv] $DuskKey$).
-Additionally, a proof of the EBRs is included as the aggregated signatures on such messages.
+Its $Iteration$ is $255$, which is outside the range of consensus iterations.
+
+An Emergency Block is not voted on and has no Attestation: nodes accept it if it is signed with $DuskKey$ (see [*isEmergencyBlock*][ieb]) and if its timestamp meets the minimum delay described below.
 
 If a node receives an Emergency Block, it accepts it into its local chain and moves to the next round. Nevertheless, the Emergency Block is marked as $Accepted$ (see [Consensus State][cs]), so it can be replaced by a lower-iteration block for the same round (unless it gets finalized due to [Rolling Finality][rf]).
 
-Note that multiple Dusk nodes can generate the same block (with the exception of the EBRs proof, which is not included in the block hash), since it contains no transactions and is signed with the same key. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
+Note that multiple Dusk nodes can generate the same block, since it contains no transactions and is signed with the same key. Thus, no fork can be produced by multiple Emergency Blocks for the same round.
 
-Also note that an Emergency Block is only accepted when the last iteration maximum time has elapsed.
+Also note that an Emergency Block is only accepted if its timestamp is at least $(MaxIterations+1) \times 3 \times MaxStepTimeout$ seconds after the previous block's timestamp, that is, after the maximum time of all iterations in the round has elapsed.
 
 ### Procedures
 
@@ -398,7 +392,7 @@ Also note that an Emergency Block is only accepted when the last iteration maxim
 This procedure outputs $true$ if the input block $\mathsf{B}$ is a valid Emergency Block.
 
 $`\textit{isEmergencyBlock}(\mathsf{B})`$
-- $\texttt{if} (\mathsf{B}.Iteration = MaxIterations)$
+- $\texttt{if} (\mathsf{B}.Iteration = 255)$
 - $\texttt{and} (\mathsf{B}.Transactions = NIL)$
 - $\texttt{and} (\mathsf{B}.Faults = NIL)$
 - $\texttt{and} (\mathsf{B}.Generator = DuskKey):$

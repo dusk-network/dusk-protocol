@@ -14,7 +14,7 @@ An iteration is composed of three ***steps***:
 
 If a candidate is produce in the Proposal step, and a supermajority of votes is reached in favor of the block, the candidate is added to the blockchain. The result of the iteration is certified with an ***Attestation*** containing all the (digitally-signed) votes of the committee members that reached agreement on the block.
 
-If the iteration fails, a new one is executed with a new candidate and a different set of provisioners running the protocol. A maximum of 50 iterations is run in a single round, with the last one producing an empty *Emergency Block*, which ensures no round ends without a block.
+If the iteration fails, a new one is executed with a new candidate and a different set of provisioners running the protocol. A maximum of 50 iterations is run in a single round. If none of them produces a block, Dusk can produce an empty *Emergency Block*, so that no round ends without a block.
 
 
 ## Deterministic Sortition

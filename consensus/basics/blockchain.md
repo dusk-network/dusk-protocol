@@ -157,12 +157,13 @@ Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between 
 4. And $\mathsf{B}$'s $PrevBlock$ is $\mathsf{B}^p$'s hash
 5. And $\mathsf{B}$'s $Seed$ is the generator's signature of $\mathsf{B}^p$'s $Seed$
 6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
-7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
-8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
-9. And $\mathsf{B}$'s fault root is correct with respect to the fault set
-10. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+7. And, if $\mathsf{B}$ is an [Emergency Block][eb], its $Timestamp$ is at least $(MaxIterations+1) \times 3 \times MaxStepTimeout$ after $\mathsf{B}^p$
+8. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
+9. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
+10. And $\mathsf{B}$'s fault root is correct with respect to the fault set
+11. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
    1. Output $true$
-11. Otherwise, output $false$
+12. Otherwise, output $false$
 
 **Procedure**
 
@@ -175,13 +176,14 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
   5. $\texttt{and } (\mathsf{B}.Seed = $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
   6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
-  7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
-  8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
-  9. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
-  10. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+  7. $\texttt{and } (\mathsf{B}.Iteration \ne 255 \texttt{ or } \mathsf{B}.Timestamp \ge \mathsf{B}^p.Timestamp+(MaxIterations+1) \times 3 \times MaxStepTimeout)$
+  8. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
+  9. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
+  10. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
+  11. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
      1. $\texttt{output } true$
 
-  11. $\texttt{else: output } false$
+  12. $\texttt{else: output } false$
 
 
 <p><br></p>
@@ -313,7 +315,7 @@ Note that, in the best case scenario, the *final* part of the chain includes all
 ### Procedures
 
 #### *GetPNI*
-This procedure gets a block $\mathsf{B}$ and returns the number of previous non-attested iterations (PNI).
+This procedure gets a block $\mathsf{B}$ and returns the number of previous non-attested iterations (PNI). It counts only the iterations that can run, so an [Emergency Block][eb] counts up to $MaxIterations$.
 
 **Parameters**
 - $\mathsf{B}$: the block being added to the chain
@@ -322,7 +324,7 @@ This procedure gets a block $\mathsf{B}$ and returns the number of previous non-
 
 $\textit{GetPNI}( \mathsf{B} ):$
 - $\texttt{set } pni = 0$
-1. $\texttt{for } i = 0 \dots \mathsf{B}.Iteration-1: $
+1. $\texttt{for } i = 0 \dots \min(\mathsf{B}.Iteration, MaxIterations)-1: $
    1. $\texttt{if } (\mathsf{H_B}.FailedIterations[i] = NIL):$
       1. $pni = pni + 1$
 2. $\texttt{output } pni$
