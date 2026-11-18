@@ -96,7 +96,7 @@ We define the following Block-related procedures:
 
 #### *VerifyBlock*
 This procedure verifies if a block $\mathsf{B}$ is a valid successor of another block $\mathsf{B}^p$ (commonly, the $Tip$) and contains a [Success Attestation][atts]. If both conditions are met, it returns $true$, otherwise, it returns $false$. If the block is a [Candidate][cb], the Attestation field is not verified.
-If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified.
+If the block is an [Emergency Block][eb], the block $Attestation$ and $FailedIterations$ are not verified. If the parent is the genesis block or an Emergency Block, which have no Attestation, the parent's certificate is not verified.
 
 This procedure is used in the [Validation][vals] step to verify the validity of the Candidate block, and to verify [`Block`][bmsg] messages from the network ([*HandleBlock*][hb], [*SyncBlock*][sb], [*AcceptPoolBlocks*][apb]).
 
@@ -110,12 +110,12 @@ This procedure is used in the [Validation][vals] step to verify the validity of 
 1. Verify transaction number
 2. Verify faults number
 3. Verify $\mathsf{B}$'s header ([*VerifyBlockHeader*][vbh])
-4. Verify $\mathsf{B}^p$'s certificate $\mathsf{A}_{\mathsf{B}^p}$ ([*VerifyAttestation*][va])
+4. Unless $\mathsf{B}^p$ is the genesis block or an Emergency Block, verify $\mathsf{B}^p$'s certificate $\mathsf{A}_{\mathsf{B}^p}$ for $\mathsf{B}^p$'s hash ([*VerifyAttestation*][va])
 5. If $\mathsf{B}$ is a valid Emergency Block: output $true$
 6. For each attestation $\mathsf{A}_i$ in $FailedIterations$
    1. Verify $\mathsf{A}_i$ ([*VerifyAttestation*][va])
 7. If $\mathsf{B}$ is not a Candidate:
-   1. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ ([*VerifyAttestation*][va])
+   1. Verify $\mathsf{B}$'s attestation $\mathsf{A_B}$ for $\mathsf{B}$'s hash ([*VerifyAttestation*][va])
 8.  If all verifications succeeded, output $true$
 
 **Procedure**
@@ -130,15 +130,16 @@ $\textit{VerifyBlock}(\mathsf{B}, \mathsf{B}^p, IsCandidate):$
 1. $\texttt{if } (|\mathsf{B}.Transactions| > MaxTransactions) \texttt{output } false$
 2. $\texttt{if } (|\mathsf{B}.Faults| > MaxFaults) \texttt{output } false$
 3. $\texttt{if } ($[*VerifyBlockHeader*][vbh]$(\mathsf{B}^p,\mathsf{B}) = false): \texttt{output } false$
-4. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success) = false): \texttt{output } false`$
+4. $\texttt{if } (\mathsf{B}^p.Height \ne 0) \texttt{ and } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}^p) = false):$
+   1. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}^p, \mathsf{A}_{\mathsf{B}^p}, Success, \mathsf{B}.PrevBlock) = false): \texttt{output } false`$
 5. $\texttt{if } ($[*isEmergencyBlock*][ieb]$(\mathsf{B}) = true): \texttt{output } true$
 6. $\texttt{for } i = 0 \dots |\mathsf{B}.FailedIterations|$
    - $\mathsf{A}_i = \mathsf{B}.FailedIterations[i]$
    1. $\texttt{if } (\mathsf{A}_i \ne NIL) :$
       - $\mathsf{CI}_i = (\mathsf{B}.PrevBlock,\mathsf{B}.Round,i)$
-      1. $\texttt{if } ($[*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail) = false): \texttt{output } false$
+      1. $\texttt{if } ($[*VerifyAttestation*][va]$(\mathsf{CI}_i, \mathsf{A}_i, Fail, NIL) = false): \texttt{output } false$
 7. $\texttt{if } (IsCandidate \ne true) :$
-   1. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success) = false): \texttt{output } false`$
+   1. $\texttt{if } ($[*VerifyAttestation*][va]$`(\mathsf{CI}, \mathsf{A_B}, Success, \mathsf{B}.Hash) = false): \texttt{output } false`$
 8.  $\texttt{output } true$
 
 #### *VerifyBlockHeader*
@@ -157,12 +158,13 @@ Note that we require a minimum of $MinBlockTime$ (currently 10 seconds) between 
 4. And $\mathsf{B}$'s $PrevBlock$ is $\mathsf{B}^p$'s hash
 5. And $\mathsf{B}$'s $Seed$ is the generator's signature of $\mathsf{B}^p$'s $Seed$
 6. And $\mathsf{B}$'s $Timestamp$ is at least 10 seconds after $\mathsf{B}^p$
-7. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
-8. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
-9. And $\mathsf{B}$'s fault root is correct with respect to the fault set
-10. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
+7. And, if $\mathsf{B}$ is an [Emergency Block][eb], its $Timestamp$ is at least $(MaxIterations+1) \times 3 \times MaxStepTimeout$ after $\mathsf{B}^p$
+8. And $\mathsf{B}$'s $Timestamp$ is lower than the local time
+9. And $\mathsf{B}$'s transaction root is correct with respect to the transaction set
+10. And $\mathsf{B}$'s fault root is correct with respect to the fault set
+11. And $\mathsf{B}$'s state hash corresponds to the result of the state transition over $\mathsf{B}^p$
    1. Output $true$
-11. Otherwise, output $false$
+12. Otherwise, output $false$
 
 **Procedure**
 
@@ -175,13 +177,14 @@ $\textit{VerifyBlockHeader}(\mathsf{B}, \mathsf{B}^p)$:
   4. $\texttt{and } (\mathsf{B}.PreviousBlock = \mathsf{B}^p.Hash)$
   5. $\texttt{and } (\mathsf{B}.Seed = $*Sign*$(\mathsf{B}.Generator, \mathsf{B}^p.Seed))$
   6. $\texttt{and } (\mathsf{B}.Timestamp \gt \mathsf{B}^p.Timestamp+MinBlockTime)$
-  7. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
-  8. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
-  9. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
-  10. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
+  7. $\texttt{and } (\mathsf{B}.Iteration \ne 255 \texttt{ or } \mathsf{B}.Timestamp \ge \mathsf{B}^p.Timestamp+(MaxIterations+1) \times 3 \times MaxStepTimeout)$
+  8. $\texttt{and } (\mathsf{B}.Timestamp \le \tau_{Now}+TimestampMargin)$
+  9. $\texttt{and } (\mathsf{B}.TransactionRoot = MerkleTree(\mathsf{B}.Transactions).Root)$
+  10. $\texttt{and } (\mathsf{B}.FaultRoot = MerkleTree(\mathsf{B}.Faults).Root)$
+  11. $\texttt{and } (\mathsf{B}.StateRoot = MerkleTree(SystemState_{\mathsf{B}^p}).Root):$
      1. $\texttt{output } true$
 
-  11. $\texttt{else: output } false$
+  12. $\texttt{else: output } false$
 
 
 <p><br></p>
@@ -313,7 +316,7 @@ Note that, in the best case scenario, the *final* part of the chain includes all
 ### Procedures
 
 #### *GetPNI*
-This procedure gets a block $\mathsf{B}$ and returns the number of previous non-attested iterations (PNI).
+This procedure gets a block $\mathsf{B}$ and returns the number of previous non-attested iterations (PNI). It counts only the iterations that can run, so an [Emergency Block][eb] counts up to $MaxIterations$.
 
 **Parameters**
 - $\mathsf{B}$: the block being added to the chain
@@ -322,7 +325,7 @@ This procedure gets a block $\mathsf{B}$ and returns the number of previous non-
 
 $\textit{GetPNI}( \mathsf{B} ):$
 - $\texttt{set } pni = 0$
-1. $\texttt{for } i = 0 \dots \mathsf{B}.Iteration-1: $
+1. $\texttt{for } i = 0 \dots \min(\mathsf{B}.Iteration, MaxIterations)-1: $
    1. $\texttt{if } (\mathsf{H_B}.FailedIterations[i] = NIL):$
       1. $pni = pni + 1$
 2. $\texttt{output } pni$

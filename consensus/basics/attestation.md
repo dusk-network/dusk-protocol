@@ -165,7 +165,7 @@ This procedure returns the absolute step number within the round. It is used for
 **Procedure**
 
 $\textit{GetStepNum}(I, Step):$
-- $\texttt{output } I \times + StepNum$ 
+- $\texttt{output } I \times 3 + StepNum$ 
 
 <p><br></p>
 
@@ -353,45 +353,56 @@ $\textit{AggregateVote}( \mathsf{SV}, \mathcal{C}, \sigma, pk ) :$
 
 #### *VerifyAttestation*
 This procedure checks an Attestation by verifying the [Validation][val] and [Ratification][rat] aggregated signatures of the Vote against the respective committees.
-It takes an optional $ExpectedResult$ against which to verify the Attestation's $Result$.
+If the Vote is $NoQuorum$, the Validation step did not reach a quorum, so only the Ratification votes are verified.
+Since the votes sign only the Vote, not the $Result$, a $Success$ result must hold a $Valid$ vote and a $Fail$ result must not.
+It takes an optional $ExpectedResult$ against which to verify the Attestation's $Result$, and an optional block hash $\eta$ that a $Success$ Attestation must vote for.
 
 **Parameters**
 - $\mathsf{CI}$: the [`ConsensusInfo`][cinf] for the Attestation
 - $\mathsf{A}$: the [Attestation][att] to verify
-- $ExpectedResult$: the expected result of the attestation ($Success$ or $Fail$)
+- $ExpectedResult$: the expected result of the attestation ($Success$, $Fail$, or $NIL$)
+- $\eta$: the hash of the block that the Attestation's $Valid$ vote is expected to be for, or $NIL$
 
 **Algorithm**
-1. Check the $Result$ against the $ExpectedResult$
-2. Check both Validation and Ratification votes are present
-3. Verify Validation votes
-4. If votes are not valid, output $false$
-5. Verify Ratification votes
-6. If votes are not valid, output $false$
-7. Output $true$
+1. If the $Result$ is $Success$ and the Vote is not $Valid$, or the $Result$ is $Fail$ and the Vote is $Valid$, output $false$
+2. Check the $Result$ against the $ExpectedResult$
+3. If $\eta$ is given, check the Vote is $Valid$ for $\eta$
+4. Check Ratification votes are present
+5. If the Vote is not $NoQuorum$:
+   1. If Validation votes are missing, output $false$
+   2. Verify Validation votes
+   3. If votes are not valid, output $false$
+6. Verify Ratification votes
+7. If votes are not valid, output $false$
+8. Output $true$
 
 **Procedure**
 
-$\textit{VerifyAttestation}(\mathsf{CI}, \mathsf{A}, ExpectedResult):$
+$\textit{VerifyAttestation}(\mathsf{CI}, \mathsf{A}, ExpectedResult, \eta):$
 - $\texttt{set}:$
    - $\eta_{\mathsf{B}}^p, R, I \leftarrow \mathsf{CI}$
    - $`\mathsf{IR}, \mathsf{SV}^V, \mathsf{SV}^R \leftarrow \mathsf{A}`$
    - $\mathcal{C}^V =$ [*ExtractCommittee*][ec]$(R,I, ValStep)$
    - $\mathcal{C}^R =$ [*ExtractCommittee*][ec]$(R,I, RatStep)$
    - $\mathsf{V}: \mathsf{IR}.Vote$
-   - $\upsilon^V = (\mathsf{CI}||\mathsf{V}||ValStep)$ 
-   - $\upsilon^R = (\mathsf{CI}||\mathsf{V}||RatStep)$
+   - $\upsilon^V = (\mathsf{CI}||ValStep||\mathsf{V})$ 
+   - $\upsilon^R = (\mathsf{CI}||RatStep||\mathsf{V})$
    - $Q =$ [*GetQuorum*][gq]$(\mathsf{V})$
 
-1. $\texttt{if } (ExpectedResult \ne NIL) \texttt{ and } (\mathsf{IR} \ne ExpectedResult): \texttt{output } false$
-2. $\texttt{if } (\mathsf{SV}^V = NIL) \texttt{ or } (\mathsf{SV}^R = NIL): \texttt{output } false$
+1. $\texttt{if } (\mathsf{IR} = Success \texttt{ and } \mathsf{V} \ne Valid) \texttt{ or } (\mathsf{IR} = Fail \texttt{ and } \mathsf{V} = Valid): \texttt{output } false$
+2. $\texttt{if } (ExpectedResult \ne NIL) \texttt{ and } (\mathsf{IR} \ne ExpectedResult): \texttt{output } false$
+3. $\texttt{if } (\eta \ne NIL) \texttt{ and } (\mathsf{V} \ne Valid(\eta)): \texttt{output } false$
+4. $\texttt{if } (\mathsf{SV}^R = NIL): \texttt{output } false$
 
-3. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
-4. $\texttt{if } (isValid{=}false): \texttt{output } false$
+5. $\texttt{if } (\mathsf{V} \ne NoQuorum):$
+   1. $\texttt{if } (\mathsf{SV}^V = NIL): \texttt{output } false$
+   2. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^V, \upsilon^V, Q, \mathcal{C}^V)`$
+   3. $\texttt{if } (isValid{=}false): \texttt{output } false$
 
-5. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
-6. $\texttt{if } (isValid{=}false): \texttt{output } false$
+6. $isValid =$ [*VerifyVotes*][vv]$`(\mathsf{SV}^R, \upsilon^R, Q, \mathcal{C}^R)`$
+7. $\texttt{if } (isValid{=}false): \texttt{output } false$
 
-7. $\texttt{output } true$
+8. $\texttt{output } true$
 
 #### *VerifyVotes*
 This procedure checks the aggregated votes are valid and reach the target quorum.

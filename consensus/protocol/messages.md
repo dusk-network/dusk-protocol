@@ -45,7 +45,7 @@ To run the SA protocol, nodes exchange four main types of messages:
 - $\mathsf{Ratification}$: it contains the vote of a member of the voting committee for a [Ratification][rat] step;
 - $\mathsf{Quorum}$: it contains the aggregated votes of a specific iteration's Validation and Ratification steps; it is generated at the end of an SA iteration if a quorum was reached in the Ratification step;
 
-Consensus messages are composed of a [`ConsensusInfo`][cinf] structure, some fields specific to the message type, and, with the exception of the `Quorum` message, a [`SignInfo`][sinf] structure, containing the public key and signature of the provisioner that created the message. 
+Consensus messages are composed of a [`ConsensusInfo`][cinf] structure, some fields specific to the message type, and, with the exception of the `Quorum` message, a [`SignInfo`][sinf] structure, containing the public key and signature of the provisioner that created the message. The `Candidate` message takes both from the header of its block. 
 
 #### Sender
 All messages include a $Sender$ field indicating the network identity (e.g. the IP address) of the peer from which the message was received. 
@@ -53,7 +53,7 @@ For the sake of readability, this field is omitted from the structure definition
 
 ### Preamble
 All consensus messages includes the essential information to identify the round, iteration, and branch they belong to.
-We include all this information in the `ConsensusInfo` structure, which is the first field of all consensus messages.
+We include all this information in the `ConsensusInfo` structure, which is the first field of all consensus messages except `Candidate`.
 
 #### `ConsensusInfo`
 This structure is used for all consensus messages to identify the round and iteration they refer to. 
@@ -67,17 +67,19 @@ The structure is defined as follows:
 |-------------|--------------|----------|---------------------|
 | $PrevHash$  | [SHA3][hash] | 32 bytes | Previous block hash |
 | $Round$     | Unsigned Int | 64 bits  | Round number        |
-| $Iteration$ | Unsigned Int | 64 bits  | Iteration number    |
+| $Iteration$ | Unsigned Int | 8 bits   | Iteration number    |
 
-The structure's total size is 48 bytes.
+The structure's total size is 41 bytes.
 
 
 ### Signatures
 To ensure integrity and authenticity of votes, each message is digitally signed by the sender.
 
-In particular, all messages include a signature of the following information:
+In particular, `Validation` and `Ratification` messages include a signature of the following information:
 - the [`ConsensusInfo`][cinf] structure
-- the message-specific payload (e.g., the candidate hash for `Candidate` messages, or the `Vote` for Validation and Ratification messages)
+- the message-specific payload (i.e., the step number and the `Vote`)
+
+`Candidate` messages are an exception: their signature only covers the candidate block hash, which already includes the block's previous block hash, height, and iteration (see [`Candidate`][cmsg]).
 
 This *message signature* is included in the $Signature$ field.
 
@@ -111,21 +113,19 @@ The $Signature$ field is not just the signature of the whole message but varies 
 ### Messages
 
 #### `Candidate`
-This message is used by a block generator to broadcast a candidate block.
+This message is used by a block generator to broadcast a candidate block. It consists of the block alone:
 
-The message has the following structure:
+| Field       | Type         | Size           | Description     |
+|-------------|--------------|----------------|-----------------|
+| $Candidate$ | [`Block`][b] | 410-1306 bytes | Candidate block |
 
-| Field           | Type                    | Size           | Description     |
-|-----------------|-------------------------|----------------|-----------------|
-| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes       | Consensus info  |
-| $Candidate$     | [`Block`][b]            | 410-1306 bytes | Candidate block |
-| $SignInfo$      | [`SignInfo`][sinf]      | 144 bytes      | Signature info  |
-
-The message has a variable size of 192 bytes plus the block size.
+The message has the size of the block. Its [`ConsensusInfo`][cinf] is taken from the block header, as $(\mathsf{B}.PreviousBlock, \mathsf{B}.Height, \mathsf{B}.Iteration)$, and its [`SignInfo`][sinf] is $(\mathsf{B}.Generator, \mathsf{B}.Signature)$.
 
 The message's [signature value][sigs] $\upsilon_\mathcal{M^C}$ is:
 
-$$\upsilon_\mathcal{M^C} = (ConsensusInfo || \eta_{Candidate})$$
+$$\upsilon_\mathcal{M^C} = \eta_{Candidate}$$
+
+that is, the hash of the candidate [block][b], which already covers the block's $PreviousBlock$, $Height$ (i.e., the round), and $Iteration$.
 
 
 #### `Validation`
@@ -135,17 +135,17 @@ The message has the following structure:
 
 | Field           | Type                    | Size      | Description     |
 |-----------------|-------------------------|-----------|-----------------|
-| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info  |
+| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 41 bytes  | Consensus info  |
 | $Vote$          | [`Vote`][vote]          | 33 byte   | Validation vote |
 | $SignInfo$      | [`SignInfo`][sinf]      | 144 bytes | Signature info  |
 
-The message has a total size of 225 bytes.
+The message has a total size of 218 bytes.
 
 In this message, $Vote$ can be $Valid$, $Invalid$, or $NoCandidate$.
 
 The message's [signature value][sigs] $\upsilon_\mathcal{M}$ is:
 
-$$\upsilon_\mathcal{M} = (ConsensusInfo || Vote || ValStep)$$
+$$\upsilon_\mathcal{M} = (ConsensusInfo || ValStep || Vote)$$
 
 
 #### `Ratification`
@@ -154,19 +154,19 @@ This message is used by a member of a [Ratification][rat] committee to cast a vo
 The message has the following structure:
 | Field             | Type                    | Size      | Description                 |
 |-------------------|-------------------------|-----------|-----------------------------|
-| $ConsensusInfo$   | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info              |
+| $ConsensusInfo$   | [`ConsensusInfo`][cinf] | 41 bytes  | Consensus info              |
 | $Vote$            | [`Vote`][vote]          | 33 byte   | Ratification vote           |
 | $ValidationVotes$ | [`StepVotes`][sv]       | 56 byte   | Aggregated Validation votes |
 | $Timestamp$       | Unsigned Int            | 64 bits   | Timestamp in Unix format    |
 | $SignInfo$        | [`SignInfo`][sinf]      | 144 bytes | Signature info              |
 
-The message has a total size of 281 bytes.
+The message has a total size of 282 bytes.
 
 The $Timestamp$ field is reserved for a future feature.
 
 The message's [signature value][sigs] $\upsilon_\mathcal{M^R}$ is:
 
-$$\upsilon_\mathcal{M^R} = (ConsensusInfo || Vote || RatStep)$$
+$$\upsilon_\mathcal{M^R} = (ConsensusInfo || RatStep || Vote)$$
 
 
 #### `Quorum`
@@ -174,10 +174,10 @@ This message is used at the end of a successful SA iteration to communicate to t
 
 | Field           | Type                    | Size      | Description           |
 |-----------------|-------------------------|-----------|-----------------------|
-| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 48 bytes  | Consensus info        |
+| $ConsensusInfo$ | [`ConsensusInfo`][cinf] | 41 bytes  | Consensus info        |
 | $Attestation$   | [`Attestation`][att]    | 152 bytes | Iteration attestation |
 
-The message has a total size of 289 bytes.
+The message has a total size of 193 bytes.
 
 Note that this message is not signed, since the $Attestation$ is already made of aggregated signatures, which can be verified against the $ConsensusInfo$ and the $Vote$. As a consequence, any node of the network can broadcast this message, when collecting a quorum of Ratification votes.
 
@@ -273,8 +273,10 @@ The expected message flow is the following: $\mathsf{GetMempool}$ -> $\mathsf{In
 This messages is sent to synchronize the blockchain with a peer. Its payload includes a $Locator$ block hash indicating the highest block known to the sender. 
 
 This message is used in two situations:
- - if the block acceptance timeout expires (i.e., no new block is accepted for 20 seconds) <!-- TODO: define BLOCK_ACCEPTANCE_TIMEOUT -->
- - when the node starts a [synchronization procedure][syn] with a peer;
+ - if no new block is accepted for $AcceptTimeout$ (60 seconds); in this case, $Locator$ is the last finalized block, and the message is sent again every $StalledTimeout$ (30 seconds) until a new block is accepted;
+ - when the node starts, with its $Tip$ as $Locator$ ([*SAInit*][init]);
+
+<!-- TODO: define the procedure that sends `GetBlocks` after $AcceptTimeout$ -->
 
 The response to this message should be an $\mathsf{Inv}$ message containing a vector of type $BlockFromHash$ with the list of all blocks in the [local chain][lc] that are successors of $Locator$.
 
@@ -412,6 +414,7 @@ $SendMulti(NumPeers, \mathsf{M}):$
 [propm]: #propagate
 [send]:  #send
 [sendm]: #sendmulti
+[init]:  https://github.com/dusk-network/dusk-protocol/tree/main/consensus/protocol/succinct-attestation.md#sainit
 
 <!-- Notation -->
 [hash]: https://github.com/dusk-network/dusk-protocol/tree/main/consensus/notation.md#hash-functions

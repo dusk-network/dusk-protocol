@@ -14,8 +14,11 @@ This section describes how new blocks are accepted into the local blockchain and
     - [Environment](#environment-1)
     - [Procedures](#procedures-1)
       - [*SyncBlock*](#syncblock)
+      - [*HandleFutureQuorum*](#handlefuturequorum)
+      - [*SyncQuorum*](#syncquorum)
       - [*PreSync*](#presync)
       - [*StartSync*](#startsync)
+      - [*RequestMoreBlocks*](#requestmoreblocks)
       - [*HandleSyncTimeout*](#handlesynctimeout)
       - [*AcceptPoolBlocks*](#acceptpoolblocks)
 
@@ -29,7 +32,7 @@ There are two main reasons a network block is not in the chain:
  
  - *out-of-sync*: the node fell behind the main chain, that is, its $Tip$ is part of the main chain but is at a lower height than the main chain's tip; in this case, the node needs to retrieve missing blocks to catch up with the network. This process is called [*synchronization*][syn] and is run with the peer that sent the triggering block.
 
- - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the last finalized block and then starts the synchronization procedure to catch up with the main chain.
+ - *fork*: two or more candidates reached consensus in the same round (but different iteration); in this case, the node must first decide whether to stick to the local chain or switch to the other one. To switch, the node runs a [*fallback*][fal] process that reverts the local chain (and state) to the parent of the received block and then accepts the received block as the new tip.
 
 Incoming blocks (transmitted via [Block][bmsg] messages) are handled by the [*HandleBlock*][hb] procedure, which can trigger the [*Fallback*][fal] and [*SyncBlock*][sb] procedures to manage forks and out-of-sync cases, respectively.
 
@@ -103,7 +106,7 @@ $\textit{HandleBlock}():$
 #### *HandleQuorum*
 This procedure manages [`Quorum`][qmsg] messages for a certain round $R$. If the message was received from the network, it is first verified ([*VerifyAttestation*][va]) and then propagated. The corresponding candidate block is then marked as the winning block of the round ([*MakeWinning*][mw]).
 
-If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded.
+If the `Quorum` message is for the previous round (the $Tip$'s one), meaning that the node already received/produced a Valid Quorum for it,, the message is discarded. `Quorum` messages for later rounds are handled by [*HandleFutureQuorum*][hfq], which passes them to [*SyncQuorum*][sq].
 
 If the message contains a [Fail Attestation][atts], and it does not refer to a [Relaxed iteration][rm], add it to the $\boldsymbol{FailedIterations}$ array.
 
@@ -145,7 +148,7 @@ $\textit{HandleQuorum}( R ):$
        1. $\texttt{if } (R_{\mathsf{M}} = Tip.Height):$
           1. $\texttt{break}$
        2. $\texttt{else}:$
-          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL)$
+          1. $isValid =$ [*VerifyAttestation*][va]$(\mathsf{CI}, \mathsf{A}, NIL, NIL)$
           2. $\texttt{if } (isValid = true) :$
              1. [*Propagate*][propm]$(\mathsf{M}^Q)$
              2. $\texttt{if } (\mathsf{A}.Result = Success):$
@@ -212,16 +215,16 @@ It is triggered by [*HandleBlock*][hb] when receiving a block with height equal 
 This event indicates that a quorum was reached on a previous candidate and that the node is currently on a fork. To guarantee nodes converge on a common block, we give priority to blocks produced at lower iterations.
 
 <!-- TODO: Is it safe to blacklist these blocks? Is it possible that we accept this block while the rest of the network moves on the delete branch?-->
-Deleted blocks are blacklisted (because they belong to a lower-priority fork) and their transactions are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
+The deleted block at height $\mathsf{B}_\eta.Height+1$, which is replaced by the lower-iteration block, is blacklisted (because it belongs to a lower-priority fork). The transactions of all deleted blocks are pushed back to the mempool. The local $SystemState$ and $Provisioners$ are updated accordingly.
 
 **Parameters**
 - $\eta$: the hash of the block to which to revert
 
 **Algorithm**
-1. For each block $`\mathsf{B}_i`$ between $Tip$ and $\mathsf{B}_\eta$
+1. For each block $`\mathsf{B}_i`$ from $Tip$ down to $\mathsf{B}_\eta$'s successor
    1. Push $\mathsf{B}_i$'s transactions back to mempool
    2. Delete $\mathsf{B}_i$ from the chain
-   3. Blacklist $\mathsf{B}_i$
+   3. If $\mathsf{B}_i$ is $\mathsf{B}_\eta$'s successor, blacklist $\mathsf{B}_i$
 2. Set $Tip$ to $\mathsf{B}_\eta$
 3. Revert VM state to $\mathsf{B}_\eta$'s state
 4. Update $Provisioners$
@@ -229,10 +232,10 @@ Deleted blocks are blacklisted (because they belong to a lower-priority fork) an
 **Procedure**
 
 $\textit{Fallback}():$
-1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height :$
+1. $\texttt{for } i = Tip.Height \dots \mathsf{B}_\eta.Height+1 :$
    1. $Mempool = Mempool \cup \{ \mathsf{B}_i.Transactions \}$
    2. $\textbf{Chain}[i] = NIL$
-   3. $Blacklist = Blacklist \cup \mathsf{B}_i$
+   3. $\texttt{if } (i = \mathsf{B}_\eta.Height+1): Blacklist = Blacklist \cup \mathsf{B}_i$
 2. $Tip = \mathsf{B}_\eta$
 3. $SystemState = VM.Revert(\mathsf{B}_\eta)$
 4. $Provisioners = SystemState.Provisioners$
@@ -240,7 +243,7 @@ $\textit{Fallback}():$
 <p><br></p>
 
 ## Synchronization
-The *synchronization* process allows a node to catch up with a peer's chain. The process, handled by the [*SyncBlock*][sb] procedure, is triggered when receiving a block at a higher height than the $Tip$.
+The *synchronization* process allows a node to catch up with a peer's chain. The process, handled by the [*SyncBlock*][sb] procedure, is triggered when receiving a block at a higher height than the $Tip$. It is also triggered by a [`Quorum`][qmsg] message for a round $R$ higher than $Tip.Height+2$, in which case the node synchronizes up to height $R-1$ (see [*SyncQuorum*][sq]).
 
 If the triggering block is a valid $Tip$'s successor, it is accepted as the new tip, and the SA loop ([*SALoop*][sl]) is restarted (to sync up the consensus protocol).
 
@@ -252,12 +255,12 @@ More specifically, the protocol works as follows:
    1. The node sends a $\mathsf{GetResource}$ message (see [Data Exchange messages][dx]) of type $BlockFromHeight$ requesting the $Tip$'s successor
 2. Sync phase ([*StartSync*][ss]):
    1. If the $Tip$'s successor is received:
-      1. The node sends a $\mathsf{GetBlocks}$ message to $\mathcal{S}$ containing its local $Tip$;
-      2. The sync peer $\mathcal{S}$ replies with an $\mathsf{Inv}$ message containing the hashes of the blocks from the received $Tip$ and its current tip;
-      3. When the $\mathsf{Inv}$ message is received, the node requests unknown blocks with a $\mathsf{GetResource}$ message;
-      4. The peer responds to the $\mathsf{GetResource}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
+      1. The node requests the missing blocks, from $Tip.Height+1$ to $syncTo$, by sending $\mathsf{GetResource}$ messages of type $BlockFromHeight$ to $\mathcal{S}$ (up to $MaxSyncRequest$ heights per message);
+      2. The peer responds to the $\mathsf{GetResource}$ message by sending all requested blocks, one by one, using $\mathsf{Block}$ messages.
 
 In the sync phase, the node stops the SA loop ([*SALoop*][sl]) for efficiency purposes. Note that this is done after receiving a valid $Tip+1$, which is a sign of trustworthiness from the $syncPeer$.
+While synchronizing, the target height $syncTo$ is raised when receiving a block at a higher height, or a `Quorum` message for a later round.
+Missing blocks are requested in batches of at most $MaxSyncRequest$ heights: a new batch is requested when $syncTo$ is raised by a `Quorum` message, or when a block higher than the $Tip$ is received, the last requested height is lower than $syncTo$, and less than a third of a batch is left between the $Tip$ and the last requested height (see [*RequestMoreBlocks*][rmb]).
 Nonetheless, the sync peer is only given a limited amount of time (defined by [SyncTimeout][env]) to transmit blocks. If the timeout expires, the synchronization is stopped (see [*HandleSyncTimeout*][hst]) and [*SALoop*][sl] is restarted. The timer to keep track of the timeout is set when starting the protocol, and reset each time a valid $Tip$'s successor is provided.
 
 ### Environment
@@ -269,7 +272,10 @@ The environment of synchronization procedures includes node-level parameters, co
 |------------------|-------|----------------------------------------------------|
 | $PreSyncTimeout$ | $10$  | Pre-Synchronization procedure timeout (in seconds) |
 | $SyncTimeout$    | $5$   | Synchronization procedure timeout (in seconds)     |
-| $MaxSyncBlocks$  | $50$  | Maximum number of blocks in a sync session         |
+| $MaxSyncBlocks$  | $1000$ | Maximum number of blocks in the $BlockPool$       |
+| $MaxSyncRequest$ | $100$ | Maximum number of heights requested in a single $\mathsf{GetResource}$ message |
+| $AcceptTimeout$  | $60$  | Time without a new accepted block after which the node sends `GetBlocks` (in seconds) |
+| $StalledTimeout$ | $30$  | Interval at which the node sends `GetBlocks` again until a new block is accepted (in seconds) |
 
 **State**
 
@@ -277,10 +283,11 @@ The environment of synchronization procedures includes node-level parameters, co
 |---------------|----------------------|-----------------------------------------------------------------------------------------|
 | $BlockPool$   | $\mathsf{Block}$ [ ] | List of received blocks with height more than $Tip.Height +1$.                          |
 | $Syncing$     | Boolean              | $true$ if we are running a synchronization procedure with some peer, $false$ otherwise. |
-| $syncPeer$    | Peer ID              | It contains the ID of the peer the node is synchronizing with.                          |
+| $syncPeer$    | Peer ID              | It contains the ID of the peer the node is pre-synchronizing or synchronizing with, or $NIL$. |
 | $\tau_{Sync}$ | Timestamp            | It contains the time from when the $syncTimeout$ is checked against                     |
 | $syncFrom$    | Int              | The height of the starting block during the synchronization process.                    |
 | $syncTo$      | Int              | The heights of last blocks of synchronization process.                                  |
+| $lastRequested$ | Int            | The highest block height requested during the synchronization process.                  |
 
 ### Procedures
 
@@ -299,8 +306,11 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
 1. If $\mathsf{B}$ is higher than the $Tip$'s successor:
    1. If $BlockPool$ has less than $MaxSyncBlocks$
       1. Add $\mathsf{B}$ to the $BlockPool$
-   2. If not synchronizing with any peer ($Syncing = false$):
+   2. If neither synchronizing nor pre-synchronizing with any peer ($Syncing = false$, $syncPeer = NIL$):
       1. Start pre-synchronization ([*PreSync*][ps]) with peer $\mathcal{S}$
+   3. Otherwise, if synchronizing:
+      1. If $\mathsf{B}$ is higher than $syncTo$, set $syncTo$ to $\mathsf{B}$'s height
+      2. Request more blocks, if needed ([*RequestMoreBlocks*][rmb])
 <!-- B = Tip+1 -->
 1. Otherwise, if $\mathsf{B}$'s height is $Tip.Height + 1$:
    1. Verify $\mathsf{B}$ ([*VerifyBlock*][vb])
@@ -318,11 +328,12 @@ If an invalid $Tip$'s successor is received by a sync peer while running the pro
           1. Reset sync timeout $\tau_{Sync}$
           2. Accept all consecutive $\mathsf{B}$'s successors in $BlockPool$ ([*AcceptPoolBlocks*][apb])
           3. If the new $Tip$ is $syncTo$
-             1. Stop syncing ($Syncing = false$)
+             1. Stop syncing ($Syncing = false$, $syncPeer = NIL$)
              2. Restart [*SALoop*][sl]
+          4. Otherwise, request more blocks, if needed ([*RequestMoreBlocks*][rmb])
    3. Otherwise (if $\mathsf{B}$ is not valid):
      1. If $\mathcal{S}$ is $syncPeer$
-         1. Stop syncing ($Syncing = false$)
+         1. Stop syncing ($Syncing = false$, $syncPeer = NIL$)
 
 **Procedure**
 
@@ -333,8 +344,11 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
 1. $\texttt{if } (\mathsf{B}.Height > Tip.Height + 1) :$
    1. $\texttt{if } (|BlockPool| < MaxSyncBlocks):$
       1. $BlockPool = BlockPool \cup \mathsf{B}$
-   2. $\texttt{if } (Syncing = false):$
-      1. [*PreSync*][ps]$(\mathsf{B}, \mathcal{S})$
+   2. $\texttt{if } (Syncing = false) \texttt{ and } (syncPeer = NIL):$
+      1. [*PreSync*][ps]$(\mathsf{B}.Height, \mathcal{S})$
+   3. $\texttt{else if } (Syncing = true):$
+      1. $\texttt{if } (\mathsf{B}.Height > syncTo): syncTo = \mathsf{B}.Height$
+      2. [*RequestMoreBlocks*][rmb]$()$
 <!-- B = Tip+1 -->
 1. $\texttt{else if } (\mathsf{B}.Height = Tip.Height+1) :$
    1. $isValid$ = [*VerifyBlock*][vb]$(\mathsf{B}, Tip, false)$
@@ -354,26 +368,79 @@ $\textit{SyncBlock}(\mathsf{M^B}):$
           2. [*AcceptPoolBlocks*][apb]$()$
           3. $\texttt{if } (Tip.Height = syncTo):$
             1. $Syncing = false$
-            2. $\texttt{start}$([*SALoop*][sl])
+            2. $syncPeer = NIL$
+            3. $\texttt{start}$([*SALoop*][sl])
+          4. $\texttt{else}:$
+            1. [*RequestMoreBlocks*][rmb]$()$
    3. $\texttt{else}:$
        1. $\texttt{if } (\mathcal{S} = syncPeer):$
            1. $Syncing = false$
+           2. $syncPeer = NIL$
 
+#### *HandleFutureQuorum*
+This procedure handles [`Quorum`][qmsg] messages for rounds after the current one, which [*HandleQuorum*][hq] does not receive. It runs alongside [*HandleBlock*][hb], outside the [*SALoop*][sl], so it keeps running while the node synchronizes.
+
+**Algorithm**
+1. Loop:
+   1. If a $\mathsf{Quorum}$ message $\mathsf{M^Q}$ is received for a round higher than $Tip.Height+1$:
+      1. Handle it with [*SyncQuorum*][sq]
+
+**Procedure**
+
+$\textit{HandleFutureQuorum}():$
+1. $\texttt{loop}$:
+   1. $\texttt{if } (\mathsf{M^Q} =$ [*Receive*][recv]$(\mathsf{Quorum}) \ne NIL):$
+      - $\texttt{set}:$
+        - $`\_, R_{\mathsf{M}}, \_ \leftarrow \mathsf{M^Q}.ConsensusInfo`$
+      1. $\texttt{if } (R_{\mathsf{M}} > Tip.Height+1):$
+         1. [*SyncQuorum*][sq]$(\mathsf{M^Q})$
+
+#### *SyncQuorum*
+This procedure handles [`Quorum`][qmsg] messages for later rounds, which can show that the node is behind. A `Quorum` message for round $R$ indicates that its sender knows the block at height $R-1$: if this is higher than the $Tip$'s successor, the node starts pre-synchronizing with the sender ([*PreSync*][ps]), unless a pre-synchronization is already running, or, if already synchronizing, raises $syncTo$ and requests the missing blocks again from the $Tip$'s successor, which also retries heights whose replies were lost.
+
+**Parameters**
+- $\mathsf{M^Q}$: received `Quorum` message
+
+**Algorithm**
+1. Set $h$ to the message's round minus 1
+2. If $h$ is higher than the $Tip$'s successor:
+   1. If synchronizing ($Syncing = true$):
+      1. If $h$ is higher than $syncTo$:
+         1. Set $syncTo$ to $h$
+         2. Request the missing blocks from the $Tip$'s successor to $syncPeer$, up to $MaxSyncRequest$ heights
+   2. Otherwise, if not pre-synchronizing either ($syncPeer = NIL$):
+      1. Start pre-synchronization ([*PreSync*][ps]) with the message's sender $\mathcal{S}$ up to height $h$
+
+**Procedure**
+
+$\textit{SyncQuorum}(\mathsf{M^Q}):$
+- $\texttt{set}:$
+  - $`\_, R_{\mathsf{M}}, \_ \leftarrow \mathsf{M^Q}.ConsensusInfo`$
+  - $\mathcal{S} = \mathsf{M^Q}.Sender$
+  - $h = R_{\mathsf{M}} - 1$
+1. $\texttt{if } (h > Tip.Height + 1) :$
+   1. $\texttt{if } (Syncing = true):$
+      1. $\texttt{if } (h > syncTo):$
+         1. $syncTo = h$
+         2. $lastRequested = min(syncTo, Tip.Height+MaxSyncRequest)$
+         3. [*Send*][send]$(syncPeer, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1 \dots lastRequested))$
+   2. $\texttt{else if } (syncPeer = NIL):$
+      1. [*PreSync*][ps]$(h, \mathcal{S})$
 
 #### *PreSync*
-This procedure requests to a peer the successor of $Tip$ to ensure it knows it before starting the synchronization process. This is done to prevent a peer from stopping our consensus loop just by sending a block in the future. When $Tip+1$ is received from $\mathcal{S}$, the synchronization will start ([*StartSync*][ss]).
+This procedure requests to a peer the successor of $Tip$ to ensure it knows it before starting the synchronization process. This is done to prevent a peer from stopping our consensus loop just by sending a block, or a `Quorum` message, for a future round. When $Tip+1$ is received from $\mathcal{S}$, the synchronization will start ([*StartSync*][ss]).
 
 A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with sync. $syncPeer$ has maximum $PreSyncTimeout$ to send the first block, and $SyncTimeout$ time to send the following ones. With each valid block the timeout is reset (that is, the peer has $SyncTimeout$ time to send each block).
 
 **Parameters**
 
-- $\mathsf{B}$: the block received
+- $h$: the height to synchronize to
 - $\mathcal{S}$: sender peer
  
 **Algorithm**
 
 1. Set $syncFrom$ to $Tip$
-2. Set $syncTo$ to $\mathsf{B}$'s height or $Tip + MaxSyncBlocks$
+2. Set $syncTo$ to $h$
 3. Set $syncPeer$ to $\mathcal{S}$
 4. Send $\mathsf{GetResource}$ requesting $Tip$'s successor
 5. Start the sync timeout $\tau_{Sync}$
@@ -381,28 +448,45 @@ A timeout $\tau_{Sync}$ is setup to prevent a peer from blocking our node with s
 
 **Procedure**
 
-$\textit{PreSync}(\mathsf{B}, \mathcal{S}):$
+$\textit{PreSync}(h, \mathcal{S}):$
 1. $syncFrom = Tip.Height$
-2. $syncTo = min(\mathsf{B}.Height, Tip.Height+MaxSyncBlocks)$
+2. $syncTo = h$
 3. $syncPeer = \mathcal{S}$
 4. [*Send*][send]$(\mathcal{S}, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1))$
 5. $\tau_{Sync} = \tau_{Now}$
 6. $\texttt{start}($[*HandleSyncTimeout*][hst]$)$
 
 #### *StartSync*
-This procedure initiates the synchronization protocol with $syncPeer$ on the base of the block $syncTo$ previously received from this peer.
+This procedure initiates the synchronization protocol with $syncPeer$ up to $syncTo$, the target height from the block or the `Quorum` message that started the synchronization.
 While syncing, the [*SALoop*][sl] is kept stopped to improve performance.
 
 
 **Algorithm**
-1. Send a $\mathsf{GetBlocks}$ message to $syncPeer$ to request missing blocks
-2. Set as "syncing" ($Syncing = true$)
+1. Set $lastRequested$ to $syncTo$, or to $Tip.Height+MaxSyncRequest$ if lower
+2. Send a $\mathsf{GetResource}$ message to $syncPeer$ requesting the blocks from $Tip.Height+1$ to $lastRequested$
+3. Set as "syncing" ($Syncing = true$)
 
 **Procedure**
 
 $\textit{StartSync}():$
-1. [*Send*][send]$(syncPeer, \mathsf{GetBlocks}(Tip.Hash))$
-2. $Syncing = true$
+1. $lastRequested = min(syncTo, Tip.Height+MaxSyncRequest)$
+2. [*Send*][send]$(syncPeer, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1 \dots lastRequested))$
+3. $Syncing = true$
+
+#### *RequestMoreBlocks*
+This procedure keeps the requests to $syncPeer$ ahead of the $Tip$ while synchronizing. If the last requested height has not reached $syncTo$, and less than $MaxSyncRequest/3$ requested heights are left after the $Tip$, it requests the next batch of missing blocks.
+
+**Algorithm**
+1. If $lastRequested$ is lower than $syncTo$ and less than $MaxSyncRequest/3$ heights after the $Tip$:
+   1. Set $lastRequested$ to $syncTo$, or to $Tip.Height+MaxSyncRequest$ if lower
+   2. Send a $\mathsf{GetResource}$ message to $syncPeer$ requesting the blocks from $Tip.Height+1$ to $lastRequested$
+
+**Procedure**
+
+$\textit{RequestMoreBlocks}():$
+1. $\texttt{if } (lastRequested < syncTo) \texttt{ and } (lastRequested - Tip.Height < MaxSyncRequest/3):$
+   1. $lastRequested = min(syncTo, Tip.Height+MaxSyncRequest)$
+   2. [*Send*][send]$(syncPeer, \mathsf{GetResource}(BlockFromHeight, Tip.Height+1 \dots lastRequested))$
 
 #### *HandleSyncTimeout*
 This procedure checks if the sync timeout $\tau_{Sync}$ expires when synchronizing or pre-synchronizing with a peer.
@@ -416,7 +500,8 @@ $\textit{HandleSyncTimeout}():$
 1. $\texttt{if }(Syncing = true):$
    1. $\texttt{if }(\tau_{Now} \gt \tau_{Sync} + SyncTimeout):$
       1. $Syncing = false$
-      2. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
+      2. $syncPeer = NIL$
+      3. $\texttt{if } (\texttt{running}$([*SALoop*][sl]$) = false)$:
         1. $\texttt{start}$([*SALoop*][sl])
      1. $\texttt{break}$
 2. $\texttt{else}:$
@@ -463,8 +548,11 @@ $\textit{AcceptPoolBlocks}():$
 [hb]:  #HandleBlock
 [syn]: #synchronization
 [sb]:  #syncblock
+[sq]:  #syncquorum
+[hfq]: #handlefuturequorum
 [ps]:  #presync
 [ss]:  #startsync
+[rmb]: #requestmoreblocks
 
 [hq]:  #HandleQuorum
 [mw]:  #makewinning
